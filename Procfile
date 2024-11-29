@@ -1,1 +1,1 @@
-web: flask db init || true && flask db stamp head && flask db migrate && flask db upgrade && sleep 2 && flask create-category && sleep 2 && flask create-cpus && sleep 2 && flask create-tags && sleep 2 && flask create-admin && gunicorn --bind 0.0.0.0:8080 run:app 
+web: flask db stamp head || true && flask db migrate || true && flask db upgrade && flask create-category && flask create-cpus && flask create-tags && flask create-admin && gunicorn --bind 0.0.0.0:8080 run:app 
