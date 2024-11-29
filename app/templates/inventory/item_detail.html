@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Item Detail - {{ item.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">{{ item.name }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Basic Information</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Tracking ID</dt>
+                            <dd class="col-sm-8">{{ item.tracking_id }}</dd>
+                            
+                            <dt class="col-sm-4">Category</dt>
+                            <dd class="col-sm-8">{{ item.category.name }}</dd>
+                            
+                            <dt class="col-sm-4">Quantity</dt>
+                            <dd class="col-sm-8">{{ item.quantity }}</dd>
+                            
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-{{ 'success' if item.status == 'in_stock' else 'warning' }}">
+                                    {{ item.status }}
+                                </span>
+                            </dd>
+                        </dl>
+                    </div>
+                    
+                    {% if item.__class__.__name__ == 'ComputerSystem' %}
+                    <div class="col-md-6">
+                        <h5>System Specifications</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">System Type</dt>
+                            <dd class="col-sm-8">{{ item.system_type }}</dd>
+                            
+                            <dt class="col-sm-4">RAM</dt>
+                            <dd class="col-sm-8">{{ item.ram }}</dd>
+                            
+                            <dt class="col-sm-4">Storage</dt>
+                            <dd class="col-sm-8">{{ item.storage }}</dd>
+                            
+                            <dt class="col-sm-4">Processor</dt>
+                            <dd class="col-sm-8">{{ item.processor }}</dd>
+                            
+                            <dt class="col-sm-4">OS</dt>
+                            <dd class="col-sm-8">{{ item.os }}</dd>
+                        </dl>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if qr_code %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5>QR Code</h5>
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="window.print()">Print Label</button>
+                    <a href="#" class="btn btn-warning">Update Item</a>
+                    <button class="btn btn-danger">Remove Item</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

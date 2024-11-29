@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Add Computer Model{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Add New Computer Model</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label class="form-label">Manufacturer</label>
+                            <select class="form-select" name="manufacturer" required>
+                                <option value="Dell">Dell</option>
+                                <option value="HP">HP</option>
+                                <option value="Lenovo">Lenovo</option>
+                                <option value="Apple">Apple</option>
+                                <option value="Custom">Custom Build</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Model Name</label>
+                            <input type="text" class="form-control" name="model_name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="model_type" required>
+                                <option value="desktop">Desktop</option>
+                                <option value="laptop">Laptop</option>
+                                <option value="server">Server</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Add Model</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

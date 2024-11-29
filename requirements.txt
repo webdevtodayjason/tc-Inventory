@@ -1,0 +1,16 @@
+Flask==3.1.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-Migrate==4.0.7
+Flask-WTF==1.2.2
+psycopg2-binary==2.9.10
+python-dotenv==1.0.1
+qrcode==8.0
+reportlab==4.2.5
+pytest==8.3.3
+black==24.10.0
+flake8==7.1.1
+python-barcode==0.15.1
+qrcode==7.4.2
+reportlab==4.0.4
+Pillow==10.0.0

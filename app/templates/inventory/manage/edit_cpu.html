@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Edit CPU{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Edit CPU: {{ cpu.model }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label class="form-label">Manufacturer</label>
+                            <select class="form-select" name="manufacturer" required>
+                                <option value="Intel" {% if cpu.manufacturer == 'Intel' %}selected{% endif %}>Intel</option>
+                                <option value="AMD" {% if cpu.manufacturer == 'AMD' %}selected{% endif %}>AMD</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Model</label>
+                            <input type="text" class="form-control" name="model" required
+                                   value="{{ cpu.model }}"
+                                   placeholder="e.g., Core i7-12700K or Ryzen 7 5800X">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Speed (GHz)</label>
+                            <input type="text" class="form-control" name="speed" required
+                                   value="{{ cpu.speed }}"
+                                   placeholder="e.g., 3.6 GHz">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Cores</label>
+                            <select class="form-select" name="cores" required>
+                                {% for core in [2, 4, 6, 8, 10, 12, 14, 16, 24, 32, 64] %}
+                                <option value="{{ core }}" {% if cpu.cores == core %}selected{% endif %}>
+                                    {{ core }} Cores
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Update CPU</button>
+                            <a href="{{ url_for('inventory.manage_cpus') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

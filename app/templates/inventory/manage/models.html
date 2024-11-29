@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Computer Models{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Computer Models</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('inventory.add_model') }}" class="btn btn-primary">Add New Model</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" 
+                           value="{{ request.args.get('search', '') }}" 
+                           placeholder="Search models...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="type">
+                        <option value="">All Types</option>
+                        {% for value, label in computer_types %}
+                        <option value="{{ value }}" {% if request.args.get('type') == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="manufacturer">
+                        <option value="">All Manufacturers</option>
+                        {% for value, label in manufacturers %}
+                        <option value="{{ value }}" {% if request.args.get('manufacturer') == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>
+                                <a href="{{ url_for('inventory.manage_models', 
+                                         sort='manufacturer',
+                                         order='desc' if sort_by == 'manufacturer' and order == 'asc' else 'asc',
+                                         **request.args) }}" class="text-decoration-none text-dark">
+                                    Manufacturer
+                                    {% if sort_by == 'manufacturer' %}
+                                        <i class="bi bi-arrow-{{ 'up' if order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ url_for('inventory.manage_models',
+                                         sort='model_name',
+                                         order='desc' if sort_by == 'model_name' and order == 'asc' else 'asc',
+                                         **request.args) }}" class="text-decoration-none text-dark">
+                                    Model Name
+                                    {% if sort_by == 'model_name' %}
+                                        <i class="bi bi-arrow-{{ 'up' if order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ url_for('inventory.manage_models',
+                                         sort='type',
+                                         order='desc' if sort_by == 'type' and order == 'asc' else 'asc',
+                                         **request.args) }}" class="text-decoration-none text-dark">
+                                    Type
+                                    {% if sort_by == 'type' %}
+                                        <i class="bi bi-arrow-{{ 'up' if order == 'asc' else 'down' }}"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in models.items %}
+                        <tr>
+                            <td>{{ model.manufacturer }}</td>
+                            <td>{{ model.model_name }}</td>
+                            <td>{{ model.model_type }}</td>
+                            <td>
+                                <a href="{{ url_for('inventory.edit_model', id=model.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                                <form action="{{ url_for('inventory.delete_model', id=model.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if models.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% for page in range(1, models.pages + 1) %}
+                    <li class="page-item {% if page == models.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('inventory.manage_models', page=page, **request.args) }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

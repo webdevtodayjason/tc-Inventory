@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}403 Forbidden{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 text-center">
+            <h1>403 - Forbidden</h1>
+            <p class="lead">You don't have permission to access this page.</p>
+            <p>This error has been logged and will be investigated.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

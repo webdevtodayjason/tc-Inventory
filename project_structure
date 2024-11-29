@@ -1,0 +1,33 @@
+inventory_system/
+├── .env.example
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── config.py
+├── run.py
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   └── test_auth.py
+├── app/
+│   ├── __init__.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   └── inventory.py
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   └── inventory.py
+│   ├── templates/
+│   │   ├── base.html
+│   │   ├── auth/
+│   │   │   ├── login.html
+│   │   │   └── register.html
+│   │   └── inventory/
+│   │       └── dashboard.html
+│   └── static/
+│       ├── css/
+│       ├── js/
+│       └── img/
+└── migrations/ 

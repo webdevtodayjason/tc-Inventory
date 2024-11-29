@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Computer System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Edit Computer System: {{ item.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+
+                        <div class="mb-3">
+                            <label class="form-label">Computer Model</label>
+                            <select class="form-select" name="model_id" required>
+                                {% for model in computer_models %}
+                                <option value="{{ model.id }}" {% if item.model_id == model.id %}selected{% endif %}>
+                                    {{ model.manufacturer }} {{ model.model_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">CPU</label>
+                            <select class="form-select" name="cpu_id" required>
+                                {% for cpu in cpus %}
+                                <option value="{{ cpu.id }}" {% if item.cpu_id == cpu.id %}selected{% endif %}>
+                                    {{ cpu.manufacturer }} {{ cpu.model }} ({{ cpu.speed }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">RAM</label>
+                            <input type="text" class="form-control" name="ram" value="{{ item.ram }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Storage</label>
+                            <input type="text" class="form-control" name="storage" value="{{ item.storage }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Operating System</label>
+                            <select class="form-select" name="os" required>
+                                <option value="Windows 10 Pro" {% if item.os == 'Windows 10 Pro' %}selected{% endif %}>Windows 10 Pro</option>
+                                <option value="Windows 11 Pro" {% if item.os == 'Windows 11 Pro' %}selected{% endif %}>Windows 11 Pro</option>
+                                <option value="Microsoft Server 2022" {% if item.os == 'Microsoft Server 2022' %}selected{% endif %}>Microsoft Server 2022</option>
+                                <option value="Linux" {% if item.os == 'Linux' %}selected{% endif %}>Linux</option>
+                            </select>
+                        </div>
+
+                        <!-- Testing Fields -->
+                        <h4 class="mt-4">System Inspection</h4>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">CPU Benchmark Score</label>
+                            <input type="number" step="0.01" class="form-control" name="cpu_benchmark" value="{{ item.cpu_benchmark }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">USB Ports Status</label>
+                            <select class="form-select" name="usb_ports_status">
+                                <option value="PASSED" {% if item.usb_ports_status == 'PASSED' %}selected{% endif %}>PASSED</option>
+                                <option value="FAILED" {% if item.usb_ports_status == 'FAILED' %}selected{% endif %}>FAILED</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">USB Ports Notes</label>
+                            <textarea class="form-control" name="usb_ports_notes" rows="2">{{ item.usb_ports_notes }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Video Status</label>
+                            <select class="form-select" name="video_status">
+                                <option value="PASSED" {% if item.video_status == 'PASSED' %}selected{% endif %}>PASSED</option>
+                                <option value="FAILED" {% if item.video_status == 'FAILED' %}selected{% endif %}>FAILED</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Video Notes</label>
+                            <textarea class="form-control" name="video_notes" rows="2">{{ item.video_notes }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Network Status</label>
+                            <select class="form-select" name="network_status">
+                                <option value="PASSED" {% if item.network_status == 'PASSED' %}selected{% endif %}>PASSED</option>
+                                <option value="FAILED" {% if item.network_status == 'FAILED' %}selected{% endif %}>FAILED</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Network Notes</label>
+                            <textarea class="form-control" name="network_notes" rows="2">{{ item.network_notes }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">General Notes</label>
+                            <textarea class="form-control" name="general_notes" rows="4">{{ item.general_notes }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Update Computer System</button>
+                            <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

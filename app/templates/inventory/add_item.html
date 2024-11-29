@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Add Item{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Add New Item</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Item Type</label>
+                            <select class="form-select" name="type" id="itemType">
+                                <option value="general">General Item</option>
+                                <option value="computer">Computer System</option>
+                            </select>
+                        </div>
+
+                        <!-- Category field - only shown for general items -->
+                        <div class="mb-3" id="categoryField">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" name="category" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- General Item Fields -->
+                        <div id="generalFields">
+                            <div class="mb-3">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control" name="name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" name="quantity" value="1">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Reorder Threshold</label>
+                                <input type="number" class="form-control" name="reorder_threshold">
+                            </div>
+                        </div>
+
+                        <!-- Computer System Fields -->
+                        <div id="computerFields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Computer Model</label>
+                                <select class="form-select" name="model_id">
+                                    {% for model in computer_models %}
+                                    <option value="{{ model.id }}">{{ model.manufacturer }} {{ model.model_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">CPU</label>
+                                <select class="form-select" name="cpu_id">
+                                    {% for cpu in cpus %}
+                                    <option value="{{ cpu.id }}">{{ cpu.manufacturer }} {{ cpu.model }} ({{ cpu.speed }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">RAM</label>
+                                <input type="text" class="form-control" name="ram">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Storage</label>
+                                <input type="text" class="form-control" name="storage">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Operating System</label>
+                                <select class="form-select" name="os">
+                                    <option value="Windows 10 Pro">Windows 10 Pro</option>
+                                    <option value="Windows 11 Pro">Windows 11 Pro</option>
+                                    <option value="Microsoft Server 2022">Microsoft Server 2022</option>
+                                    <option value="Linux">Linux</option>
+                                </select>
+                            </div>
+
+                            <!-- Testing Fields -->
+                            <h4 class="mt-4">System Inspection</h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">CPU Benchmark Score</label>
+                                <input type="number" step="0.01" class="form-control" name="cpu_benchmark">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">USB Ports Status</label>
+                                <select class="form-select" name="usb_ports_status">
+                                    <option value="PASSED">PASSED</option>
+                                    <option value="FAILED">FAILED</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">USB Ports Notes</label>
+                                <textarea class="form-control" name="usb_ports_notes" rows="2"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Video Status</label>
+                                <select class="form-select" name="video_status">
+                                    <option value="PASSED">PASSED</option>
+                                    <option value="FAILED">FAILED</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Video Notes</label>
+                                <textarea class="form-control" name="video_notes" rows="2"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Network Status</label>
+                                <select class="form-select" name="network_status">
+                                    <option value="PASSED">PASSED</option>
+                                    <option value="FAILED">FAILED</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Network Notes</label>
+                                <textarea class="form-control" name="network_notes" rows="2"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">General Notes</label>
+                                <textarea class="form-control" name="general_notes" rows="4"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Add Item</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('itemType').addEventListener('change', function() {
+    const generalFields = document.getElementById('generalFields');
+    const computerFields = document.getElementById('computerFields');
+    const categoryField = document.getElementById('categoryField');
+    
+    if (this.value === 'computer') {
+        generalFields.style.display = 'none';
+        computerFields.style.display = 'block';
+        categoryField.style.display = 'none';  // Hide category for computer systems
+    } else {
+        generalFields.style.display = 'block';
+        computerFields.style.display = 'none';
+        categoryField.style.display = 'block';  // Show category for general items
+    }
+});
+</script>
+{% endblock %} 

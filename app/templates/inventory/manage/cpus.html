@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Manage CPUs{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>CPUs</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('inventory.add_cpu') }}" class="btn btn-primary">Add New CPU</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" 
+                           value="{{ request.args.get('search', '') }}" 
+                           placeholder="Search CPUs...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="manufacturer">
+                        <option value="">All Manufacturers</option>
+                        <option value="Intel" {% if request.args.get('manufacturer') == 'Intel' %}selected{% endif %}>Intel</option>
+                        <option value="AMD" {% if request.args.get('manufacturer') == 'AMD' %}selected{% endif %}>AMD</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="cores">
+                        <option value="">All Core Counts</option>
+                        {% for core in [2, 4, 6, 8, 12, 16, 24, 32] %}
+                        <option value="{{ core }}" {% if request.args.get('cores')|int == core %}selected{% endif %}>
+                            {{ core }} Cores
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Manufacturer</th>
+                            <th>Model</th>
+                            <th>Speed</th>
+                            <th>Cores</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cpu in cpus.items %}
+                        <tr>
+                            <td>{{ cpu.manufacturer }}</td>
+                            <td>{{ cpu.model }}</td>
+                            <td>{{ cpu.speed }}</td>
+                            <td>{{ cpu.cores }}</td>
+                            <td>
+                                <a href="{{ url_for('inventory.edit_cpu', id=cpu.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                                <form action="{{ url_for('inventory.delete_cpu', id=cpu.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if cpus.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% for page in range(1, cpus.pages + 1) %}
+                    <li class="page-item {% if page == cpus.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('inventory.manage_cpus', page=page, **request.args) }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}View Item - {{ item.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Item Details</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+            <a href="{{ url_for('inventory.edit_item', id=item.id) }}" class="btn btn-warning">Edit</a>
+            <a href="{{ url_for('inventory.print_label', id=item.id) }}" class="btn btn-primary" target="_blank">Print Label</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Item details card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Tracking ID</dt>
+                        <dd class="col-sm-9">{{ item.tracking_id }}</dd>
+
+                        <dt class="col-sm-3">Name</dt>
+                        <dd class="col-sm-9">{{ item.name }}</dd>
+
+                        <dt class="col-sm-3">Category</dt>
+                        <dd class="col-sm-9">{{ item.item_category.name }}</dd>
+
+                        <dt class="col-sm-3">Type</dt>
+                        <dd class="col-sm-9">{{ item.type }}</dd>
+
+                        <dt class="col-sm-3">Status</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-{{ 'success' if item.status == 'in_stock' else 'danger' }}">
+                                {{ item.status }}
+                            </span>
+                        </dd>
+
+                        {% if item.type == 'computer_system' %}
+                        <dt class="col-sm-3">Model</dt>
+                        <dd class="col-sm-9">{{ item.model.manufacturer }} {{ item.model.model_name }}</dd>
+
+                        <dt class="col-sm-3">CPU</dt>
+                        <dd class="col-sm-9">{{ item.cpu.manufacturer }} {{ item.cpu.model }} ({{ item.cpu.speed }})</dd>
+
+                        <dt class="col-sm-3">RAM</dt>
+                        <dd class="col-sm-9">{{ item.ram }}</dd>
+
+                        <dt class="col-sm-3">Storage</dt>
+                        <dd class="col-sm-9">{{ item.storage }}</dd>
+
+                        <dt class="col-sm-3">Operating System</dt>
+                        <dd class="col-sm-9">{{ item.os }}</dd>
+
+                        <dt class="col-sm-3">CPU Benchmark</dt>
+                        <dd class="col-sm-9">{{ item.cpu_benchmark }}</dd>
+
+                        <dt class="col-sm-3">USB Ports</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-{{ 'success' if item.usb_ports_status == 'PASSED' else 'danger' }}">
+                                {{ item.usb_ports_status }}
+                            </span>
+                            {% if item.usb_ports_notes %}
+                            <br><small class="text-muted">{{ item.usb_ports_notes }}</small>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Video</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-{{ 'success' if item.video_status == 'PASSED' else 'danger' }}">
+                                {{ item.video_status }}
+                            </span>
+                            {% if item.video_notes %}
+                            <br><small class="text-muted">{{ item.video_notes }}</small>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Network</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-{{ 'success' if item.network_status == 'PASSED' else 'danger' }}">
+                                {{ item.network_status }}
+                            </span>
+                            {% if item.network_notes %}
+                            <br><small class="text-muted">{{ item.network_notes }}</small>
+                            {% endif %}
+                        </dd>
+
+                        {% if item.general_notes %}
+                        <dt class="col-sm-3">General Notes</dt>
+                        <dd class="col-sm-9">{{ item.general_notes }}</dd>
+                        {% endif %}
+                        {% endif %}
+
+                        <dt class="col-sm-3">Created By</dt>
+                        <dd class="col-sm-9">{{ item.creator.username }} on {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+
+                        <dt class="col-sm-3">Last Updated</dt>
+                        <dd class="col-sm-9">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Barcode and QR code card -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Item Identification</h5>
+                    
+                    <!-- Barcode -->
+                    <div class="mb-3">
+                        <img src="data:image/png;base64,{{ barcode }}" alt="Barcode">
+                        <div class="mt-1">
+                            <small class="text-muted">{{ item.tracking_id }}</small>
+                        </div>
+                    </div>
+                    
+                    <!-- QR Code -->
+                    <div>
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

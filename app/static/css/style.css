@@ -1,0 +1,44 @@
+/* Custom styles */
+.table th a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.table th a:hover {
+    color: #0d6efd;
+}
+
+/* Add spacing between buttons in table rows */
+.table td .btn + .btn {
+    margin-left: 0.5rem;
+}
+
+/* Style for status badges */
+.badge {
+    font-size: 0.875rem;
+}
+
+/* Add some padding to the main content */
+main.container {
+    padding-bottom: 2rem;
+}
+
+/* Style for form validation feedback */
+.invalid-feedback {
+    display: block;
+}
+
+/* Style for flash messages */
+.alert {
+    margin-bottom: 1rem;
+}
+
+/* Style for dropdown menus */
+.dropdown-menu {
+    min-width: 200px;
+}
+
+/* Style for card headers */
+.card-header {
+    background-color: #f8f9fa;
+} 
