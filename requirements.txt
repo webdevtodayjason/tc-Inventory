@@ -11,7 +11,5 @@ pytest==8.3.3
 black==24.10.0
 flake8==7.1.1
 python-barcode==0.15.1
-qrcode==7.4.2
-reportlab==4.0.4
 Pillow==10.0.0
 gunicorn==21.2.0
