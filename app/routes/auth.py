@@ -41,7 +41,9 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('inventory.dashboard'))
     
-    if request.method == 'POST':
+    form = FlaskForm()
+    
+    if request.method == 'POST' and form.validate_on_submit():
         user = User(
             username=request.form['username'],
             email=request.form['email']
@@ -49,7 +51,7 @@ def register():
         user.set_password(request.form['password'])
         db.session.add(user)
         db.session.commit()
-        flash('Registration successful!')
+        flash('Registration successful!', 'success')
         return redirect(url_for('auth.login'))
     
-    return render_template('auth/register.html') 
+    return render_template('auth/register.html', form=form) 
