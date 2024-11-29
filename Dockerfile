@@ -26,6 +26,7 @@ COPY . .
 ENV FLASK_APP=run.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
 
 # Command to run the application
-CMD ["gunicorn", "run:app", "--bind", "0.0.0.0:$PORT"] 
+CMD gunicorn --bind 0.0.0.0:8080 run:app 
