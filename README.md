@@ -12,9 +12,38 @@ A comprehensive web-based inventory management system for tracking computer and 
 - Component management (CPUs, Models)
 - QR code and barcode generation
 - Label printing (2x4 inch format)
+- Cost tracking (purchase and selling prices)
+- Purchase URL tracking
+- Tag-based organization
+- Restock alerts
+- Multi-tag filtering
 - Search and filter functionality
 - User authentication and authorization
+- PIN-based quick checkout system
+- Tablet-optimized checkout interface
+- Dark mode support
 - Audit trail for inventory changes
+
+## Status System
+Items in the system can have the following statuses:
+- In Stock (green): Item is available
+- Needs Restock (orange): Quantity at or below reorder threshold
+- Out of Stock (red): Item is unavailable
+
+## Tag System
+Default tags for quick identification and filtering:
+- NO TOUCH: Items that should not be handled
+- JUMP BOX: Network jump box systems
+- DESKTOP: Desktop computers
+- INTERNAL: Internal use only
+- FOR SALE: Items available for sale
+- DO NOT SELL: Items not for sale
+
+Tags can be:
+- Assigned to any item type
+- Used for filtering in dashboard
+- Combined for complex queries
+- Added/removed through item management
 
 ## Requirements
 
@@ -54,19 +83,40 @@ pip install -r requirements.txt
 ### 4. Set up PostgreSQL
 
 ```bash
-# Create database and user
-sudo -u postgres psql
+# Connect to PostgreSQL as postgres user
+psql -U postgres
 
+# Create database and user
+postgres=# DROP DATABASE IF EXISTS inventory_db;
 postgres=# CREATE DATABASE inventory_db;
+postgres=# DROP USER IF EXISTS inventory_admin;
 postgres=# CREATE USER inventory_admin WITH PASSWORD 'your_password';
+
+# Connect to the inventory_db
+postgres=# \c inventory_db
+
+# Set up proper permissions
 postgres=# GRANT ALL PRIVILEGES ON DATABASE inventory_db TO inventory_admin;
+postgres=# GRANT USAGE ON SCHEMA public TO inventory_admin;
+postgres=# GRANT CREATE ON SCHEMA public TO inventory_admin;
+postgres=# ALTER SCHEMA public OWNER TO inventory_admin;
+postgres=# GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO inventory_admin;
+postgres=# GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO inventory_admin;
+postgres=# ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO inventory_admin;
+postgres=# ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO inventory_admin;
+
+# Exit psql
+postgres=# \q
 ```
 
 ### 5. Configure Environment
 
 ```bash
 cp .env.example .env
-# Edit .env with your development configuration
+# Edit .env with your development configuration:
+# - Set DATABASE_URL with your PostgreSQL credentials
+# - Generate a secure SECRET_KEY
+# - Set other configuration options as needed
 ```
 
 ### 6. Initialize Database and Create Initial Data
@@ -82,7 +132,7 @@ flask db migrate -m "Initial database setup"
 flask db upgrade
 ```
 
-### 7. Create Initial Categories and Admin User
+### 7. Create Initial Data
 
 The system comes with predefined CLI commands to set up initial data:
 
@@ -93,9 +143,20 @@ flask create-category
 # Create initial CPU database
 flask create-cpus
 
-# Create admin user
+# Create default tags
+flask create-tags
+
+# Create admin user (interactive)
 flask create-admin
 ```
+
+Available CLI Commands:
+- `flask create-category`: Creates default category hierarchy
+- `flask create-cpus`: Populates database with common CPU models
+- `flask create-tags`: Creates default tags (NO TOUCH, JUMP BOX, etc.)
+- `flask create-admin`: Creates an admin user (interactive)
+- `flask add-computer-model`: Adds a new computer model (interactive)
+- `flask add-cpu`: Adds a new CPU model (interactive)
 
 ### 8. Run Development Server
 
@@ -166,9 +227,25 @@ flask create-category
 # Create CPU database
 flask create-cpus
 
+# Create default tags
+flask create-tags
+
 # Create admin user
 flask create-admin
+
+# Set user PIN
+flask set-user-pin <username>
 ```
+
+## Checkout System
+
+The system includes a tablet-optimized checkout interface that allows:
+- Quick PIN-based authentication for technicians
+- Barcode/QR code scanning
+- Multiple item quantity selection
+- Automatic stock level tracking
+- Checkout history tracking
+- Recent transactions view
 
 ## Project Structure
 

@@ -6,5 +6,6 @@ from .inventory import (
     InventoryTransaction, 
     BenchmarkResult,
     ComputerModel,
-    CPU
+    CPU,
+    Tag
 ) 

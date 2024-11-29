@@ -1,7 +1,7 @@
 from flask.cli import with_appcontext
 import click
 from app import db
-from app.models import Category, User, ComputerModel, CPU
+from app.models import Category, User, ComputerModel, CPU, Tag
 
 def init_app(app):
     app.cli.add_command(create_category_command)
@@ -9,6 +9,8 @@ def init_app(app):
     app.cli.add_command(add_computer_model_command)
     app.cli.add_command(add_cpu_command)
     app.cli.add_command(create_cpus_command)
+    app.cli.add_command(create_tags_command)
+    app.cli.add_command(set_user_pin_command)
 
 @click.command('create-category')
 @with_appcontext
@@ -195,4 +197,62 @@ def create_cpus_command():
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error creating CPUs: {str(e)}") 
+        print(f"Error creating CPUs: {str(e)}")
+
+@click.command('create-tags')
+@with_appcontext
+def create_tags_command():
+    """Create initial tags"""
+    try:
+        # Default tags
+        default_tags = [
+            'NO TOUCH',
+            'JUMP BOX',
+            'DESKTOP',
+            'INTERNAL',
+            'FOR SALE',
+            'DO NOT SELL'
+        ]
+        
+        # Add tags
+        for tag_name in default_tags:
+            tag = Tag.query.filter_by(name=tag_name).first()
+            if not tag:
+                tag = Tag(name=tag_name)
+                db.session.add(tag)
+        
+        db.session.commit()
+        print("Default tags created successfully!")
+        
+        # Print summary
+        tags = Tag.query.all()
+        print("\nAvailable tags:")
+        for tag in tags:
+            print(f"- {tag.name}")
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating tags: {str(e)}")
+
+@click.command('set-user-pin')
+@click.argument('username')
+@with_appcontext
+def set_user_pin_command(username):
+    """Set PIN code for a user"""
+    try:
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            print(f"User {username} not found")
+            return
+        
+        pin = input("Enter 6-digit PIN: ")
+        try:
+            user.set_pin(pin)
+            db.session.commit()
+            print(f"PIN set successfully for user {username}")
+        except ValueError as e:
+            print(f"Error: {str(e)}")
+            
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error setting PIN: {str(e)}") 

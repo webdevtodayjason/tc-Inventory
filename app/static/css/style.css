@@ -41,4 +41,249 @@ main.container {
 /* Style for card headers */
 .card-header {
     background-color: #f8f9fa;
+}
+
+/* Tag Colors */
+.tag-no-touch {
+    background-color: #dc3545 !important;  /* Red - Warning */
+}
+
+.tag-jump-box {
+    background-color: #6f42c1 !important;  /* Purple - Special System */
+}
+
+.tag-desktop {
+    background-color: #0d6efd !important;  /* Blue - Standard System */
+}
+
+.tag-internal {
+    background-color: #198754 !important;  /* Green - Internal Use */
+}
+
+.tag-for-sale {
+    background-color: #ffc107 !important;  /* Yellow - Sales */
+    color: #000 !important;  /* Black text for better contrast */
+}
+
+.tag-do-not-sell {
+    background-color: #dc3545 !important;  /* Red - Restriction */
+}
+
+/* Status Badge Colors */
+.badge.bg-restock {
+    background-color: #fd7e14 !important;  /* Bootstrap orange */
+    color: #000 !important;  /* Black text for contrast */
+}
+
+/* Make dashboard tags smaller and more compact */
+.table td .badge {
+    font-size: 0.7rem;
+    padding: 0.2em 0.5em;
+    margin: 0.1em;
+    font-weight: 500;
+}
+
+/* Keep view page tags at original size */
+.card-body .badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+    margin: 0.1em;
+    font-weight: 500;
+}
+
+/* Add hover effect for tags */
+.badge:hover {
+    opacity: 0.9;
+    cursor: default;
+}
+
+/* Dark Mode Styles */
+[data-bs-theme="dark"] {
+    --bs-body-color: #dee2e6;
+    --bs-body-bg: #212529;
+    --bs-tertiary-bg: #2b3035;
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #2b3035;
+    border-color: #373b3e;
+}
+
+[data-bs-theme="dark"] .table {
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #1a1d20;
+    border-color: #373b3e;
+    color: #dee2e6;
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus {
+    background-color: #1a1d20;
+    border-color: #0d6efd;
+    color: #dee2e6;
+}
+
+/* Dark mode toggle button */
+.theme-toggle {
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme-toggle i {
+    font-size: 1.2rem;
+}
+
+/* Tablet Interface Styles */
+@media (max-width: 768px) {
+    /* Larger text for tablet screens */
+    .form-control-lg, .form-select-lg {
+        font-size: 1.25rem;
+        padding: 0.75rem 1rem;
+        height: calc(2.5rem + 2px);
+    }
+    
+    /* Larger buttons for touch */
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1.25rem;
+    }
+    
+    /* PIN input styling */
+    #pinInput {
+        letter-spacing: 0.5em;
+        font-size: 2rem;
+        text-align: center;
+        font-family: monospace;
+    }
+    
+    /* Barcode input styling */
+    #barcodeInput {
+        font-size: 1.5rem;
+        font-family: monospace;
+    }
+    
+    /* Recent checkouts list */
+    .list-group-item {
+        padding: 1rem;
+    }
+    
+    .list-group-item h5 {
+        font-size: 1.25rem;
+    }
+    
+    /* Flash messages */
+    .alert {
+        font-size: 1.25rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Card headers */
+    .card-header h2 {
+        font-size: 1.75rem;
+    }
+    
+    /* Form labels */
+    .form-label {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Textarea height for notes */
+    textarea.form-control {
+        min-height: 120px;
+    }
+}
+
+/* Dark mode adjustments for tablet */
+[data-bs-theme="dark"] #pinInput,
+[data-bs-theme="dark"] #barcodeInput {
+    background-color: #2b3035;
+    color: #fff;
+    border-color: #495057;
+}
+
+/* Checkout page styles */
+.checkout-header {
+    background-color: #0d6efd;  /* Bootstrap primary blue */
+    color: white;
+    padding: 1rem;
+    border-radius: 4px 4px 0 0;
+    margin-bottom: 0;
+}
+
+.checkout-header h2 {
+    font-size: 1.75rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.checkout-user {
+    color: white;
+    font-size: 1.1rem;
+    margin: 0;
+    padding: 0.5rem 1rem;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .checkout-header {
+    background-color: #0d6efd;  /* Keep the blue header in dark mode */
+}
+
+[data-bs-theme="dark"] .checkout-user {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Make form labels more visible in dark mode */
+[data-bs-theme="dark"] .form-label {
+    color: #e9ecef;  /* Light gray for better contrast */
+}
+
+/* Dark Mode Header Styles */
+[data-bs-theme="dark"] .card-header {
+    background-color: #000000;  /* Black background */
+    border-bottom: 1px solid #2c2c2c;
+}
+
+[data-bs-theme="dark"] .card-header h2,
+[data-bs-theme="dark"] .card-header h3,
+[data-bs-theme="dark"] .card-header h4,
+[data-bs-theme="dark"] .card-header h5 {
+    color: #FFD700;  /* Gold text */
+    font-weight: 500;
+}
+
+/* Keep the checkout header blue but with gold text */
+[data-bs-theme="dark"] .checkout-header {
+    background-color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .checkout-header h2 {
+    color: #FFD700;  /* Gold text */
+}
+
+/* Make the user info in checkout header more visible */
+[data-bs-theme="dark"] .checkout-user {
+    color: #FFD700;  /* Gold text */
+    background-color: rgba(0, 0, 0, 0.3);  /* Darker background */
 } 

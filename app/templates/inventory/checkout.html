@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Item Checkout{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            {% if not current_tech %}
+            <!-- Only show PIN Entry Form when not logged in -->
+            <div class="card" id="pinForm">
+                <div class="checkout-header">
+                    <h2 class="text-center mb-0">Tech Login</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventory.verify_pin') }}" id="techLoginForm">
+                        {{ form.csrf_token }}
+                        <input type="hidden" name="form_type" value="pin_verify">
+                        <!-- PIN Entry -->
+                        <div class="mb-4">
+                            <label class="form-label fs-4">Enter PIN</label>
+                            <input type="password" 
+                                   class="form-control form-control-lg text-center" 
+                                   name="pin" 
+                                   id="pinInput"
+                                   maxlength="6" 
+                                   pattern="\d{6}"
+                                   inputmode="numeric"
+                                   readonly
+                                   required>
+                        </div>
+
+                        <!-- Numeric Keypad -->
+                        <div class="keypad mb-4">
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="1">1</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="2">2</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="3">3</button>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="4">4</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="5">5</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="6">6</button>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="7">7</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="8">8</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="9">9</button>
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-danger w-100" id="clearBtn">Clear</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 keypad-btn" data-value="0">0</button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-lg btn-outline-danger w-100" id="backspaceBtn">⌫</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <!-- Show Checkout Form only when logged in -->
+            <div class="card" id="checkoutForm">
+                <div class="checkout-header">
+                    <h2 class="text-center mb-0">Item Checkout</h2>
+                    <p class="text-center checkout-user">Logged in as: {{ current_tech.username }}</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('inventory.process_checkout') }}">
+                        {{ form.csrf_token }}
+                        <input type="hidden" name="form_type" value="checkout">
+                        
+                        <!-- Barcode Scanner Input -->
+                        <div class="mb-4">
+                            <label class="form-label fs-4">Scan Item</label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   name="tracking_id" 
+                                   id="barcodeInput"
+                                   placeholder="TC-XXXXXXXX"
+                                   required
+                                   autofocus>
+                        </div>
+
+                        <!-- Add quantity field -->
+                        <div class="mb-4" id="quantityField">
+                            <label class="form-label fs-4">Quantity</label>
+                            <input type="number" 
+                                   class="form-control form-control-lg" 
+                                   name="quantity" 
+                                   value="1"
+                                   min="1"
+                                   required>
+                            <small class="text-muted">Number of items to check out</small>
+                        </div>
+
+                        <!-- Reason for Checkout -->
+                        <div class="mb-4">
+                            <label class="form-label fs-4">Reason for Checkout</label>
+                            <textarea class="form-control" 
+                                      name="reason" 
+                                      rows="3" 
+                                      required></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Check Out Item</button>
+                            <a href="{{ url_for('inventory.checkout_logout') }}" class="btn btn-secondary btn-lg">Cancel / Logout</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Recent Checkouts -->
+            {% if recent_transactions %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Recent Checkouts</h3>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for transaction in recent_transactions %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ transaction.item.name }}</h5>
+                                <small>{{ transaction.timestamp.strftime('%H:%M:%S') }}</small>
+                            </div>
+                            <p class="mb-1">{{ transaction.notes }}</p>
+                            <small>Checked out by {{ transaction.user.username }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pinInput = document.getElementById('pinInput');
+    const barcodeInput = document.getElementById('barcodeInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const backspaceBtn = document.getElementById('backspaceBtn');
+    
+    // Handle numeric keypad input
+    document.querySelectorAll('.keypad-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (pinInput.value.length < 6) {
+                pinInput.value += this.dataset.value;
+            }
+        });
+    });
+    
+    // Clear button
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            pinInput.value = '';
+        });
+    }
+    
+    // Backspace button
+    if (backspaceBtn) {
+        backspaceBtn.addEventListener('click', function() {
+            pinInput.value = pinInput.value.slice(0, -1);
+        });
+    }
+    
+    // Auto-focus PIN input if no tech is logged in
+    if (pinInput) {
+        pinInput.focus();
+    }
+    
+    // Auto-focus barcode input if tech is logged in
+    if (barcodeInput) {
+        barcodeInput.focus();
+    }
+});
+</script>
+{% endblock %} 

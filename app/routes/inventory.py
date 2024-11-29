@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, send_file
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, send_file, session
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
-    InventoryTransaction, ComputerModel, CPU
+    InventoryTransaction, ComputerModel, CPU, Tag
 )
 from app.forms import (
     ComputerModelForm, CPUForm, ItemForm, 
@@ -22,6 +22,7 @@ from reportlab.lib.pagesizes import landscape
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.graphics.barcode import code128
+from app.models.user import User
 
 bp = Blueprint('inventory', __name__)
 
@@ -51,6 +52,18 @@ def dashboard():
     category_id = request.args.get('category', type=int)
     if category_id:
         query = query.filter(InventoryItem.category_id == category_id)
+    
+    # Add status filter
+    status = request.args.get('status')
+    if status == 'restock':
+        query = query.filter(
+            db.and_(
+                InventoryItem.quantity <= InventoryItem.reorder_threshold,
+                InventoryItem.reorder_threshold != None
+            )
+        )
+    elif status:
+        query = query.filter(InventoryItem.status == status)
     
     # Sorting
     sort_by = request.args.get('sort', 'tracking_id')
@@ -115,7 +128,11 @@ def add_item():
                     network_notes=form.network_notes.data,
                     general_notes=form.general_notes.data,
                     created_by=current_user.id,
-                    tested_by=current_user.id
+                    tested_by=current_user.id,
+                    cost=form.cost.data,
+                    purchase_url=form.purchase_url.data,
+                    sell_price=form.sell_price.data,
+                    tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
                 )
             else:
                 # Create General Item
@@ -125,7 +142,11 @@ def add_item():
                     category_id=form.category.data,
                     quantity=form.quantity.data,
                     reorder_threshold=form.reorder_threshold.data,
-                    created_by=current_user.id
+                    created_by=current_user.id,
+                    cost=form.cost.data,
+                    purchase_url=form.purchase_url.data,
+                    sell_price=form.sell_price.data,
+                    tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
                 )
             
             db.session.add(item)
@@ -147,7 +168,10 @@ def add_item():
 @bp.route('/item/<int:id>/view')
 @login_required
 def view_item(id):
-    item = InventoryItem.query.get_or_404(id)
+    # Get item with transactions eager loaded
+    item = InventoryItem.query.options(
+        db.joinedload(InventoryItem.transactions).joinedload(InventoryTransaction.user)
+    ).get_or_404(id)
     
     # Generate barcode
     barcode_io = io.BytesIO()
@@ -219,23 +243,73 @@ def print_label(id):
 @login_required
 def edit_item(id):
     item = InventoryItem.query.get_or_404(id)
+    categories = Category.query.order_by(Category.name).all()
     
     if isinstance(item, ComputerSystem):
         form = ComputerSystemForm(obj=item)
         if form.validate_on_submit():
-            form.populate_obj(item)
-            db.session.commit()
-            flash('Computer system updated successfully!', 'success')
-            return redirect(url_for('inventory.dashboard'))
+            try:
+                # Manually update fields for computer system
+                item.cost = request.form.get('cost', type=float)
+                item.purchase_url = request.form.get('purchase_url')
+                item.sell_price = request.form.get('sell_price', type=float)
+                
+                # Update computer-specific fields
+                form.populate_obj(item)
+                
+                # Handle tags
+                if request.form.getlist('tags'):
+                    item.tags = [Tag.query.get(tag_id) for tag_id in request.form.getlist('tags')]
+                
+                db.session.commit()
+                flash('Computer system updated successfully!', 'success')
+                return redirect(url_for('inventory.dashboard'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error updating computer system: {str(e)}', 'danger')
+                current_app.logger.error(f'Error updating computer system: {str(e)}')
+        else:
+            # Log form validation errors
+            current_app.logger.error(f'Form validation errors: {form.errors}')
+            flash('Please check the form for errors', 'danger')
+            
         return render_template('inventory/edit_computer_system.html', form=form, item=item)
     else:
         form = ItemForm(obj=item)
-        if form.validate_on_submit():
-            form.populate_obj(item)
-            db.session.commit()
-            flash('Item updated successfully!', 'success')
-            return redirect(url_for('inventory.dashboard'))
-        return render_template('inventory/edit_item.html', form=form, item=item)
+        if request.method == 'POST':
+            try:
+                # Manually update fields
+                item.name = request.form.get('name')
+                item.category_id = request.form.get('category_id', type=int)
+                item.quantity = int(request.form.get('quantity', 0))
+                item.reorder_threshold = request.form.get('reorder_threshold', type=int)
+                item.cost = request.form.get('cost', type=float)
+                item.purchase_url = request.form.get('purchase_url')
+                item.sell_price = request.form.get('sell_price', type=float)
+                
+                # Handle tags
+                if request.form.getlist('tags'):
+                    item.tags = [Tag.query.get(tag_id) for tag_id in request.form.getlist('tags')]
+                
+                # Log the values before commit
+                current_app.logger.debug(f'Updating item {item.id}:')
+                current_app.logger.debug(f'Name: {item.name}')
+                current_app.logger.debug(f'Category: {item.category_id}')
+                current_app.logger.debug(f'Quantity: {item.quantity}')
+                current_app.logger.debug(f'Reorder Threshold: {item.reorder_threshold}')
+                
+                db.session.commit()
+                flash('Item updated successfully!', 'success')
+                return redirect(url_for('inventory.dashboard'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error updating item: {str(e)}', 'danger')
+                current_app.logger.error(f'Error updating item: {str(e)}')
+        
+        return render_template('inventory/edit_item.html', 
+                             form=form, 
+                             item=item,
+                             categories=categories)
 
 @bp.route('/item/<int:id>/delete', methods=['POST'])
 @login_required
@@ -401,6 +475,116 @@ def delete_model(id):
         db.session.rollback()
         flash(f'Error deleting model: {str(e)}', 'danger')
     return redirect(url_for('inventory.manage_models'))
+
+@bp.route('/checkout', methods=['GET'])
+def checkout():
+    """Tablet-friendly checkout view"""
+    # Create form for CSRF protection
+    form = FlaskForm()
+    
+    # Get current tech from session if they're logged in
+    current_tech = None
+    if 'tech_id' in session:
+        current_tech = User.query.get(session['tech_id'])
+    
+    # Get recent transactions if tech is logged in
+    recent_transactions = []
+    if current_tech:
+        recent_transactions = InventoryTransaction.query\
+            .filter_by(transaction_type='check_out')\
+            .order_by(InventoryTransaction.timestamp.desc())\
+            .limit(5)\
+            .all()
+    
+    return render_template('inventory/checkout.html',
+                         current_tech=current_tech,
+                         recent_transactions=recent_transactions,
+                         form=form)  # Pass form to template
+
+@bp.route('/checkout/verify-pin', methods=['POST'])
+def verify_pin():
+    """Verify tech PIN and start checkout session"""
+    pin = request.form.get('pin')
+    
+    # Find user by PIN
+    tech = User.query.filter_by(pin_code=pin).first()
+    if not tech:
+        flash('Invalid PIN code', 'danger')
+        return redirect(url_for('inventory.checkout'))
+    
+    # Store tech ID in session
+    session['tech_id'] = tech.id
+    flash(f'Welcome, {tech.username}!', 'success')
+    return redirect(url_for('inventory.checkout'))
+
+@bp.route('/checkout/process', methods=['POST'])
+def process_checkout():
+    """Process item checkout"""
+    if 'tech_id' not in session:
+        flash('Please log in first', 'danger')
+        return redirect(url_for('inventory.checkout'))
+    
+    tech = User.query.get(session['tech_id'])
+    tracking_id = request.form.get('tracking_id')
+    reason = request.form.get('reason')
+    quantity = int(request.form.get('quantity', 1))  # Get quantity from form
+    
+    # Find item
+    item = InventoryItem.query.filter_by(tracking_id=tracking_id).first()
+    if not item:
+        flash('Item not found', 'danger')
+        return redirect(url_for('inventory.checkout'))
+    
+    try:
+        # Validate quantity for general items
+        if not isinstance(item, ComputerSystem):
+            if quantity > item.quantity:
+                flash(f'Not enough items in stock. Available: {item.quantity}', 'danger')
+                return redirect(url_for('inventory.checkout'))
+        else:
+            # Force quantity to 1 for computer systems
+            quantity = 1
+        
+        # Create transaction record
+        transaction = InventoryTransaction(
+            item_id=item.id,
+            transaction_type='check_out',
+            quantity=quantity,  # Use the requested quantity
+            user_id=tech.id,
+            notes=reason
+        )
+        
+        # Update item based on type
+        if isinstance(item, ComputerSystem):
+            item.status = 'removed'
+        else:
+            # Update quantity for general items
+            item.quantity -= quantity
+            
+            # Update status based on remaining quantity
+            if item.quantity == 0:
+                item.status = 'out_of_stock'
+            elif item.quantity <= item.reorder_threshold:
+                item.status = 'restock'
+        
+        db.session.add(transaction)
+        db.session.commit()
+        
+        flash(f'Successfully checked out {quantity} {item.name}', 'success')
+        return redirect(url_for('inventory.checkout'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error checking out item: {str(e)}', 'danger')
+        current_app.logger.error(f'Checkout error: {str(e)}')
+        return redirect(url_for('inventory.checkout'))
+
+@bp.route('/checkout/logout', methods=['GET'])
+def checkout_logout():
+    """End checkout session"""
+    session.pop('tech_id', None)
+    flash('Logged out successfully', 'success')
+    return redirect(url_for('inventory.checkout'))  # This will force a full page refresh
 
 def generate_tracking_id():
     """Generate a unique tracking ID"""

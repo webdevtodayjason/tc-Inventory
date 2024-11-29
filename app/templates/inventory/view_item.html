@@ -11,6 +11,9 @@
         <div class="col-md-4 text-end">
             <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
             <a href="{{ url_for('inventory.edit_item', id=item.id) }}" class="btn btn-warning">Edit</a>
+            {% if item.purchase_url %}
+            <a href="{{ item.purchase_url }}" target="_blank" class="btn btn-success">Buy</a>
+            {% endif %}
             <a href="{{ url_for('inventory.print_label', id=item.id) }}" class="btn btn-primary" target="_blank">Print Label</a>
         </div>
     </div>
@@ -19,6 +22,9 @@
         <div class="col-md-8">
             <!-- Item details card -->
             <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Basic Information</h5>
+                </div>
                 <div class="card-body">
                     <dl class="row">
                         <dt class="col-sm-3">Tracking ID</dt>
@@ -40,7 +46,59 @@
                             </span>
                         </dd>
 
-                        {% if item.type == 'computer_system' %}
+                        <dt class="col-sm-3">Quantity</dt>
+                        <dd class="col-sm-9">{{ item.quantity }}</dd>
+
+                        <dt class="col-sm-3">Reorder Threshold</dt>
+                        <dd class="col-sm-9">{{ item.reorder_threshold if item.reorder_threshold else 'Not set' }}</dd>
+
+                        <dt class="col-sm-3">Tags</dt>
+                        <dd class="col-sm-9">
+                            {% for tag in item.tags %}
+                                <span class="badge tag-{{ tag.name.lower().replace(' ', '-') }}">
+                                    {{ tag.name }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">No tags</span>
+                            {% endfor %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Financial Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Financial Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Cost</dt>
+                        <dd class="col-sm-9">{% if item.cost %}${{ "%.2f"|format(item.cost) }}{% else %}N/A{% endif %}</dd>
+
+                        <dt class="col-sm-3">Sell Price</dt>
+                        <dd class="col-sm-9">{% if item.sell_price %}${{ "%.2f"|format(item.sell_price) }}{% else %}N/A{% endif %}</dd>
+
+                        <dt class="col-sm-3">Purchase URL</dt>
+                        <dd class="col-sm-9">
+                            {% if item.purchase_url %}
+                            <a href="{{ item.purchase_url }}" target="_blank">{{ item.purchase_url }}</a>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if item.type == 'computer_system' %}
+            <!-- Computer System Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">System Specifications</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
                         <dt class="col-sm-3">Model</dt>
                         <dd class="col-sm-9">{{ item.model.manufacturer }} {{ item.model.model_name }}</dd>
 
@@ -58,7 +116,17 @@
 
                         <dt class="col-sm-3">CPU Benchmark</dt>
                         <dd class="col-sm-9">{{ item.cpu_benchmark }}</dd>
+                    </dl>
+                </div>
+            </div>
 
+            <!-- Testing Results -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Testing Results</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
                         <dt class="col-sm-3">USB Ports</dt>
                         <dd class="col-sm-9">
                             <span class="badge bg-{{ 'success' if item.usb_ports_status == 'PASSED' else 'danger' }}">
@@ -93,8 +161,18 @@
                         <dt class="col-sm-3">General Notes</dt>
                         <dd class="col-sm-9">{{ item.general_notes }}</dd>
                         {% endif %}
-                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
 
+            <!-- System Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">System Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
                         <dt class="col-sm-3">Created By</dt>
                         <dd class="col-sm-9">{{ item.creator.username }} on {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
 
@@ -103,14 +181,44 @@
                     </dl>
                 </div>
             </div>
+
+            <!-- Recent Checkouts -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Checkouts</h5>
+                </div>
+                <div class="card-body">
+                    {% if item.transactions %}
+                        <div class="list-group">
+                            {% for transaction in item.transactions|sort(attribute='timestamp', reverse=true) %}
+                            {% if transaction.transaction_type == 'check_out' %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Checked out by {{ transaction.user.username }}</h6>
+                                    <small>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1">Quantity: {{ transaction.quantity }}</p>
+                                {% if transaction.notes %}
+                                <small class="text-muted">Reason: {{ transaction.notes }}</small>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No checkout history available.</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         
         <div class="col-md-4">
             <!-- Barcode and QR code card -->
             <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Item Identification</h5>
+                </div>
                 <div class="card-body text-center">
-                    <h5 class="card-title">Item Identification</h5>
-                    
                     <!-- Barcode -->
                     <div class="mb-3">
                         <img src="data:image/png;base64,{{ barcode }}" alt="Barcode">

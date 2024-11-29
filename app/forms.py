@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp, ValidationError
-from app.models.inventory import ComputerModel, Category, CPU
+from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField, DecimalField, SelectMultipleField
+from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp, ValidationError, URL
+from app.models.inventory import ComputerModel, Category, CPU, Tag
 
 # Define choices as constants for easy maintenance
 MANUFACTURER_CHOICES = [
@@ -155,7 +155,23 @@ class ItemForm(FlaskForm):
                                validators=[Optional()])
     network_notes = TextAreaField('Network Notes', validators=[Optional()])
     general_notes = TextAreaField('General Notes', validators=[Optional()])
-
+    
+    # New fields
+    cost = DecimalField('Cost (USD)', 
+                       validators=[Optional()],
+                       places=2,
+                       render_kw={"placeholder": "0.00"})
+    purchase_url = StringField('Purchase URL',
+                             validators=[Optional(), URL()],
+                             render_kw={"placeholder": "https://..."})
+    sell_price = DecimalField('Sell Price (USD)',
+                            validators=[Optional()],
+                            places=2,
+                            render_kw={"placeholder": "0.00"})
+    
+    # Add tags field
+    tags = SelectMultipleField('Tags', coerce=int, validators=[Optional()])
+    
     def __init__(self, *args, **kwargs):
         super(ItemForm, self).__init__(*args, **kwargs)
         # Populate category choices
@@ -168,3 +184,6 @@ class ItemForm(FlaskForm):
         # Populate CPU choices
         self.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model} ({c.speed})") 
                               for c in CPU.query.order_by(CPU.manufacturer, CPU.model).all()]
+        
+        # Add tag choices
+        self.tags.choices = [(t.id, t.name) for t in Tag.query.order_by(Tag.name).all()]

@@ -108,6 +108,22 @@
                             <textarea class="form-control" name="general_notes" rows="4">{{ item.general_notes }}</textarea>
                         </div>
 
+                        <!-- Cost Fields -->
+                        <div class="mb-3">
+                            <label class="form-label">Cost (USD)</label>
+                            <input type="number" step="0.01" class="form-control" name="cost" value="{{ item.cost }}" placeholder="0.00">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Purchase URL</label>
+                            <input type="url" class="form-control" name="purchase_url" value="{{ item.purchase_url }}" placeholder="https://...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Sell Price (USD)</label>
+                            <input type="number" step="0.01" class="form-control" name="sell_price" value="{{ item.sell_price }}" placeholder="0.00">
+                        </div>
+
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Update Computer System</button>
                             <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Cancel</a>
