@@ -59,19 +59,40 @@ def create_category_command():
         print(f"Error creating categories: {str(e)}")
 
 @click.command('create-admin')
+@click.option('--username', envvar='ADMIN_USERNAME')
+@click.option('--email', envvar='ADMIN_EMAIL')
+@click.option('--password', envvar='ADMIN_PASSWORD')
+@click.option('--pin', envvar='ADMIN_PIN')
 @with_appcontext
-def create_admin_command():
+def create_admin_command(username, email, password, pin):
     """Create an admin user"""
-    username = click.prompt('Enter admin username')
-    email = click.prompt('Enter admin email')
-    password = click.prompt('Enter admin password', hide_input=True)
-    
-    user = User(username=username, email=email, role='admin')
-    user.set_password(password)
-    
-    db.session.add(user)
-    db.session.commit()
-    print(f"Admin user {username} created successfully!")
+    try:
+        # Check if admin already exists
+        if User.query.filter_by(role='admin').first():
+            print("Admin user already exists!")
+            return
+
+        # Use environment variables or prompt for input
+        username = username or input("Enter admin username: ")
+        email = email or input("Enter admin email: ")
+        password = password or input("Enter admin password: ")
+        pin = pin or input("Enter admin 6-digit PIN: ")
+
+        user = User(
+            username=username,
+            email=email,
+            role='admin'
+        )
+        user.set_password(password)
+        user.set_pin(pin)
+        
+        db.session.add(user)
+        db.session.commit()
+        print(f"Admin user '{username}' created successfully!")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating admin user: {str(e)}")
 
 @click.command('add-computer-model')
 @with_appcontext
