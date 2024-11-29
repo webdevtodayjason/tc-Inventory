@@ -33,6 +33,17 @@ def dashboard():
     per_page = current_app.config['ITEMS_PER_PAGE']
     query = InventoryItem.query
     
+    # Filter out removed computer systems by default
+    query = query.filter(
+        db.or_(
+            InventoryItem.type != 'computer_system',  # Show all non-computer items
+            db.and_(
+                InventoryItem.type == 'computer_system',
+                InventoryItem.status != 'removed'  # Only show non-removed computers
+            )
+        )
+    )
+    
     # Search functionality
     search = request.args.get('search', '')
     if search:
@@ -65,6 +76,16 @@ def dashboard():
     elif status:
         query = query.filter(InventoryItem.status == status)
     
+    # Show removed items if specifically requested
+    show_removed = request.args.get('show_removed', type=bool)
+    if not show_removed:
+        query = query.filter(
+            db.or_(
+                InventoryItem.status != 'removed',
+                InventoryItem.type != 'computer_system'
+            )
+        )
+    
     # Sorting
     sort_by = request.args.get('sort', 'tracking_id')
     order = request.args.get('order', 'asc')
@@ -86,7 +107,8 @@ def dashboard():
                          categories=categories,
                          form=form,
                          sort_by=sort_by,
-                         order=order)
+                         order=order,
+                         show_removed=show_removed)
 
 @bp.route('/item/add', methods=['GET', 'POST'])
 @login_required
