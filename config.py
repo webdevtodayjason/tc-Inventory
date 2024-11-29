@@ -3,16 +3,15 @@ from datetime import timedelta
 
 class Config:
     # Database configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://')
-    if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("No DATABASE_URL set in environment")
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://')
     
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    if not SECRET_KEY:
-        raise ValueError("No SECRET_KEY set in environment")
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
     
     # Application settings
     ITEMS_PER_PAGE = int(os.environ.get('ITEMS_PER_PAGE', 20))
@@ -23,4 +22,4 @@ class Config:
     
     # Add additional configuration settings
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-    UPLOAD_FOLDER = os.path.join(basedir, 'app/static/uploads') 
+    UPLOAD_FOLDER = 'app/static/uploads'
