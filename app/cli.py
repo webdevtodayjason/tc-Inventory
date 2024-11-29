@@ -68,10 +68,12 @@ def create_admin_command(username, email, password, pin):
     """Create an admin user"""
     try:
         # Check if admin already exists
-        if User.query.filter_by(role='admin').first():
-            print("Admin user already exists!")
+        existing_admin = User.query.filter_by(role='admin').first()
+        if existing_admin:
+            print(f"Admin user already exists: {existing_admin.username}")
             return
 
+        # Create new admin user
         user = User(
             username=username,
             email=email,
@@ -82,7 +84,10 @@ def create_admin_command(username, email, password, pin):
         
         db.session.add(user)
         db.session.commit()
-        print(f"Admin user '{username}' created successfully!")
+        print(f"Admin user created successfully:")
+        print(f"Username: {username}")
+        print(f"Email: {email}")
+        print(f"PIN: {pin}")
         
     except Exception as e:
         db.session.rollback()
