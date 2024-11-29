@@ -28,5 +28,10 @@ ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
 
-# Command to run the application
-CMD gunicorn --bind 0.0.0.0:8080 run:app 
+# Initialize database and start application
+CMD flask db upgrade && \
+    flask create-category && \
+    flask create-cpus && \
+    flask create-tags && \
+    flask create-admin && \
+    gunicorn --bind 0.0.0.0:8080 run:app 
