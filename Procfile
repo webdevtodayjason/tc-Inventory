@@ -1,0 +1,1 @@
+web: flask db upgrade && flask create-category && flask create-cpus && flask create-tags && flask create-admin && gunicorn run:app 
