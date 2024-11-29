@@ -9,10 +9,6 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Create and set permissions for migrations directory
-RUN mkdir -p migrations/versions && \
-    chmod -R 777 migrations
-
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
@@ -34,10 +30,12 @@ ENV PORT=8080
 
 # Initialize database and start application
 CMD flask db stamp head || true && \
-    flask db migrate || true && \
     flask db upgrade && \
-    flask create-category && \
-    flask create-cpus && \
-    flask create-tags && \
-    flask create-admin && \
+    if [ ! -f .initialized ]; then \
+      flask create-category && \
+      flask create-cpus && \
+      flask create-tags && \
+      flask create-admin && \
+      touch .initialized; \
+    fi && \
     gunicorn --bind 0.0.0.0:8080 run:app 
