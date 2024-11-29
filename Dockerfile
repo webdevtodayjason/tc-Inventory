@@ -29,13 +29,10 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
 
 # Initialize database and start application
-CMD flask db stamp head || true && \
+CMD flask db migrate && \
     flask db upgrade && \
-    if [ ! -f .initialized ]; then \
-      flask create-category && \
-      flask create-cpus && \
-      flask create-tags && \
-      flask create-admin && \
-      touch .initialized; \
-    fi && \
+    flask create-category && \
+    flask create-cpus && \
+    flask create-tags && \
+    flask create-admin && \
     gunicorn --bind 0.0.0.0:8080 run:app 
