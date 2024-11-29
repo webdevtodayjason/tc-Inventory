@@ -44,14 +44,32 @@ def register():
     form = FlaskForm()
     
     if request.method == 'POST' and form.validate_on_submit():
-        user = User(
-            username=request.form['username'],
-            email=request.form['email']
-        )
-        user.set_password(request.form['password'])
-        db.session.add(user)
-        db.session.commit()
-        flash('Registration successful!', 'success')
-        return redirect(url_for('auth.login'))
+        try:
+            # Create new user
+            user = User(
+                username=request.form['username'],
+                email=request.form['email']
+            )
+            user.set_password(request.form['password'])
+            
+            # Set PIN code
+            pin = request.form.get('pin')
+            if not pin or len(pin) != 6 or not pin.isdigit():
+                flash('PIN must be exactly 6 digits', 'danger')
+                return render_template('auth/register.html', form=form)
+            
+            user.set_pin(pin)
+            
+            db.session.add(user)
+            db.session.commit()
+            flash('Registration successful! You can now log in.', 'success')
+            return redirect(url_for('auth.login'))
+            
+        except ValueError as e:
+            flash(str(e), 'danger')
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'danger')
+            current_app.logger.error(f'Registration error: {str(e)}')
     
     return render_template('auth/register.html', form=form) 

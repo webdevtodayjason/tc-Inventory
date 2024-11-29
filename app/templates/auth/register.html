@@ -24,6 +24,18 @@
                         <label for="password" class="form-label">Password</label>
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="pin" class="form-label">6-Digit PIN</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="pin" 
+                               name="pin" 
+                               pattern="\d{6}" 
+                               maxlength="6" 
+                               inputmode="numeric" 
+                               required>
+                        <small class="text-muted">Enter a 6-digit PIN for quick checkout access</small>
+                    </div>
                     <button type="submit" class="btn btn-primary">Register</button>
                 </form>
                 <div class="mt-3">
