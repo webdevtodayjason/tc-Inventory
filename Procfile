@@ -1,1 +1,1 @@
-web: flask db upgrade && flask create-category && flask create-cpus && flask create-tags && flask create-admin && gunicorn --bind 0.0.0.0:8080 run:app 
+web: flask db stamp head && flask db upgrade && flask create-category && flask create-cpus && flask create-tags && flask create-admin && gunicorn --bind 0.0.0.0:8080 run:app 
