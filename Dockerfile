@@ -29,8 +29,7 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
 
 # Initialize database and start application
-CMD flask db stamp head || true && \
-    flask db migrate -m "Initial migration" && \
+CMD flask db migrate -m "Initial migration" && \
     flask db upgrade && \
     flask create-category && \
     flask create-cpus && \
