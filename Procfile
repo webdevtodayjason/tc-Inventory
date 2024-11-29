@@ -1,1 +1,1 @@
-web: flask db migrate -m "Initial migration" && flask db upgrade && flask create-category && flask create-cpus && flask create-tags && flask create-admin && gunicorn --bind 0.0.0.0:8080 run:app 
+web: gunicorn --bind 0.0.0.0:8080 run:app

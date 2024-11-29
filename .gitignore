@@ -36,7 +36,6 @@ env/
 # Flask
 instance/
 .webassets-cache
-migrations/versions/
 
 # Database
 *.db
