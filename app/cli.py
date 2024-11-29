@@ -59,10 +59,10 @@ def create_category_command():
         print(f"Error creating categories: {str(e)}")
 
 @click.command('create-admin')
-@click.option('--username', envvar='ADMIN_USERNAME')
-@click.option('--email', envvar='ADMIN_EMAIL')
-@click.option('--password', envvar='ADMIN_PASSWORD')
-@click.option('--pin', envvar='ADMIN_PIN')
+@click.option('--username', envvar='ADMIN_USERNAME', default='admin')
+@click.option('--email', envvar='ADMIN_EMAIL', default='admin@example.com')
+@click.option('--password', envvar='ADMIN_PASSWORD', default='admin123')
+@click.option('--pin', envvar='ADMIN_PIN', default='123456')
 @with_appcontext
 def create_admin_command(username, email, password, pin):
     """Create an admin user"""
@@ -71,12 +71,6 @@ def create_admin_command(username, email, password, pin):
         if User.query.filter_by(role='admin').first():
             print("Admin user already exists!")
             return
-
-        # Use environment variables or prompt for input
-        username = username or input("Enter admin username: ")
-        email = email or input("Enter admin email: ")
-        password = password or input("Enter admin password: ")
-        pin = pin or input("Enter admin 6-digit PIN: ")
 
         user = User(
             username=username,
