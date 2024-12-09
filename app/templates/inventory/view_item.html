@@ -34,7 +34,7 @@
                         <dd class="col-sm-9">{{ item.name }}</dd>
 
                         <dt class="col-sm-3">Category</dt>
-                        <dd class="col-sm-9">{{ item.item_category.name }}</dd>
+                        <dd class="col-sm-9">{{ item.category.name if item.category else 'Uncategorized' }}</dd>
 
                         <dt class="col-sm-3">Type</dt>
                         <dd class="col-sm-9">{{ item.type }}</dd>
