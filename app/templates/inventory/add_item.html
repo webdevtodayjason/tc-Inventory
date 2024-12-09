@@ -36,12 +36,20 @@
                             <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" required>
                         </div>
                         <div class="mb-3">
-                            <label for="reorder_point" class="form-label">Reorder Point</label>
-                            <input type="number" class="form-control" id="reorder_point" name="reorder_point" value="5" min="0">
+                            <label for="reorder_threshold" class="form-label">Reorder Point</label>
+                            <input type="number" class="form-control" id="reorder_threshold" name="reorder_threshold" value="5" min="0">
                         </div>
                         <div class="mb-3">
                             <label for="storage_location" class="form-label">Storage Location</label>
                             <input type="text" class="form-control" id="storage_location" name="storage_location">
+                        </div>
+                        <div class="mb-3">
+                            <label for="manufacturer" class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="manufacturer" name="manufacturer">
+                        </div>
+                        <div class="mb-3">
+                            <label for="mpn" class="form-label">Manufacturer Part Number (MPN)</label>
+                            <input type="text" class="form-control" id="mpn" name="mpn">
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -50,8 +58,20 @@
                             <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
+                            <label for="cost" class="form-label">Cost (USD)</label>
+                            <input type="number" step="0.01" class="form-control" id="cost" name="cost" placeholder="0.00">
+                        </div>
+                        <div class="mb-3">
+                            <label for="sell_price" class="form-label">Sell Price (USD)</label>
+                            <input type="number" step="0.01" class="form-control" id="sell_price" name="sell_price" placeholder="0.00">
+                        </div>
+                        <div class="mb-3">
                             <label for="purchase_url" class="form-label">Purchase URL</label>
-                            <input type="url" class="form-control" id="purchase_url" name="purchase_url">
+                            <input type="url" class="form-control" id="purchase_url" name="purchase_url" placeholder="https://...">
+                        </div>
+                        <div class="mb-3">
+                            <label for="image_url" class="form-label">Image URL</label>
+                            <input type="url" class="form-control" id="image_url" name="image_url" placeholder="https://...">
                         </div>
                         <div class="mb-3">
                             <label for="barcode" class="form-label">Barcode</label>
@@ -69,6 +89,7 @@
                                     <option value="{{ tag.id }}">{{ tag.name }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="form-text">Hold Ctrl/Cmd to select multiple tags</div>
                         </div>
                     </div>
                 </div>
@@ -121,31 +142,48 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('barcode').value = decodedText;
         document.getElementById('scanResult').textContent = 'Barcode scanned successfully!';
         
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        
         // Make API call to get product info
-        fetch(`/scan_barcode/${decodedText}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('name').value = data.name || '';
-                    document.getElementById('description').value = data.description || '';
-                    // Close the modal after a short delay
-                    setTimeout(() => {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('scannerModal'));
-                        modal.hide();
-                        html5QrcodeScanner.clear();
-                    }, 1000);
-                } else {
-                    document.getElementById('scanResult').textContent = 'Product not found';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('scanResult').textContent = 'Error fetching product info';
-            });
+        fetch('/api/scan_barcode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ barcode: decodedText })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('scanResult').textContent = data.error;
+                return;
+            }
+            
+            // Fill in the form fields with the product data
+            if (data.name) document.getElementById('name').value = data.name;
+            if (data.description) document.getElementById('description').value = data.description;
+            if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
+            if (data.mpn) document.getElementById('mpn').value = data.mpn;
+            if (data.image_url) document.getElementById('image_url').value = data.image_url;
+            
+            // Close the modal after a short delay
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('scannerModal'));
+                modal.hide();
+                html5QrcodeScanner.clear();
+            }, 1000);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('scanResult').textContent = 'Error fetching product info';
+        });
     }
     
     function onScanError(errorMessage) {
         // handle scan error
+        console.error('Scan error:', errorMessage);
     }
     
     // Clean up scanner when modal is closed

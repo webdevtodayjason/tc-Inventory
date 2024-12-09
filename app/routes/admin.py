@@ -15,7 +15,7 @@ bp = Blueprint('admin', __name__)
 @admin_required
 def manage_users():
     users = User.query.order_by(User.username).all()
-    return render_template('inventory/manage/users.html', users=users)
+    return render_template('admin/users/list.html', users=users)
 
 @bp.route('/admin/users/add', methods=['GET', 'POST'])
 @login_required
@@ -54,7 +54,7 @@ def add_user():
             flash(f'Error creating user: {str(e)}', 'error')
             return redirect(url_for('admin.add_user'))
 
-    return render_template('inventory/manage/add_user.html')
+    return render_template('admin/users/add.html')
 
 @bp.route('/admin/users/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -103,7 +103,7 @@ def edit_user(id):
             flash(f'Error updating user: {str(e)}', 'error')
             return redirect(url_for('admin.edit_user', id=id))
 
-    return render_template('inventory/manage/edit_user.html', user=user)
+    return render_template('admin/users/edit.html', user=user)
 
 @bp.route('/admin/users/<int:id>/delete', methods=['POST'])
 @login_required
