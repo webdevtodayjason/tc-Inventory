@@ -1,9 +1,11 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file
 from flask_login import login_required
 from app.models.config import Configuration
 from app.models.inventory import Tag
 from app.routes.inventory import admin_required
 from app import db
+import subprocess
+from datetime import datetime
 
 bp = Blueprint('admin', __name__)
 
@@ -184,3 +186,55 @@ def manage_config():
     }
 
     return render_template('admin/config.html', **settings)
+
+@bp.route('/admin/logs')
+@login_required
+@admin_required
+def view_logs():
+    # Get the last 100 log entries
+    try:
+        with open('app.log', 'r') as f:
+            logs = f.readlines()[-100:]
+        return render_template('admin/logs.html', logs=logs)
+    except FileNotFoundError:
+        flash('Log file not found', 'error')
+        return render_template('admin/logs.html', logs=[])
+
+@bp.route('/admin/backup')
+@login_required
+@admin_required
+def backup():
+    try:
+        # Get database URL from config
+        db_url = Configuration.get_setting('DATABASE_URL')
+        if not db_url:
+            flash('Database URL not configured', 'error')
+            return redirect(url_for('admin.manage_config'))
+
+        # Create backup filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_file = f'backup_{timestamp}.sql'
+        
+        # Execute pg_dump
+        result = subprocess.run([
+            'pg_dump',
+            '-F', 'c',  # Custom format
+            '-f', backup_file,
+            db_url
+        ], capture_output=True, text=True)
+
+        if result.returncode == 0:
+            flash('Database backup created successfully', 'success')
+            # Send the file to the user
+            return send_file(
+                backup_file,
+                as_attachment=True,
+                download_name=backup_file
+            )
+        else:
+            flash(f'Backup failed: {result.stderr}', 'error')
+            return redirect(url_for('admin.manage_config'))
+
+    except Exception as e:
+        flash(f'Error creating backup: {str(e)}', 'error')
+        return redirect(url_for('admin.manage_config'))

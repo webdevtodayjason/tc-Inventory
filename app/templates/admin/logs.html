@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}System Logs{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>System Logs</h2>
+            <p class="text-muted">Showing last 100 log entries</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <pre class="log-container bg-dark text-light p-3" style="max-height: 600px; overflow-y: auto;">
+                    {% for log in logs %}
+                    {{ log }}
+                    {% else %}
+                    No logs available
+                    {% endfor %}
+                </pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
