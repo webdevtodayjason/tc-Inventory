@@ -117,9 +117,9 @@
                             <td>{{ item.category.name if item.category else '-' }}</td>
                             <td>{{ item.storage_location if item.storage_location else '-' }}</td>
                             <td>
-                                {% if item.reorder_threshold is not none %}
-                                    <span class="{% if item.quantity <= item.reorder_threshold %}text-warning{% endif %}">
-                                        {{ item.reorder_threshold }}/{{ item.quantity }}
+                                {% if item.min_quantity is not none %}
+                                    <span class="{% if item.quantity <= item.min_quantity %}text-warning{% endif %}">
+                                        {{ item.min_quantity }}/{{ item.quantity }}
                                     </span>
                                 {% else %}
                                     -/{{ item.quantity }}
