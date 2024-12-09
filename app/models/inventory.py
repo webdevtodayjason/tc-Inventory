@@ -94,6 +94,7 @@ class ComputerSystem(InventoryItem):
     }
 
 class InventoryTransaction(db.Model):
+    __tablename__ = 'transactions'
     id = db.Column(db.Integer, primary_key=True)
     item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
     transaction_type = db.Column(db.String(20))
