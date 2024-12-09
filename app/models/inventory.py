@@ -33,6 +33,7 @@ class InventoryItem(db.Model):
     __tablename__ = 'items'
     
     id = db.Column(db.Integer, primary_key=True)
+    tracking_id = db.Column(db.String(50), unique=True)
     upc = db.Column(db.String(50), unique=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
