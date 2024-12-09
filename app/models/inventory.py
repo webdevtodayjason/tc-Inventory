@@ -98,7 +98,7 @@ class InventoryTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
     transaction_type = db.Column(db.String(20))
-    quantity = db.Column(db.Integer)
+    quantity_changed = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
