@@ -43,6 +43,16 @@ class User(UserMixin, db.Model):
         """Verify PIN code"""
         return self.pin == pin
 
+    @property
+    def role(self):
+        """Return user role based on is_admin flag"""
+        return 'admin' if self.is_admin else 'user'
+
+    @role.setter
+    def role(self, value):
+        """Set is_admin based on role value"""
+        self.is_admin = (value == 'admin')
+
 @login_manager.user_loader
 def load_user(id):
     return User.query.get(int(id)) 
