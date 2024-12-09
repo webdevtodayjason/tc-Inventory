@@ -5,13 +5,59 @@ from app.models.user import User
 from app.models.config import Configuration
 import click
 import os
+import time
+from sqlalchemy import text
 
 app = create_app()
+
+def wait_for_db(max_attempts=5, wait_time=5):
+    """Wait for database to be available."""
+    for attempt in range(max_attempts):
+        try:
+            # Try internal URL first
+            with app.app_context():
+                try:
+                    db.session.execute(text('SELECT 1'))
+                    db.session.commit()
+                    print("Database connection successful using internal URL!")
+                    return True
+                except Exception as internal_error:
+                    print(f"Internal connection failed: {internal_error}")
+                    
+                    # Try public URL as fallback
+                    if 'DATABASE_PUBLIC_URL' in os.environ:
+                        print("Trying public URL...")
+                        # Temporarily override the SQLAlchemy URL
+                        app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_PUBLIC_URL']
+                        db.session.execute(text('SELECT 1'))
+                        db.session.commit()
+                        print("Database connection successful using public URL!")
+                        return True
+                    raise
+        except Exception as e:
+            print(f"Database connection attempt {attempt + 1} failed: {e}")
+            if attempt < max_attempts - 1:
+                print(f"Waiting {wait_time} seconds before retrying...")
+                time.sleep(wait_time)
+    return False
+
+@app.cli.command("verify-db")
+def verify_db():
+    """Verify database connection."""
+    if wait_for_db():
+        print("Database verification successful!")
+    else:
+        print("Database verification failed!")
+        exit(1)
 
 @app.cli.command("create-category")
 def create_category():
     """Create initial categories."""
     try:
+        if not wait_for_db():
+            print("Could not connect to database!")
+            return
+
         categories = ["Desktop", "Laptop", "Server", "Network", "Peripheral", "Component", "Software", "Other"]
         for cat_name in categories:
             category = Category.query.filter_by(name=cat_name).first()
@@ -27,6 +73,10 @@ def create_category():
 def create_admin():
     """Create the admin user."""
     try:
+        if not wait_for_db():
+            print("Could not connect to database!")
+            return
+
         admin = User.query.filter_by(username=os.environ.get('ADMIN_USERNAME')).first()
         if not admin:
             admin = User(
@@ -48,6 +98,10 @@ def create_admin():
 def init_config():
     """Initialize configuration settings with defaults from environment variables."""
     try:
+        if not wait_for_db():
+            print("Could not connect to database!")
+            return
+
         # Only set configuration if it doesn't exist
         def init_setting(key, env_key, description, default=None):
             if not Configuration.get_setting(key):
