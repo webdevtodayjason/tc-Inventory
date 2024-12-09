@@ -109,11 +109,11 @@ def dashboard():
         )
     
     # Sorting
-    sort_by = request.args.get('sort', 'tracking_id')
+    sort_by = request.args.get('sort', 'id')
     order = request.args.get('order', 'asc')
     
-    if sort_by == 'tracking_id':
-        query = query.order_by(InventoryItem.tracking_id.asc() if order == 'asc' else InventoryItem.tracking_id.desc())
+    if sort_by == 'id':
+        query = query.order_by(InventoryItem.id.asc() if order == 'asc' else InventoryItem.id.desc())
     elif sort_by == 'name':
         query = query.order_by(InventoryItem.name.asc() if order == 'asc' else InventoryItem.name.desc())
     

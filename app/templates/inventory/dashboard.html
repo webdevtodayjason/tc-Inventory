@@ -73,15 +73,15 @@
                         <tr>
                             <th>
                                 <a href="{{ url_for('inventory.dashboard', 
-                                         sort='tracking_id',
-                                         order='desc' if sort_by == 'tracking_id' and order == 'asc' else 'asc',
+                                         sort='id',
+                                         order='desc' if sort_by == 'id' and order == 'asc' else 'asc',
                                          search=request.args.get('search', ''),
                                          type=request.args.get('type', ''),
                                          category=request.args.get('category', ''),
                                          status=request.args.get('status', ''),
                                          show_removed=request.args.get('show_removed', '')) }}" class="text-decoration-none text-dark">
-                                    Tracking ID
-                                    {% if sort_by == 'tracking_id' %}
+                                    ID
+                                    {% if sort_by == 'id' %}
                                         <i class="bi bi-arrow-{{ 'up' if order == 'asc' else 'down' }}"></i>
                                     {% endif %}
                                 </a>
