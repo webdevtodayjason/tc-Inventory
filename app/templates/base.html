@@ -38,14 +38,23 @@
                             <li><a class="dropdown-item" href="{{ url_for('inventory.add_item') }}">Add Item</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('inventory.manage_models') }}">Models</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('inventory.manage_cpus') }}">CPUs</a></li>
-                            {% if current_user.role == 'admin' %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('inventory.manage_users') }}">Users</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.manage_config') }}">System Config</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.manage_tags') }}">Manage Tags</a></li>
-                            {% endif %}
                         </ul>
                     </li>
+                    {% if current_user.role == 'admin' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                            Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('inventory.manage_users') }}">User Management</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.manage_tags') }}">Tag Management</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.manage_config') }}">System Configuration</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.view_logs') }}">System Logs</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.backup') }}">Backup Database</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
