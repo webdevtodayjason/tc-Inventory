@@ -114,7 +114,7 @@
                         <tr>
                             <td>{{ item.tracking_id }}</td>
                             <td>{{ item.name }}</td>
-                            <td>{{ item.item_category.name }}</td>
+                            <td>{{ item.category.name if item.category else '-' }}</td>
                             <td>{{ item.storage_location if item.storage_location else '-' }}</td>
                             <td>
                                 {% if item.reorder_threshold is not none %}
