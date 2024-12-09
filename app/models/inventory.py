@@ -51,8 +51,14 @@ class InventoryItem(db.Model):
 
     __mapper_args__ = {
         'polymorphic_identity': 'item',
-        'polymorphic_on': type
+        'polymorphic_on': type,
+        'with_polymorphic': '*'
     }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.type:
+            self.type = 'item'
 
     def __repr__(self):
         return f'<InventoryItem {self.name}>'
