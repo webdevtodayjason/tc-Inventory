@@ -42,23 +42,10 @@ class InventoryItem(db.Model):
     location = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
-    type = db.Column(db.String(50))
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     status = db.Column('status', db.String(50), default='available')
-    
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'item',
-        'polymorphic_on': type,
-        'with_polymorphic': '*'
-    }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.type:
-            self.type = 'item'
 
     def __repr__(self):
         return f'<InventoryItem {self.name}>'

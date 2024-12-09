@@ -53,19 +53,6 @@ def dashboard():
     per_page = current_app.config['ITEMS_PER_PAGE']
     query = InventoryItem.query
     
-    # Filter out removed computer systems by default
-    query = query.filter(
-        db.or_(
-            InventoryItem.type != 'computer_system',  # Show all non-computer items
-            db.and_(
-                InventoryItem.type == 'computer_system',
-                db.or_(
-                    ~db.exists().where(InventoryItem.status == 'removed')  # Only show non-removed computers
-                )
-            )
-        )
-    )
-    
     # Search functionality
     search = request.args.get('search', '')
     if search:
@@ -75,11 +62,6 @@ def dashboard():
                 InventoryItem.tracking_id.ilike(f'%{search}%')
             )
         )
-    
-    # Filter by type
-    item_type = request.args.get('type')
-    if item_type:
-        query = query.filter(InventoryItem.type == item_type)
     
     # Filter by category
     category_id = request.args.get('category', type=int)
@@ -91,22 +73,12 @@ def dashboard():
     if status == 'restock':
         query = query.filter(
             db.and_(
-                InventoryItem.quantity <= InventoryItem.reorder_threshold,
-                InventoryItem.reorder_threshold != None
+                InventoryItem.quantity <= InventoryItem.min_quantity,
+                InventoryItem.min_quantity != None
             )
         )
     elif status:
         query = query.filter(InventoryItem.status == status)
-    
-    # Show removed items if specifically requested
-    show_removed = request.args.get('show_removed', type=bool)
-    if not show_removed:
-        query = query.filter(
-            db.or_(
-                InventoryItem.status != 'removed',
-                InventoryItem.type != 'computer_system'
-            )
-        )
     
     # Sorting
     sort_by = request.args.get('sort', 'id')
@@ -129,8 +101,7 @@ def dashboard():
                          categories=categories,
                          form=form,
                          sort_by=sort_by,
-                         order=order,
-                         show_removed=show_removed)
+                         order=order)
 
 @bp.route('/item/add', methods=['GET', 'POST'])
 @login_required
