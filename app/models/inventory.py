@@ -38,10 +38,15 @@ class InventoryItem(db.Model):
     location = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    type = db.Column(db.String(50))
     
-    # Fix the relationship by adding foreign key
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'item',
+        'polymorphic_on': type
+    }
 
     def __repr__(self):
         return f'<InventoryItem {self.name}>'
@@ -65,7 +70,7 @@ class CPU(db.Model):
 
 class ComputerSystem(InventoryItem):
     __tablename__ = 'computer_system'
-    id = db.Column(db.Integer, db.ForeignKey('inventory_item.id'), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('items.id'), primary_key=True)
     model_id = db.Column(db.Integer, db.ForeignKey('computer_model.id'))
     cpu_id = db.Column(db.Integer, db.ForeignKey('cpu.id'))
     ram = db.Column(db.String(64))
@@ -79,15 +84,14 @@ class ComputerSystem(InventoryItem):
     network_status = db.Column(db.String(20))
     network_notes = db.Column(db.Text)
     general_notes = db.Column(db.Text)
-    tested_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    tested_by = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    # Relationships
     model = db.relationship('ComputerModel', backref='computers')
     cpu = db.relationship('CPU', backref='computers')
     tester = db.relationship('User', backref='tested_computers', foreign_keys=[tested_by])
 
     __mapper_args__ = {
-        'polymorphic_identity': 'computer_system',
+        'polymorphic_identity': 'computer_system'
     }
 
 class InventoryTransaction(db.Model):
