@@ -51,7 +51,9 @@ def init_config():
         # Only set configuration if it doesn't exist
         def init_setting(key, env_key, description, default=None):
             if not Configuration.get_setting(key):
-                value = os.environ.get(env_key, default)
+                value = os.environ.get(env_key)
+                if value is None:
+                    value = default
                 if value is not None:
                     Configuration.set_setting(key, str(value).lower(), description)
 
@@ -107,6 +109,7 @@ def init_config():
         print("Configuration settings initialized successfully!")
     except Exception as e:
         print(f"Error initializing configuration settings: {e}")
+        raise  # Re-raise the exception to see the full traceback
 
 if __name__ == '__main__':
     app.run() 
