@@ -27,59 +27,24 @@ class Tag(db.Model):
         return f'<Tag {self.name}>'
 
 class InventoryItem(db.Model):
-    __tablename__ = 'inventory_item'
+    __tablename__ = 'items'
+    
     id = db.Column(db.Integer, primary_key=True)
-    tracking_id = db.Column(db.String(20), unique=True, nullable=False)
-    name = db.Column(db.String(128), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
-    quantity = db.Column(db.Integer, default=1)
-    reorder_threshold = db.Column(db.Integer)
-    STATUS_CHOICES = ['in_stock', 'restock', 'out_of_stock']
-    status = db.Column(db.String(20), default='in_stock')
-    
-    # New fields for barcode scanning
-    barcode = db.Column(db.String(128), unique=True, nullable=True)
+    upc = db.Column(db.String(50), unique=True)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    manufacturer = db.Column(db.String(128))
-    mpn = db.Column(db.String(128))  # Manufacturer Part Number
-    image_url = db.Column(db.String(512))
-    storage_location = db.Column(db.String(64))  # New field for storage location
+    quantity = db.Column(db.Integer, default=0)
+    min_quantity = db.Column(db.Integer, default=0)
+    location = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     
-    # Existing fields
-    cost = db.Column(db.Numeric(10, 2))  # Purchase cost in USD
-    purchase_url = db.Column(db.String(512))  # URL where item was/can be purchased
-    sell_price = db.Column(db.Numeric(10, 2))  # Selling price in USD
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    type = db.Column(db.String(50))
+    # Fix the relationship by adding foreign key
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    creator = db.relationship('User', backref='items_created')
 
-    # Relationships
-    creator = db.relationship('User', backref='created_items')
-
-    # Add tags relationship
-    tags = db.relationship('Tag', secondary=item_tags, lazy='subquery',
-                         backref=db.backref('items', lazy=True))
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'inventory_item',
-        'polymorphic_on': type
-    }
-
-    @property
-    def needs_restock(self):
-        """Check if item needs restocking based on quantity and threshold"""
-        if self.reorder_threshold is None:
-            return False
-        return self.quantity <= self.reorder_threshold
-    
-    @property
-    def display_status(self):
-        """Return the actual status, considering restock threshold"""
-        if self.needs_restock:
-            return 'restock'
-        return self.status
+    def __repr__(self):
+        return f'<InventoryItem {self.name}>'
 
 class ComputerModel(db.Model):
     __tablename__ = 'computer_model'
