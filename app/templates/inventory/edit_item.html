@@ -136,7 +136,11 @@
             <div class="card-body">
                 <div class="mb-3">
                     {{ form.tags.label(class="form-label") }}
-                    {{ form.tags(class="form-select", multiple=True) }}
+                    <select class="form-select" id="tags" name="tags" multiple>
+                        {% for tag in tags %}
+                            <option value="{{ tag.id }}" {% if tag in item.tags %}selected{% endif %}>{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
                     <div class="form-text">Hold Ctrl/Cmd to select multiple tags</div>
                 </div>
             </div>

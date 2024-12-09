@@ -234,22 +234,25 @@ def print_label(id):
 def edit_item(id):
     item = InventoryItem.query.get_or_404(id)
     categories = Category.query.order_by(Category.name).all()
+    tags = Tag.query.order_by(Tag.name).all()
     
     if isinstance(item, ComputerSystem):
         form = ComputerSystemForm(obj=item)
         if form.validate_on_submit():
             try:
                 # Manually update fields for computer system
-                item.cost = request.form.get('cost', type=float)
-                item.purchase_url = request.form.get('purchase_url')
-                item.sell_price = request.form.get('sell_price', type=float)
+                item.cost = form.cost.data
+                item.purchase_url = form.purchase_url.data
+                item.sell_price = form.sell_price.data
                 
                 # Update computer-specific fields
                 form.populate_obj(item)
                 
                 # Handle tags
-                if request.form.getlist('tags'):
-                    item.tags = [Tag.query.get(tag_id) for tag_id in request.form.getlist('tags')]
+                if form.tags.data:
+                    item.tags = [Tag.query.get(tag_id) for tag_id in form.tags.data]
+                else:
+                    item.tags = []  # Clear tags if none selected
                 
                 db.session.commit()
                 flash('Computer system updated successfully!', 'success')
@@ -266,28 +269,16 @@ def edit_item(id):
         return render_template('inventory/edit_computer_system.html', form=form, item=item)
     else:
         form = ItemForm(obj=item)
-        if request.method == 'POST':
+        if form.validate_on_submit():
             try:
-                # Manually update fields
-                item.name = request.form.get('name')
-                item.category_id = request.form.get('category', type=int)
-                item.quantity = int(request.form.get('quantity', 0))
-                item.reorder_threshold = request.form.get('reorder_threshold', type=int)
-                item.cost = request.form.get('cost', type=float)
-                item.purchase_url = request.form.get('purchase_url')
-                item.sell_price = request.form.get('sell_price', type=float)
-                
-                # Update barcode-related fields
-                item.barcode = request.form.get('barcode') or None  # Convert empty string to None
-                item.description = request.form.get('description')
-                item.manufacturer = request.form.get('manufacturer')
-                item.mpn = request.form.get('mpn')
-                item.image_url = request.form.get('image_url')
-                item.storage_location = request.form.get('storage_location')
+                # Update fields using form data
+                form.populate_obj(item)
                 
                 # Handle tags
-                if request.form.getlist('tags'):
-                    item.tags = [Tag.query.get(tag_id) for tag_id in request.form.getlist('tags')]
+                if form.tags.data:
+                    item.tags = [Tag.query.get(tag_id) for tag_id in form.tags.data]
+                else:
+                    item.tags = []  # Clear tags if none selected
                 
                 # Log the values before commit
                 current_app.logger.debug(f'Updating item {item.id}:')
@@ -295,6 +286,7 @@ def edit_item(id):
                 current_app.logger.debug(f'Category: {item.category_id}')
                 current_app.logger.debug(f'Quantity: {item.quantity}')
                 current_app.logger.debug(f'Reorder Threshold: {item.reorder_threshold}')
+                current_app.logger.debug(f'Tags: {[tag.name for tag in item.tags]}')
                 
                 db.session.commit()
                 flash('Item updated successfully!', 'success')
@@ -307,7 +299,8 @@ def edit_item(id):
         return render_template('inventory/edit_item.html', 
                              form=form, 
                              item=item,
-                             categories=categories)
+                             categories=categories,
+                             tags=tags)
 
 @bp.route('/item/<int:id>/delete', methods=['POST'])
 @login_required
