@@ -16,7 +16,7 @@ class Category(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 item_tags = db.Table('item_tags',
-    db.Column('item_id', db.Integer, db.ForeignKey('inventory_item.id'), primary_key=True),
+    db.Column('item_id', db.Integer, db.ForeignKey('items.id'), primary_key=True),
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
 )
 
@@ -100,15 +100,14 @@ class ComputerSystem(InventoryItem):
 
 class InventoryTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('inventory_item.id'))
-    transaction_type = db.Column(db.String(20))  # check_in, check_out, update
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+    transaction_type = db.Column(db.String(20))
     quantity = db.Column(db.Integer)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
     client_info = db.Column(db.JSON)
 
-    # Add relationships
     item = db.relationship('InventoryItem', backref='transactions')
     user = db.relationship('User', backref='transactions')
 
@@ -122,4 +121,4 @@ class BenchmarkResult(db.Model):
     score = db.Column(db.Float)
     details = db.Column(db.JSON)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    technician_id = db.Column(db.Integer, db.ForeignKey('user.id')) 
+    technician_id = db.Column(db.Integer, db.ForeignKey('users.id')) 
