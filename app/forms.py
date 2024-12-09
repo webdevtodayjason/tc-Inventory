@@ -125,6 +125,14 @@ class ItemForm(FlaskForm):
     name = StringField('Name', validators=[Optional(), Length(min=2, max=128)])
     quantity = IntegerField('Quantity', validators=[Optional()], default=1)
     reorder_threshold = IntegerField('Reorder Threshold', validators=[Optional()])
+    storage_location = StringField('Storage Location', validators=[Optional(), Length(max=64)])
+    
+    # Barcode Fields
+    barcode = StringField('Barcode', validators=[Optional(), Length(max=128)])
+    description = TextAreaField('Description', validators=[Optional()])
+    manufacturer = StringField('Manufacturer', validators=[Optional(), Length(max=128)])
+    mpn = StringField('Manufacturer Part Number (MPN)', validators=[Optional(), Length(max=128)])
+    image_url = StringField('Image URL', validators=[Optional(), URL()])
     
     # Computer System Fields
     model_id = SelectField('Computer Model', coerce=int, validators=[Optional()])

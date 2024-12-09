@@ -52,6 +52,9 @@
                         <dt class="col-sm-3">Reorder Threshold</dt>
                         <dd class="col-sm-9">{{ item.reorder_threshold if item.reorder_threshold else 'Not set' }}</dd>
 
+                        <dt class="col-sm-3">Storage Location</dt>
+                        <dd class="col-sm-9">{{ item.storage_location if item.storage_location else 'Not set' }}</dd>
+
                         <dt class="col-sm-3">Tags</dt>
                         <dd class="col-sm-9">
                             {% for tag in item.tags %}
@@ -62,6 +65,43 @@
                                 <span class="text-muted">No tags</span>
                             {% endfor %}
                         </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Product Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Product Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        {% if item.barcode %}
+                        <dt class="col-sm-3">Barcode</dt>
+                        <dd class="col-sm-9">{{ item.barcode }}</dd>
+                        {% endif %}
+
+                        {% if item.manufacturer %}
+                        <dt class="col-sm-3">Manufacturer</dt>
+                        <dd class="col-sm-9">{{ item.manufacturer }}</dd>
+                        {% endif %}
+
+                        {% if item.mpn %}
+                        <dt class="col-sm-3">Model/Part Number</dt>
+                        <dd class="col-sm-9">{{ item.mpn }}</dd>
+                        {% endif %}
+
+                        {% if item.description %}
+                        <dt class="col-sm-3">Description</dt>
+                        <dd class="col-sm-9">{{ item.description }}</dd>
+                        {% endif %}
+
+                        {% if item.image_url %}
+                        <dt class="col-sm-3">Product Image</dt>
+                        <dd class="col-sm-9">
+                            <img src="{{ item.image_url }}" alt="Product Image" class="img-fluid" style="max-width: 200px;">
+                        </dd>
+                        {% endif %}
                     </dl>
                 </div>
             </div>

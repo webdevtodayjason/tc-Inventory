@@ -1,7 +1,8 @@
 from flask.cli import with_appcontext
 import click
 from app import db
-from app.models import Category, User, ComputerModel, CPU, Tag
+from app.models.inventory import Category, ComputerModel, CPU, Tag
+from app.models.user import User
 
 def init_app(app):
     app.cli.add_command(create_category_command)

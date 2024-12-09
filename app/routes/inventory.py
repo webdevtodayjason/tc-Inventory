@@ -5,6 +5,8 @@ from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
     InventoryTransaction, ComputerModel, CPU, Tag
 )
+from app.models.config import Configuration
+from app.utils.email import send_stock_alert
 from app.forms import (
     ComputerModelForm, CPUForm, ItemForm, 
     ComputerSystemForm, MANUFACTURER_CHOICES, 
@@ -23,8 +25,26 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.graphics.barcode import code128
 from app.models.user import User
+import requests
+from bs4 import BeautifulSoup
+from flask_wtf.csrf import validate_csrf
+from werkzeug.exceptions import BadRequest
+import os
+import random
+import time
+from werkzeug.security import generate_password_hash
+from functools import wraps
 
 bp = Blueprint('inventory', __name__)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            flash('You need to be an admin to access this page.', 'danger')
+            return redirect(url_for('inventory.dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @bp.route('/dashboard')
 @login_required
@@ -168,6 +188,12 @@ def add_item():
                     cost=form.cost.data,
                     purchase_url=form.purchase_url.data,
                     sell_price=form.sell_price.data,
+                    barcode=form.barcode.data,
+                    description=form.description.data,
+                    manufacturer=form.manufacturer.data,
+                    mpn=form.mpn.data,
+                    image_url=form.image_url.data,
+                    storage_location=form.storage_location.data,
                     tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
                 )
             
@@ -220,46 +246,15 @@ def view_item(id):
 def print_label(id):
     item = InventoryItem.query.get_or_404(id)
     
-    # Generate PDF with ReportLab
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import landscape
-    from reportlab.lib.units import inch
-    from reportlab.pdfgen import canvas
-    from reportlab.graphics.barcode import code128
+    # Generate barcode image
+    barcode_io = io.BytesIO()
+    Code128(item.tracking_id, writer=ImageWriter()).write(barcode_io)
+    barcode_base64 = base64.b64encode(barcode_io.getvalue()).decode()
     
-    # Create a BytesIO buffer for the PDF
-    buffer = io.BytesIO()
-    
-    # Create the PDF canvas (2x4 inches)
-    c = canvas.Canvas(buffer, pagesize=(4*inch, 2*inch))
-    
-    # Add item details
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(0.2*inch, 1.5*inch, item.name)
-    
-    if isinstance(item, ComputerSystem):
-        c.setFont("Helvetica", 10)
-        c.drawString(0.2*inch, 1.2*inch, f"Model: {item.model.manufacturer} {item.model.model_name}")
-        c.drawString(0.2*inch, 1.0*inch, f"CPU: {item.cpu.manufacturer} {item.cpu.model}")
-        c.drawString(0.2*inch, 0.8*inch, f"RAM: {item.ram}")
-    
-    # Add barcode
-    barcode = code128.Code128(item.tracking_id, barHeight=0.4*inch)
-    barcode.drawOn(c, 0.2*inch, 0.3*inch)
-    
-    # Add tracking ID below barcode
-    c.setFont("Helvetica", 8)
-    c.drawString(0.2*inch, 0.1*inch, item.tracking_id)
-    
-    c.save()
-    buffer.seek(0)
-    
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=f"label_{item.tracking_id}.pdf",
-        mimetype='application/pdf'
-    )
+    # Return the print template
+    return render_template('inventory/print_label.html',
+                         item=item,
+                         barcode=barcode_base64)
 
 @bp.route('/item/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -302,12 +297,20 @@ def edit_item(id):
             try:
                 # Manually update fields
                 item.name = request.form.get('name')
-                item.category_id = request.form.get('category_id', type=int)
+                item.category_id = request.form.get('category', type=int)
                 item.quantity = int(request.form.get('quantity', 0))
                 item.reorder_threshold = request.form.get('reorder_threshold', type=int)
                 item.cost = request.form.get('cost', type=float)
                 item.purchase_url = request.form.get('purchase_url')
                 item.sell_price = request.form.get('sell_price', type=float)
+                
+                # Update barcode-related fields
+                item.barcode = request.form.get('barcode') or None  # Convert empty string to None
+                item.description = request.form.get('description')
+                item.manufacturer = request.form.get('manufacturer')
+                item.mpn = request.form.get('mpn')
+                item.image_url = request.form.get('image_url')
+                item.storage_location = request.form.get('storage_location')
                 
                 # Handle tags
                 if request.form.getlist('tags'):
@@ -539,6 +542,22 @@ def verify_pin():
     flash(f'Welcome, {tech.username}!', 'success')
     return redirect(url_for('inventory.checkout'))
 
+def check_low_stock(item):
+    """Check if an item needs a stock alert and send if enabled"""
+    if not Configuration.get_setting('enable_low_stock_alerts', 'false') == 'true':
+        return
+        
+    if item.needs_restock:
+        # Get all items that need restocking
+        low_stock_items = InventoryItem.query.filter(
+            InventoryItem.quantity <= InventoryItem.reorder_threshold,
+            InventoryItem.reorder_threshold != None,
+            InventoryItem.type != 'computer_system'  # Exclude computer systems
+        ).all()
+        
+        if low_stock_items:
+            send_stock_alert(low_stock_items)
+
 @bp.route('/checkout/process', methods=['POST'])
 def process_checkout():
     """Process item checkout"""
@@ -549,7 +568,7 @@ def process_checkout():
     tech = User.query.get(session['tech_id'])
     tracking_id = request.form.get('tracking_id')
     reason = request.form.get('reason')
-    quantity = int(request.form.get('quantity', 1))  # Get quantity from form
+    quantity = int(request.form.get('quantity', 1))
     
     # Find item
     item = InventoryItem.query.filter_by(tracking_id=tracking_id).first()
@@ -571,7 +590,7 @@ def process_checkout():
         transaction = InventoryTransaction(
             item_id=item.id,
             transaction_type='check_out',
-            quantity=quantity,  # Use the requested quantity
+            quantity=quantity,
             user_id=tech.id,
             notes=reason
         )
@@ -588,6 +607,9 @@ def process_checkout():
                 item.status = 'out_of_stock'
             elif item.quantity <= item.reorder_threshold:
                 item.status = 'restock'
+                
+            # Check if we need to send a stock alert
+            check_low_stock(item)
         
         db.session.add(transaction)
         db.session.commit()
@@ -608,9 +630,179 @@ def checkout_logout():
     flash('Logged out successfully', 'success')
     return redirect(url_for('inventory.checkout'))  # This will force a full page refresh
 
+# List of common Chrome user agents
+CHROME_USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+]
+
+@bp.route('/api/scan_barcode', methods=['POST'])
+@login_required
+def scan_barcode():
+    try:
+        # Validate CSRF token from X-CSRFToken header
+        csrf_token = request.headers.get('X-CSRFToken')
+        if not csrf_token:
+            raise BadRequest('Missing CSRF token')
+        validate_csrf(csrf_token)
+        
+        data = request.get_json()
+        barcode = data.get('barcode')
+        
+        if not barcode:
+            return jsonify({'error': 'No barcode provided'}), 400
+        
+        try:
+            # UPCItemDB API endpoint
+            url = f'https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            # Parse the response
+            data = response.json()
+            
+            # Initialize product info
+            product_info = {
+                'name': None,
+                'description': None,
+                'manufacturer': None,
+                'mpn': None,
+                'image_url': None
+            }
+            
+            # Extract information from the response
+            if data.get('items') and len(data['items']) > 0:
+                item = data['items'][0]  # Get the first item
+                
+                # Extract basic information
+                product_info['name'] = item.get('title')
+                product_info['description'] = item.get('description')
+                product_info['manufacturer'] = item.get('brand')
+                product_info['mpn'] = item.get('model')
+                
+                # Get the first image URL if available
+                if item.get('images') and len(item['images']) > 0:
+                    product_info['image_url'] = item['images'][0]
+            
+            return jsonify(product_info)
+            
+        except requests.exceptions.RequestException as e:
+            return jsonify({'error': f'Failed to fetch product information: {str(e)}'}), 500
+        except Exception as e:
+            return jsonify({'error': f'Error processing barcode: {str(e)}'}), 500
+            
+    except BadRequest as e:
+        return jsonify({'error': str(e)}), 400
+
 def generate_tracking_id():
     """Generate a unique tracking ID"""
     while True:
         tracking_id = f"TC-{uuid.uuid4().hex[:8].upper()}"
         if not InventoryItem.query.filter_by(tracking_id=tracking_id).first():
             return tracking_id
+
+# User Management Routes
+@bp.route('/users')
+@login_required
+@admin_required
+def manage_users():
+    users = User.query.all()
+    return render_template('inventory/manage/users.html', users=users)
+
+@bp.route('/users/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_user():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        role = request.form.get('role', 'user')
+        pin = request.form.get('pin')
+
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists', 'danger')
+            return redirect(url_for('inventory.add_user'))
+
+        if User.query.filter_by(email=email).first():
+            flash('Email already exists', 'danger')
+            return redirect(url_for('inventory.add_user'))
+
+        user = User(username=username, email=email, role=role)
+        user.set_password(password)
+        if pin:
+            try:
+                user.set_pin(pin)
+            except ValueError as e:
+                flash(str(e), 'danger')
+                return redirect(url_for('inventory.add_user'))
+
+        db.session.add(user)
+        db.session.commit()
+        flash('User added successfully', 'success')
+        return redirect(url_for('inventory.manage_users'))
+
+    return render_template('inventory/manage/add_user.html')
+
+@bp.route('/users/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_user(id):
+    user = User.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        role = request.form.get('role')
+        new_password = request.form.get('password')
+        new_pin = request.form.get('pin')
+
+        # Check if username is being changed and is unique
+        if username != user.username and User.query.filter_by(username=username).first():
+            flash('Username already exists', 'danger')
+            return redirect(url_for('inventory.edit_user', id=id))
+
+        # Check if email is being changed and is unique
+        if email != user.email and User.query.filter_by(email=email).first():
+            flash('Email already exists', 'danger')
+            return redirect(url_for('inventory.edit_user', id=id))
+
+        user.username = username
+        user.email = email
+        user.role = role
+
+        if new_password:
+            user.set_password(new_password)
+
+        if new_pin:
+            try:
+                user.set_pin(new_pin)
+            except ValueError as e:
+                flash(str(e), 'danger')
+                return redirect(url_for('inventory.edit_user', id=id))
+
+        db.session.commit()
+        flash('User updated successfully', 'success')
+        return redirect(url_for('inventory.manage_users'))
+
+    return render_template('inventory/manage/edit_user.html', user=user)
+
+@bp.route('/users/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(id):
+    if current_user.id == id:
+        flash('You cannot delete your own account', 'danger')
+        return redirect(url_for('inventory.manage_users'))
+
+    user = User.query.get_or_404(id)
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted successfully', 'success')
+    return redirect(url_for('inventory.manage_users'))

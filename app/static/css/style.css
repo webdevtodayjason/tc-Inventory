@@ -99,9 +99,8 @@ main.container {
 
 /* Dark Mode Styles */
 [data-bs-theme="dark"] {
-    --bs-body-color: #dee2e6;
     --bs-body-bg: #212529;
-    --bs-tertiary-bg: #2b3035;
+    --bs-body-color: #f8f9fa;
 }
 
 [data-bs-theme="dark"] .card {
@@ -110,11 +109,49 @@ main.container {
 }
 
 [data-bs-theme="dark"] .table {
-    color: #dee2e6;
+    --bs-table-color: #f8f9fa;
+    --bs-table-striped-color: #f8f9fa;
+    --bs-table-hover-color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .table thead th {
+    color: #ffffff;
+    font-weight: 600;
+    border-bottom-color: #495057;
+}
+
+[data-bs-theme="dark"] .table thead th a {
+    color: #ffffff !important;
+    text-decoration: none;
+}
+
+[data-bs-theme="dark"] .table thead th a:hover {
+    color: #0dcaf0 !important;
 }
 
 [data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) {
-    background-color: rgba(255, 255, 255, 0.05);
+    --bs-table-accent-bg: rgba(255, 255, 255, 0.05);
+    color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(even) {
+    color: #f8f9fa;
+}
+
+/* Ensure links and buttons remain visible in dark mode */
+[data-bs-theme="dark"] .btn-outline-info,
+[data-bs-theme="dark"] .btn-outline-warning,
+[data-bs-theme="dark"] .btn-outline-success,
+[data-bs-theme="dark"] .btn-outline-danger {
+    color: #f8f9fa;
+}
+
+/* Keep icon colors */
+[data-bs-theme="dark"] .btn-outline-info:hover,
+[data-bs-theme="dark"] .btn-outline-warning:hover,
+[data-bs-theme="dark"] .btn-outline-success:hover,
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+    color: #212529;
 }
 
 [data-bs-theme="dark"] .form-control,

@@ -32,9 +32,10 @@ def create_app(config_class=Config):
     from app.models import user, inventory
 
     # Register blueprints
-    from app.routes import auth, inventory
+    from app.routes import auth, inventory, admin
     app.register_blueprint(auth.bp)
     app.register_blueprint(inventory.bp)
+    app.register_blueprint(admin.bp)
 
     # Register CLI commands
     from app import cli

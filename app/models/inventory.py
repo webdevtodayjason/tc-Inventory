@@ -37,7 +37,15 @@ class InventoryItem(db.Model):
     STATUS_CHOICES = ['in_stock', 'restock', 'out_of_stock']
     status = db.Column(db.String(20), default='in_stock')
     
-    # New fields
+    # New fields for barcode scanning
+    barcode = db.Column(db.String(128), unique=True, nullable=True)
+    description = db.Column(db.Text)
+    manufacturer = db.Column(db.String(128))
+    mpn = db.Column(db.String(128))  # Manufacturer Part Number
+    image_url = db.Column(db.String(512))
+    storage_location = db.Column(db.String(64))  # New field for storage location
+    
+    # Existing fields
     cost = db.Column(db.Numeric(10, 2))  # Purchase cost in USD
     purchase_url = db.Column(db.String(512))  # URL where item was/can be purchased
     sell_price = db.Column(db.Numeric(10, 2))  # Selling price in USD

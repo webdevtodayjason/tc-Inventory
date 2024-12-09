@@ -10,3 +10,6 @@ railway run flask create-tags
 
 # Create admin user using environment variables
 railway run flask create-admin 
+
+# Initialize configuration settings
+railway run flask init-config 

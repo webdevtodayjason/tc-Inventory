@@ -1,193 +1,159 @@
 {% extends "base.html" %}
 
-{% block title %}Add Item{% endblock %}
-
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">Add New Item</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {{ form.csrf_token }}
-                        
+<div class="container mt-4">
+    <h2>Add New Item</h2>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" id="itemForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Rest of the form content -->
+                <div class="row">
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Item Type</label>
-                            <select class="form-select" name="type" id="itemType">
-                                <option value="general">General Item</option>
-                                <option value="computer">Computer System</option>
-                            </select>
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
                         </div>
-
-                        <!-- Category field - only shown for general items -->
-                        <div class="mb-3" id="categoryField">
-                            <label class="form-label">Category</label>
-                            <select class="form-select" name="category" required>
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">Category</label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                <option value="">Select a category</option>
                                 {% for category in categories %}
-                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% if category.children %}
+                                        <optgroup label="{{ category.name }}">
+                                            {% for child in category.children %}
+                                                <option value="{{ child.id }}">{{ child.name }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% else %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endif %}
                                 {% endfor %}
                             </select>
                         </div>
-
-                        <!-- Cost fields -->
                         <div class="mb-3">
-                            <label class="form-label">Cost (USD)</label>
-                            <input type="number" step="0.01" class="form-control" name="cost" placeholder="0.00">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" required>
                         </div>
-
                         <div class="mb-3">
-                            <label class="form-label">Purchase URL</label>
-                            <input type="url" class="form-control" name="purchase_url" placeholder="https://...">
+                            <label for="reorder_point" class="form-label">Reorder Point</label>
+                            <input type="number" class="form-control" id="reorder_point" name="reorder_point" value="5" min="0">
                         </div>
-
                         <div class="mb-3">
-                            <label class="form-label">Sell Price (USD)</label>
-                            <input type="number" step="0.01" class="form-control" name="sell_price" placeholder="0.00">
+                            <label for="storage_location" class="form-label">Storage Location</label>
+                            <input type="text" class="form-control" id="storage_location" name="storage_location">
                         </div>
-
-                        <!-- Add this after the cost fields and before the type-specific fields -->
+                    </div>
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Tags</label>
-                            <select class="form-select" name="tags" multiple>
-                                {% for choice in form.tags.choices %}
-                                <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchase_url" class="form-label">Purchase URL</label>
+                            <input type="url" class="form-control" id="purchase_url" name="purchase_url">
+                        </div>
+                        <div class="mb-3">
+                            <label for="barcode" class="form-label">Barcode</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="barcode" name="barcode">
+                                <button type="button" class="btn btn-outline-secondary" id="scanButton">
+                                    <i class="fas fa-barcode"></i> Scan
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            <select class="form-select" id="tags" name="tags" multiple>
+                                {% for tag in tags %}
+                                    <option value="{{ tag.id }}">{{ tag.name }}</option>
                                 {% endfor %}
                             </select>
-                            <small class="text-muted">Hold Ctrl/Cmd to select multiple tags</small>
                         </div>
-
-                        <!-- General Item Fields -->
-                        <div id="generalFields">
-                            <div class="mb-3">
-                                <label class="form-label">Name</label>
-                                <input type="text" class="form-control" name="name">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Quantity</label>
-                                <input type="number" class="form-control" name="quantity" value="1">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Reorder Threshold</label>
-                                <input type="number" class="form-control" name="reorder_threshold">
-                            </div>
-                        </div>
-
-                        <!-- Computer System Fields -->
-                        <div id="computerFields" style="display: none;">
-                            <div class="mb-3">
-                                <label class="form-label">Computer Model</label>
-                                <select class="form-select" name="model_id">
-                                    {% for model in computer_models %}
-                                    <option value="{{ model.id }}">{{ model.manufacturer }} {{ model.model_name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">CPU</label>
-                                <select class="form-select" name="cpu_id">
-                                    {% for cpu in cpus %}
-                                    <option value="{{ cpu.id }}">{{ cpu.manufacturer }} {{ cpu.model }} ({{ cpu.speed }})</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">RAM</label>
-                                <input type="text" class="form-control" name="ram">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Storage</label>
-                                <input type="text" class="form-control" name="storage">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Operating System</label>
-                                <select class="form-select" name="os">
-                                    <option value="Windows 10 Pro">Windows 10 Pro</option>
-                                    <option value="Windows 11 Pro">Windows 11 Pro</option>
-                                    <option value="Microsoft Server 2022">Microsoft Server 2022</option>
-                                    <option value="Linux">Linux</option>
-                                </select>
-                            </div>
-
-                            <!-- Testing Fields -->
-                            <h4 class="mt-4">System Inspection</h4>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">CPU Benchmark Score</label>
-                                <input type="number" step="0.01" class="form-control" name="cpu_benchmark">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">USB Ports Status</label>
-                                <select class="form-select" name="usb_ports_status">
-                                    <option value="PASSED">PASSED</option>
-                                    <option value="FAILED">FAILED</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">USB Ports Notes</label>
-                                <textarea class="form-control" name="usb_ports_notes" rows="2"></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Video Status</label>
-                                <select class="form-select" name="video_status">
-                                    <option value="PASSED">PASSED</option>
-                                    <option value="FAILED">FAILED</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Video Notes</label>
-                                <textarea class="form-control" name="video_notes" rows="2"></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Network Status</label>
-                                <select class="form-select" name="network_status">
-                                    <option value="PASSED">PASSED</option>
-                                    <option value="FAILED">FAILED</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Network Notes</label>
-                                <textarea class="form-control" name="network_notes" rows="2"></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">General Notes</label>
-                                <textarea class="form-control" name="general_notes" rows="4"></textarea>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Add Item</button>
-                    </form>
+                    </div>
                 </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div class="modal fade" id="scannerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Scan Barcode</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="scanner-container"></div>
+                <div id="scanResult"></div>
             </div>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-document.getElementById('itemType').addEventListener('change', function() {
-    const generalFields = document.getElementById('generalFields');
-    const computerFields = document.getElementById('computerFields');
-    const categoryField = document.getElementById('categoryField');
+document.addEventListener('DOMContentLoaded', function() {
+    let html5QrcodeScanner = null;
     
-    if (this.value === 'computer') {
-        generalFields.style.display = 'none';
-        computerFields.style.display = 'block';
-        categoryField.style.display = 'none';  // Hide category for computer systems
-    } else {
-        generalFields.style.display = 'block';
-        computerFields.style.display = 'none';
-        categoryField.style.display = 'block';  // Show category for general items
+    document.getElementById('scanButton').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+        modal.show();
+        
+        if (!html5QrcodeScanner) {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "scanner-container", { fps: 10, qrbox: 250 }
+            );
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanError);
+        }
+    });
+    
+    function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById('barcode').value = decodedText;
+        document.getElementById('scanResult').textContent = 'Barcode scanned successfully!';
+        
+        // Make API call to get product info
+        fetch(`/scan_barcode/${decodedText}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('name').value = data.name || '';
+                    document.getElementById('description').value = data.description || '';
+                    // Close the modal after a short delay
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('scannerModal'));
+                        modal.hide();
+                        html5QrcodeScanner.clear();
+                    }, 1000);
+                } else {
+                    document.getElementById('scanResult').textContent = 'Product not found';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('scanResult').textContent = 'Error fetching product info';
+            });
     }
+    
+    function onScanError(errorMessage) {
+        // handle scan error
+    }
+    
+    // Clean up scanner when modal is closed
+    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function () {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+        }
+    });
 });
 </script>
 {% endblock %} 

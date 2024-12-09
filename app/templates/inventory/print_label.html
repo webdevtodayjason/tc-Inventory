@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Print Label - {{ item.tracking_id }}</title>
+    <style>
+        /* Reset default margins */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Set page size for printing */
+        @page {
+            size: 4in 2in landscape;
+            margin: 0;
+        }
+
+        /* Main container */
+        html, body {
+            width: 4in;
+            height: 2in;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: white;
+            overflow: hidden;
+        }
+
+        /* Label container */
+        .label-container {
+            width: 4in;
+            height: 2in;
+            padding: 0.2in;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            page-break-after: avoid;
+            page-break-before: avoid;
+            page-break-inside: avoid;
+        }
+
+        /* Content styling */
+        .item-name {
+            font-size: 12pt;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .details {
+            font-size: 10pt;
+            line-height: 1.2;
+            margin: 0.1in 0;
+        }
+
+        .storage-location {
+            font-size: 10pt;
+            font-weight: bold;
+            text-align: left;
+            margin: 0.1in 0;
+            color: #000;
+        }
+
+        .barcode-container {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .barcode-container img {
+            max-width: 3.5in;
+            max-height: 0.8in;
+            width: auto;
+            height: auto;
+        }
+
+        .tracking-id {
+            font-size: 8pt;
+            text-align: center;
+            margin-top: 0.1in;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            html, body {
+                width: 4in;
+                height: 2in;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .label-container {
+                break-inside: avoid;
+                break-before: avoid;
+                break-after: avoid;
+            }
+        }
+    </style>
+    <script>
+        window.onload = function() {
+            // Auto-trigger print dialog
+            window.print();
+            // Return to previous page after print dialog is closed
+            window.onafterprint = function() {
+                window.close();
+            };
+        }
+    </script>
+</head>
+<body>
+    <div class="label-container">
+        <div class="item-name">{{ item.name }}</div>
+        
+        {% if item.type == 'computer_system' %}
+        <div class="details">
+            Model: {{ item.model.manufacturer }} {{ item.model.model_name }}<br>
+            CPU: {{ item.cpu.manufacturer }} {{ item.cpu.model }}<br>
+            RAM: {{ item.ram }}
+        </div>
+        {% endif %}
+        
+        {% if item.storage_location %}
+        <div class="storage-location">
+            Location: {{ item.storage_location }}
+        </div>
+        {% endif %}
+        
+        <div class="barcode-container">
+            <img src="data:image/png;base64,{{ barcode }}" alt="Barcode">
+        </div>
+        
+        <div class="tracking-id">{{ item.tracking_id }}</div>
+    </div>
+</body>
+</html> 

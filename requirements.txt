@@ -13,3 +13,5 @@ flake8==7.1.1
 python-barcode==0.15.1
 Pillow==10.0.0
 gunicorn==21.2.0
+beautifulsoup4==4.12.2
+requests==2.31.0
