@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Add New Item{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <h2>Add New Item</h2>
@@ -7,7 +9,31 @@
         <div class="card-body">
             <form method="POST" id="itemForm">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <!-- Rest of the form content -->
+                
+                <!-- Barcode Lookup Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Barcode Lookup</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Scan or enter barcode">
+                                    <button type="button" class="btn btn-outline-secondary" id="scanButton">
+                                        <i class="fas fa-barcode"></i> Scan
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="lookupButton">
+                                        <i class="fas fa-search"></i> Lookup
+                                    </button>
+                                </div>
+                                <div id="lookupStatus" class="form-text mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rest of the form -->
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
@@ -72,15 +98,7 @@
                         <div class="mb-3">
                             <label for="image_url" class="form-label">Image URL</label>
                             <input type="url" class="form-control" id="image_url" name="image_url" placeholder="https://...">
-                        </div>
-                        <div class="mb-3">
-                            <label for="barcode" class="form-label">Barcode</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="barcode" name="barcode">
-                                <button type="button" class="btn btn-outline-secondary" id="scanButton">
-                                    <i class="fas fa-barcode"></i> Scan
-                                </button>
-                            </div>
+                            <div id="imagePreview" class="mt-2"></div>
                         </div>
                         <div class="mb-3">
                             <label for="tags" class="form-label">Tags</label>
@@ -116,7 +134,6 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
@@ -124,7 +141,77 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let html5QrcodeScanner = null;
+    const lookupStatus = document.getElementById('lookupStatus');
+    const imagePreview = document.getElementById('imagePreview');
     
+    // Function to perform barcode lookup
+    function performBarcodeLookup(barcode) {
+        lookupStatus.textContent = 'Looking up barcode...';
+        lookupStatus.className = 'form-text text-info mt-2';
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        
+        fetch('/api/scan_barcode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ barcode: barcode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                lookupStatus.textContent = data.error;
+                lookupStatus.className = 'form-text text-danger mt-2';
+                return;
+            }
+            
+            // Fill in the form fields with the product data
+            if (data.name) document.getElementById('name').value = data.name;
+            if (data.description) document.getElementById('description').value = data.description;
+            if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
+            if (data.mpn) document.getElementById('mpn').value = data.mpn;
+            if (data.image_url) {
+                document.getElementById('image_url').value = data.image_url;
+                // Show image preview
+                imagePreview.innerHTML = `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
+            }
+            
+            lookupStatus.textContent = 'Product information found and filled in!';
+            lookupStatus.className = 'form-text text-success mt-2';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            lookupStatus.textContent = 'Error fetching product info';
+            lookupStatus.className = 'form-text text-danger mt-2';
+        });
+    }
+    
+    // Lookup button click handler
+    document.getElementById('lookupButton').addEventListener('click', function() {
+        const barcode = document.getElementById('barcode').value.trim();
+        if (barcode) {
+            performBarcodeLookup(barcode);
+        } else {
+            lookupStatus.textContent = 'Please enter a barcode';
+            lookupStatus.className = 'form-text text-danger mt-2';
+        }
+    });
+    
+    // Barcode input enter key handler
+    document.getElementById('barcode').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Prevent form submission
+            const barcode = this.value.trim();
+            if (barcode) {
+                performBarcodeLookup(barcode);
+            }
+        }
+    });
+    
+    // Scanner button click handler
     document.getElementById('scanButton').addEventListener('click', function() {
         const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
         modal.show();
@@ -138,51 +225,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Scan success handler
     function onScanSuccess(decodedText, decodedResult) {
         document.getElementById('barcode').value = decodedText;
         document.getElementById('scanResult').textContent = 'Barcode scanned successfully!';
         
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        // Perform lookup with scanned barcode
+        performBarcodeLookup(decodedText);
         
-        // Make API call to get product info
-        fetch('/api/scan_barcode', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ barcode: decodedText })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                document.getElementById('scanResult').textContent = data.error;
-                return;
-            }
-            
-            // Fill in the form fields with the product data
-            if (data.name) document.getElementById('name').value = data.name;
-            if (data.description) document.getElementById('description').value = data.description;
-            if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
-            if (data.mpn) document.getElementById('mpn').value = data.mpn;
-            if (data.image_url) document.getElementById('image_url').value = data.image_url;
-            
-            // Close the modal after a short delay
-            setTimeout(() => {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('scannerModal'));
-                modal.hide();
-                html5QrcodeScanner.clear();
-            }, 1000);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('scanResult').textContent = 'Error fetching product info';
-        });
+        // Close the modal after a short delay
+        setTimeout(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('scannerModal'));
+            modal.hide();
+            html5QrcodeScanner.clear();
+        }, 1000);
     }
     
     function onScanError(errorMessage) {
-        // handle scan error
         console.error('Scan error:', errorMessage);
     }
     
@@ -190,6 +249,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function () {
         if (html5QrcodeScanner) {
             html5QrcodeScanner.clear();
+        }
+    });
+    
+    // Image URL change handler for preview
+    document.getElementById('image_url').addEventListener('change', function() {
+        const url = this.value.trim();
+        if (url) {
+            imagePreview.innerHTML = `<img src="${url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
+        } else {
+            imagePreview.innerHTML = '';
         }
     });
 });
