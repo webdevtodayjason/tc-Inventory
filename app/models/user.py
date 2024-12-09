@@ -1,6 +1,7 @@
 from app import db, login_manager
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+import bcrypt
 from datetime import datetime
 
 class User(UserMixin, db.Model):
@@ -15,20 +16,32 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        """Hash password using bcrypt"""
+        self.password_hash = bcrypt.hashpw(
+            password.encode('utf-8'), 
+            bcrypt.gensalt()
+        ).decode('utf-8')
     
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        """Verify password using bcrypt"""
+        try:
+            return bcrypt.checkpw(
+                password.encode('utf-8'),
+                self.password_hash.encode('utf-8')
+            )
+        except Exception as e:
+            print(f"Password check error: {e}")
+            return False
     
     def set_pin(self, pin):
         """Set PIN code for quick access"""
         if len(pin) != 6 or not pin.isdigit():
             raise ValueError("PIN must be 6 digits")
-        self.pin_code = pin
+        self.pin = pin
     
     def check_pin(self, pin):
         """Verify PIN code"""
-        return self.pin_code == pin
+        return self.pin == pin
 
 @login_manager.user_loader
 def load_user(id):
