@@ -43,6 +43,7 @@ class InventoryItem(db.Model):
     updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     type = db.Column(db.String(50))
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    status = db.Column('status', db.String(50), default='available')
     
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')

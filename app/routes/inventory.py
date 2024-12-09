@@ -59,7 +59,9 @@ def dashboard():
             InventoryItem.type != 'computer_system',  # Show all non-computer items
             db.and_(
                 InventoryItem.type == 'computer_system',
-                InventoryItem.status != 'removed'  # Only show non-removed computers
+                db.or_(
+                    ~db.exists().where(InventoryItem.status == 'removed')  # Only show non-removed computers
+                )
             )
         )
     )
