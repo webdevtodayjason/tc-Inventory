@@ -9,7 +9,10 @@ class Category(db.Model):
     name = db.Column(db.String(64), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
-    items = db.relationship('InventoryItem', backref='item_category', lazy='dynamic')
+    items = db.relationship('InventoryItem', 
+                          backref='category',
+                          primaryjoin="Category.id==foreign(InventoryItem.category_id)",
+                          lazy='dynamic')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 item_tags = db.Table('item_tags',
@@ -39,6 +42,7 @@ class InventoryItem(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     type = db.Column(db.String(50))
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')
