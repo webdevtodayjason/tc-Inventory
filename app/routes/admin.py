@@ -1,13 +1,128 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app.models.config import Configuration
 from app.models.inventory import Tag
 from app.routes.inventory import admin_required
 from app import db
+from app.models.user import User
 import subprocess
 from datetime import datetime
 
 bp = Blueprint('admin', __name__)
+
+@bp.route('/admin/users')
+@login_required
+@admin_required
+def manage_users():
+    users = User.query.order_by(User.username).all()
+    return render_template('inventory/manage/users.html', users=users)
+
+@bp.route('/admin/users/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_user():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        pin = request.form.get('pin')
+        role = request.form.get('role', 'user')
+
+        if not all([username, email, password, pin]):
+            flash('All fields are required', 'error')
+            return redirect(url_for('admin.add_user'))
+
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists', 'error')
+            return redirect(url_for('admin.add_user'))
+
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered', 'error')
+            return redirect(url_for('admin.add_user'))
+
+        try:
+            user = User(username=username, email=email)
+            user.set_password(password)
+            user.set_pin(pin)
+            user.role = role
+            db.session.add(user)
+            db.session.commit()
+            flash('User created successfully', 'success')
+            return redirect(url_for('admin.manage_users'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating user: {str(e)}', 'error')
+            return redirect(url_for('admin.add_user'))
+
+    return render_template('inventory/manage/add_user.html')
+
+@bp.route('/admin/users/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_user(id):
+    user = User.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        pin = request.form.get('pin')
+        role = request.form.get('role')
+
+        if not all([username, email, role]):
+            flash('Username, email and role are required', 'error')
+            return redirect(url_for('admin.edit_user', id=id))
+
+        try:
+            # Check if username is taken by another user
+            existing_user = User.query.filter_by(username=username).first()
+            if existing_user and existing_user.id != id:
+                flash('Username already exists', 'error')
+                return redirect(url_for('admin.edit_user', id=id))
+
+            # Check if email is taken by another user
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user and existing_user.id != id:
+                flash('Email already registered', 'error')
+                return redirect(url_for('admin.edit_user', id=id))
+
+            user.username = username
+            user.email = email
+            user.role = role
+
+            if password:
+                user.set_password(password)
+            if pin:
+                user.set_pin(pin)
+
+            db.session.commit()
+            flash('User updated successfully', 'success')
+            return redirect(url_for('admin.manage_users'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating user: {str(e)}', 'error')
+            return redirect(url_for('admin.edit_user', id=id))
+
+    return render_template('inventory/manage/edit_user.html', user=user)
+
+@bp.route('/admin/users/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(id):
+    if current_user.id == id:
+        flash('You cannot delete your own account', 'error')
+        return redirect(url_for('admin.manage_users'))
+
+    user = User.query.get_or_404(id)
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        flash('User deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting user: {str(e)}', 'error')
+
+    return redirect(url_for('admin.manage_users'))
 
 @bp.route('/admin/tags')
 @login_required
