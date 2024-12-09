@@ -1,4 +1,4 @@
-from flask.cli import FlaskGroup
+from flask import Flask
 from app import create_app, db
 from app.models.inventory import Category, CPU, Tag
 from app.models.user import User
@@ -7,9 +7,8 @@ import click
 import os
 
 app = create_app()
-cli = FlaskGroup(app)
 
-@cli.command("create-category")
+@app.cli.command("create-category")
 def create_category():
     """Create initial categories."""
     try:
@@ -24,7 +23,7 @@ def create_category():
     except Exception as e:
         print(f"Error creating categories: {e}")
 
-@cli.command("create-admin")
+@app.cli.command("create-admin")
 def create_admin():
     """Create the admin user."""
     try:
@@ -45,7 +44,7 @@ def create_admin():
     except Exception as e:
         print(f"Error creating admin user: {e}")
 
-@cli.command("init-config")
+@app.cli.command("init-config")
 def init_config():
     """Initialize configuration settings with defaults from environment variables."""
     try:
@@ -109,5 +108,5 @@ def init_config():
     except Exception as e:
         print(f"Error initializing configuration settings: {e}")
 
-if __name__ == "__main__":
-    cli() 
+if __name__ == '__main__':
+    app.run() 
