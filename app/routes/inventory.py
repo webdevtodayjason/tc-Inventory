@@ -49,59 +49,82 @@ def admin_required(f):
 @bp.route('/dashboard')
 @login_required
 def dashboard():
+    # General Items pagination
     page = request.args.get('page', 1, type=int)
     per_page = current_app.config['ITEMS_PER_PAGE']
-    query = InventoryItem.query
     
-    # Search functionality
+    # Items query
+    items_query = InventoryItem.query
+    
+    # Items search
     search = request.args.get('search', '')
     if search:
-        query = query.filter(
+        items_query = items_query.filter(
             db.or_(
                 InventoryItem.name.ilike(f'%{search}%'),
                 InventoryItem.tracking_id.ilike(f'%{search}%')
             )
         )
     
-    # Filter by category
+    # Items category filter
     category_id = request.args.get('category', type=int)
     if category_id:
-        query = query.filter(InventoryItem.category_id == category_id)
+        items_query = items_query.filter(InventoryItem.category_id == category_id)
     
-    # Add status filter
+    # Items status filter
     status = request.args.get('status')
     if status == 'restock':
-        query = query.filter(
+        items_query = items_query.filter(
             db.and_(
                 InventoryItem.quantity <= InventoryItem.min_quantity,
                 InventoryItem.min_quantity != None
             )
         )
     elif status:
-        query = query.filter(InventoryItem.status == status)
+        items_query = items_query.filter(InventoryItem.status == status)
     
-    # Sorting
-    sort_by = request.args.get('sort', 'id')
-    order = request.args.get('order', 'asc')
+    # Items pagination
+    items = items_query.paginate(page=page, per_page=per_page)
     
-    if sort_by == 'id':
-        query = query.order_by(InventoryItem.id.asc() if order == 'asc' else InventoryItem.id.desc())
-    elif sort_by == 'name':
-        query = query.order_by(InventoryItem.name.asc() if order == 'asc' else InventoryItem.name.desc())
+    # Computer Systems pagination
+    systems_page = request.args.get('systems_page', 1, type=int)
+    systems_query = ComputerSystem.query
     
-    # Pagination
-    items = query.paginate(page=page, per_page=per_page)
+    # Systems search
+    systems_search = request.args.get('search_systems', '')
+    if systems_search:
+        systems_query = systems_query.filter(
+            db.or_(
+                ComputerSystem.tracking_id.ilike(f'%{systems_search}%'),
+                ComputerSystem.serial_tag.ilike(f'%{systems_search}%')
+            )
+        )
     
-    # Get categories for filter dropdown
+    # Systems model filter
+    model_id = request.args.get('model', type=int)
+    if model_id:
+        systems_query = systems_query.filter(ComputerSystem.model_id == model_id)
+    
+    # Systems status filter
+    system_status = request.args.get('system_status')
+    if system_status:
+        systems_query = systems_query.filter(ComputerSystem.status == system_status)
+    
+    # Systems pagination
+    systems = systems_query.paginate(page=systems_page, per_page=per_page)
+    
+    # Get categories and models for filter dropdowns
     categories = Category.query.order_by(Category.name).all()
+    computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
     
     form = FlaskForm()  # For CSRF protection
+    
     return render_template('inventory/dashboard.html',
                          items=items,
+                         systems=systems,
                          categories=categories,
-                         form=form,
-                         sort_by=sort_by,
-                         order=order)
+                         computer_models=computer_models,
+                         form=form)
 
 @bp.route('/item/add', methods=['GET', 'POST'])
 @login_required
