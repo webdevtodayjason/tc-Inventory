@@ -76,14 +76,22 @@ class CPU(db.Model):
     cores = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class ComputerSystem(InventoryItem):
-    __tablename__ = 'computer_system'
-    id = db.Column(db.Integer, db.ForeignKey('items.id'), primary_key=True)
-    model_id = db.Column(db.Integer, db.ForeignKey('computer_model.id'))
-    cpu_id = db.Column(db.Integer, db.ForeignKey('cpu.id'))
-    ram = db.Column(db.String(64))
-    storage = db.Column(db.String(128))
-    os = db.Column(db.String(50))
+class ComputerSystem(db.Model):
+    __tablename__ = 'computer_systems'
+    id = db.Column(db.Integer, primary_key=True)
+    tracking_id = db.Column(db.String(50), unique=True)
+    model_id = db.Column(db.Integer, db.ForeignKey('computer_model.id'), nullable=False)
+    cpu_id = db.Column(db.Integer, db.ForeignKey('cpu.id'), nullable=False)
+    ram = db.Column(db.String(64), nullable=False)
+    storage = db.Column(db.String(128), nullable=False)
+    os = db.Column(db.String(50), nullable=False)
+    storage_location = db.Column(db.String(100))
+    status = db.Column(db.String(50), default='available')
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Testing fields
     cpu_benchmark = db.Column(db.Float)
     usb_ports_status = db.Column(db.String(20))
     usb_ports_notes = db.Column(db.Text)
@@ -96,11 +104,11 @@ class ComputerSystem(InventoryItem):
 
     model = db.relationship('ComputerModel', backref='computers')
     cpu = db.relationship('CPU', backref='computers')
+    creator = db.relationship('User', foreign_keys=[creator_id], backref='computers_created')
     tester = db.relationship('User', backref='tested_computers', foreign_keys=[tested_by])
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'computer_system'
-    }
+    def __repr__(self):
+        return f'<ComputerSystem {self.tracking_id}>'
 
 class InventoryTransaction(db.Model):
     __tablename__ = 'transactions'
