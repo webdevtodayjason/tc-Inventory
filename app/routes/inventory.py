@@ -110,6 +110,7 @@ def add_item():
     categories = Category.query.order_by(Category.name).all()
     computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
     cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
+    tags = Tag.query.order_by(Tag.name).all()  # Get all tags
     
     if form.validate_on_submit():
         try:
@@ -184,7 +185,8 @@ def add_item():
                          form=form,
                          categories=categories,
                          computer_models=computer_models,
-                         cpus=cpus)
+                         cpus=cpus,
+                         tags=tags)  # Pass tags to template
 
 @bp.route('/item/<int:id>/view')
 @login_required
