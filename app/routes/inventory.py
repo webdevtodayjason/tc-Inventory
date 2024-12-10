@@ -119,78 +119,95 @@ def add_item():
     
     form.category.choices = category_choices
     
+    # Set up computer model and CPU choices
     computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
-    cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
-    tags = Tag.query.order_by(Tag.name).all()
+    form.model_id.choices = [(0, 'Select a model')] + [(m.id, f"{m.manufacturer} {m.model_name}") for m in computer_models]
     
-    if form.validate_on_submit():
-        try:
-            if form.type.data == 'computer':
-                # Get the model and CPU for naming
-                model = ComputerModel.query.get(form.model_id.data)
-                cpu = CPU.query.get(form.cpu_id.data)
+    cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
+    form.cpu_id.choices = [(0, 'Select a CPU')] + [(c.id, f"{c.manufacturer} {c.model}") for c in cpus]
+    
+    # Set up tag choices
+    tags = Tag.query.order_by(Tag.name).all()
+    form.tags.choices = [(t.id, t.name) for t in tags]
+    
+    if request.method == 'POST':
+        current_app.logger.debug(f'Form submitted. Data: {request.form}')
+        
+        if form.validate():
+            current_app.logger.debug('Form validation passed')
+            try:
+                if form.type.data == 'computer':
+                    # Get the model and CPU for naming
+                    model = ComputerModel.query.get(form.model_id.data)
+                    cpu = CPU.query.get(form.cpu_id.data)
+                    
+                    # Get the Computer Systems category
+                    computer_systems_category = Category.query.filter_by(name='Computer Systems').first()
+                    if not computer_systems_category:
+                        flash('Error: Computer Systems category not found', 'danger')
+                        return redirect(url_for('inventory.dashboard'))
+                    
+                    # Create Computer System
+                    item = ComputerSystem(
+                        tracking_id=generate_tracking_id(),
+                        name=f"{model.manufacturer} {model.model_name} - {cpu.model}",
+                        category_id=computer_systems_category.id,
+                        model_id=form.model_id.data,
+                        cpu_id=form.cpu_id.data,
+                        ram=form.ram.data,
+                        storage=form.storage.data,
+                        os=form.os.data,
+                        cpu_benchmark=form.cpu_benchmark.data,
+                        usb_ports_status=form.usb_ports_status.data,
+                        usb_ports_notes=form.usb_ports_notes.data,
+                        video_status=form.video_status.data,
+                        video_notes=form.video_notes.data,
+                        network_status=form.network_status.data,
+                        network_notes=form.network_notes.data,
+                        general_notes=form.general_notes.data,
+                        created_by=current_user.id,
+                        tested_by=current_user.id,
+                        cost=form.cost.data if form.cost.data else None,
+                        purchase_url=form.purchase_url.data,
+                        sell_price=form.sell_price.data if form.sell_price.data else None,
+                        tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
+                    )
+                else:
+                    # Create General Item
+                    item = InventoryItem(
+                        tracking_id=generate_tracking_id(),
+                        name=form.name.data,
+                        category_id=form.category.data,
+                        quantity=form.quantity.data,
+                        reorder_threshold=form.reorder_threshold.data,
+                        created_by=current_user.id,
+                        cost=form.cost.data if form.cost.data else None,
+                        purchase_url=form.purchase_url.data,
+                        sell_price=form.sell_price.data if form.sell_price.data else None,
+                        barcode=form.barcode.data,
+                        description=form.description.data,
+                        manufacturer=form.manufacturer.data,
+                        mpn=form.mpn.data,
+                        image_url=form.image_url.data,
+                        storage_location=form.storage_location.data,
+                        tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
+                    )
                 
-                # Get the Computer Systems category
-                computer_systems_category = Category.query.filter_by(name='Computer Systems').first()
-                if not computer_systems_category:
-                    flash('Error: Computer Systems category not found', 'danger')
-                    return redirect(url_for('inventory.dashboard'))
+                current_app.logger.debug(f'Created item: {item}')
+                db.session.add(item)
+                db.session.commit()
+                flash('Item added successfully!', 'success')
+                return redirect(url_for('inventory.dashboard'))
                 
-                # Create Computer System
-                item = ComputerSystem(
-                    tracking_id=generate_tracking_id(),
-                    name=f"{model.manufacturer} {model.model_name} - {cpu.model}",
-                    category_id=computer_systems_category.id,
-                    model_id=form.model_id.data,
-                    cpu_id=form.cpu_id.data,
-                    ram=form.ram.data,
-                    storage=form.storage.data,
-                    os=form.os.data,
-                    cpu_benchmark=form.cpu_benchmark.data,
-                    usb_ports_status=form.usb_ports_status.data,
-                    usb_ports_notes=form.usb_ports_notes.data,
-                    video_status=form.video_status.data,
-                    video_notes=form.video_notes.data,
-                    network_status=form.network_status.data,
-                    network_notes=form.network_notes.data,
-                    general_notes=form.general_notes.data,
-                    created_by=current_user.id,
-                    tested_by=current_user.id,
-                    cost=form.cost.data,
-                    purchase_url=form.purchase_url.data,
-                    sell_price=form.sell_price.data,
-                    tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
-                )
-            else:
-                # Create General Item
-                item = InventoryItem(
-                    tracking_id=generate_tracking_id(),
-                    name=form.name.data,
-                    category_id=form.category.data,
-                    quantity=form.quantity.data,
-                    reorder_threshold=form.reorder_threshold.data,
-                    created_by=current_user.id,
-                    cost=form.cost.data,
-                    purchase_url=form.purchase_url.data,
-                    sell_price=form.sell_price.data,
-                    barcode=form.barcode.data,
-                    description=form.description.data,
-                    manufacturer=form.manufacturer.data,
-                    mpn=form.mpn.data,
-                    image_url=form.image_url.data,
-                    storage_location=form.storage_location.data,
-                    tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
-                )
-            
-            db.session.add(item)
-            db.session.commit()
-            flash('Item added successfully!', 'success')
-            return redirect(url_for('inventory.dashboard'))
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error adding item: {str(e)}', 'danger')
-            current_app.logger.error(f'Error adding item: {str(e)}')
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f'Error adding item: {str(e)}')
+                flash(f'Error adding item: {str(e)}', 'danger')
+        else:
+            current_app.logger.debug(f'Form validation failed. Errors: {form.errors}')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{field}: {error}', 'danger')
     
     return render_template('inventory/add_item.html', 
                          form=form,
