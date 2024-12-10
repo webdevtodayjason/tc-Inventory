@@ -208,6 +208,12 @@ function testClick() {
             return;
         }
         
+        // Check if product was actually found
+        if (!data.success || !data.name) {
+            showMessage('No product information found for this barcode', true);
+            return;
+        }
+        
         // Fill in the form fields
         if (data.name) document.getElementById('name').value = data.name;
         if (data.description) document.getElementById('description').value = data.description;
@@ -219,7 +225,7 @@ function testClick() {
                 `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
         }
         
-        showMessage('Product information found!');
+        showMessage('Product information found and filled in!');
     })
     .catch(error => {
         console.error('Error:', error);
