@@ -238,10 +238,18 @@ def edit_item(id):
             
             # Handle tags with detailed error logging
             try:
-                if form.tags.data and len(form.tags.data) > 0:
-                    current_app.logger.debug(f"Tags data from form: {form.tags.data}")
+                current_app.logger.debug(f"Tags data from form: {form.tags.data}")
+                if form.tags.data:
+                    # Query for Tag objects using the IDs from the form
                     tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
                     current_app.logger.debug(f"Found tags: {tags}")
+                    # Map of tag IDs to Tag objects for verification
+                    found_tag_ids = {str(tag.id) for tag in tags}
+                    # Check if all requested tags were found
+                    requested_tag_ids = {str(tag_id) for tag_id in form.tags.data}
+                    missing_tags = requested_tag_ids - found_tag_ids
+                    if missing_tags:
+                        raise ValueError(f"Some tags were not found: {missing_tags}")
                     item.tags = tags
                 else:
                     current_app.logger.debug("No tags data, clearing tags")
