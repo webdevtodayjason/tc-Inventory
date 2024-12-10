@@ -222,76 +222,32 @@ def print_label(id):
 @login_required
 def edit_item(id):
     item = InventoryItem.query.get_or_404(id)
-    categories = Category.query.order_by(Category.name).all()
-    tags = Tag.query.order_by(Tag.name).all()
+    form = GeneralItemForm(obj=item)
     
-    if isinstance(item, ComputerSystem):
-        form = ComputerSystemForm(obj=item)
-        if form.validate_on_submit():
-            try:
-                # Manually update fields for computer system
-                item.cost = form.cost.data
-                item.purchase_url = form.purchase_url.data
-                item.sell_price = form.sell_price.data
-                
-                # Update computer-specific fields
-                form.populate_obj(item)
-                
-                # Handle tags
-                if request.form.getlist('tags'):
-                    tag_ids = [int(tag_id) for tag_id in request.form.getlist('tags')]
-                    item.tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                else:
-                    item.tags = []  # Clear tags if none selected
-                
-                db.session.commit()
-                flash('Computer system updated successfully!', 'success')
-                return redirect(url_for('inventory.dashboard'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error updating computer system: {str(e)}', 'danger')
-                current_app.logger.error(f'Error updating computer system: {str(e)}')
-        else:
-            # Log form validation errors
-            current_app.logger.error(f'Form validation errors: {form.errors}')
-            flash('Please check the form for errors', 'danger')
+    if form.validate_on_submit():
+        try:
+            # Update general fields
+            form.populate_obj(item)
             
-        return render_template('inventory/edit_computer_system.html', form=form, item=item)
+            # Handle tags
+            if form.tags.data:
+                item.tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
+            else:
+                item.tags = []  # Clear tags if none selected
+            
+            db.session.commit()
+            flash('Item updated successfully!', 'success')
+            return redirect(url_for('inventory.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Error updating item: {str(e)}')
+            flash(f'Error updating item: {str(e)}', 'danger')
     else:
-        form = GeneralItemForm(obj=item)
-        if form.validate_on_submit():
-            try:
-                # Update fields using form data
-                form.populate_obj(item)
-                
-                # Handle tags
-                if request.form.getlist('tags'):
-                    tag_ids = [int(tag_id) for tag_id in request.form.getlist('tags')]
-                    item.tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                else:
-                    item.tags = []  # Clear tags if none selected
-                
-                # Log the values before commit
-                current_app.logger.debug(f'Updating item {item.id}:')
-                current_app.logger.debug(f'Name: {item.name}')
-                current_app.logger.debug(f'Category: {item.category_id}')
-                current_app.logger.debug(f'Quantity: {item.quantity}')
-                current_app.logger.debug(f'Reorder Threshold: {item.reorder_threshold}')
-                current_app.logger.debug(f'Tags: {[tag.name for tag in item.tags]}')
-                
-                db.session.commit()
-                flash('Item updated successfully!', 'success')
-                return redirect(url_for('inventory.dashboard'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Error updating item: {str(e)}', 'danger')
-                current_app.logger.error(f'Error updating item: {str(e)}')
-        
-        return render_template('inventory/edit_item.html', 
-                             form=form, 
-                             item=item,
-                             categories=categories,
-                             tags=tags)
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{field}: {error}', 'danger')
+    
+    return render_template('inventory/edit_item.html', form=form, item=item)
 
 @bp.route('/item/<int:id>/delete', methods=['POST'])
 @login_required
