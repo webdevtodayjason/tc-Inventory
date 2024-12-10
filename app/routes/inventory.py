@@ -239,23 +239,22 @@ def edit_item(id):
             # Handle tags with detailed error logging
             try:
                 current_app.logger.debug(f"Tags data from form: {form.tags.data}")
-                # Clear existing tags
-                item.tags = []
-                db.session.flush()
                 
+                # Get all selected tags first
                 if form.tags.data:
-                    # Get Tag objects for selected IDs
-                    selected_tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
+                    # Query all selected tags at once
+                    selected_tags = list(Tag.query.filter(Tag.id.in_(form.tags.data)).all())
                     current_app.logger.debug(f"Found tags: {selected_tags}")
                     
-                    # Verify all tags were found
-                    found_ids = {tag.id for tag in selected_tags}
-                    missing_ids = set(form.tags.data) - found_ids
-                    if missing_ids:
-                        raise ValueError(f"Some tags were not found: {missing_ids}")
-                    
-                    # Assign tags to item
-                    item.tags = selected_tags
+                    # Clear existing tags and add new ones
+                    item.tags.clear()
+                    for tag in selected_tags:
+                        item.tags.append(tag)
+                else:
+                    # Clear all tags if none selected
+                    item.tags.clear()
+                
+                current_app.logger.debug(f"Final tags: {item.tags}")
                 
             except Exception as tag_error:
                 current_app.logger.error(f"Tag handling error: {str(tag_error)}")
