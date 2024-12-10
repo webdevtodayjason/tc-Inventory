@@ -4,22 +4,19 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Add New Item</h2>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Add New Item</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <form method="POST" id="itemForm">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
-                <!-- Item Type Selection -->
-                <div class="mb-4">
-                    <label for="type" class="form-label">Item Type</label>
-                    {{ form.type(class="form-select", required=true) }}
-                    {% if form.type.errors %}
-                        {% for error in form.type.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
                 
                 <!-- Barcode Lookup Section -->
                 <div class="card mb-4">
@@ -34,7 +31,7 @@
                                     <button type="button" class="btn btn-outline-secondary" id="scanButton">
                                         <i class="fas fa-barcode"></i> Scan
                                     </button>
-                                    <button type="button" class="btn btn-primary" id="lookupButton" onclick="testClick()">
+                                    <button type="button" class="btn btn-primary" id="lookupButton">
                                         <i class="fas fa-search"></i> Lookup
                                     </button>
                                 </div>
@@ -44,124 +41,83 @@
                     </div>
                 </div>
 
-                <!-- General Item Fields -->
-                <div id="generalFields">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="name" name="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="category" class="form-label">Category</label>
-                                {{ form.category(class="form-select", required=true) }}
-                                {% if form.category.errors %}
-                                    {% for error in form.category.errors %}
-                                        <div class="invalid-feedback d-block">{{ error }}</div>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
-                            <div class="mb-3">
-                                <label for="quantity" class="form-label">Quantity</label>
-                                <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="reorder_threshold" class="form-label">Reorder Point</label>
-                                <input type="number" class="form-control" id="reorder_threshold" name="reorder_threshold" value="5" min="0">
-                            </div>
-                            <div class="mb-3">
-                                <label for="storage_location" class="form-label">Storage Location</label>
-                                <input type="text" class="form-control" id="storage_location" name="storage_location">
-                            </div>
-                            <div class="mb-3">
-                                <label for="manufacturer" class="form-label">Manufacturer</label>
-                                <input type="text" class="form-control" id="manufacturer" name="manufacturer">
-                            </div>
-                            <div class="mb-3">
-                                <label for="mpn" class="form-label">Manufacturer Part Number (MPN)</label>
-                                <input type="text" class="form-control" id="mpn" name="mpn">
-                            </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            {{ form.name(class="form-control", required=true) }}
+                            {% if form.name.errors %}
+                                {% for error in form.name.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="description" class="form-label">Description</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label for="cost" class="form-label">Cost (USD)</label>
-                                <input type="number" step="0.01" class="form-control" id="cost" name="cost" placeholder="0.00">
-                            </div>
-                            <div class="mb-3">
-                                <label for="sell_price" class="form-label">Sell Price (USD)</label>
-                                <input type="number" step="0.01" class="form-control" id="sell_price" name="sell_price" placeholder="0.00">
-                            </div>
-                            <div class="mb-3">
-                                <label for="purchase_url" class="form-label">Purchase URL</label>
-                                <input type="url" class="form-control" id="purchase_url" name="purchase_url" placeholder="https://...">
-                            </div>
-                            <div class="mb-3">
-                                <label for="image_url" class="form-label">Image URL</label>
-                                <input type="url" class="form-control" id="image_url" name="image_url" placeholder="https://...">
-                                <div id="imagePreview" class="mt-2"></div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="tags" class="form-label">Tags</label>
-                                {{ form.tags(class="form-select") }}
-                                <div class="form-text">Hold Ctrl/Cmd to select multiple tags</div>
-                            </div>
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            {{ form.category(class="form-select", required=true) }}
+                            {% if form.category.errors %}
+                                {% for error in form.category.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            {{ form.quantity(class="form-control", type="number", min="0", required=true) }}
+                            {% if form.quantity.errors %}
+                                {% for error in form.quantity.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="reorder_threshold" class="form-label">Reorder Point</label>
+                            {{ form.reorder_threshold(class="form-control", type="number", min="0") }}
+                            {% if form.reorder_threshold.errors %}
+                                {% for error in form.reorder_threshold.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="storage_location" class="form-label">Storage Location</label>
+                            {{ form.storage_location(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="manufacturer" class="form-label">Manufacturer</label>
+                            {{ form.manufacturer(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="mpn" class="form-label">Manufacturer Part Number (MPN)</label>
+                            {{ form.mpn(class="form-control") }}
                         </div>
                     </div>
-                </div>
-
-                <!-- Computer System Fields -->
-                <div id="computerFields" style="display: none;">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="model_id" class="form-label">Computer Model</label>
-                                {{ form.model_id(class="form-select") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="cpu_id" class="form-label">CPU</label>
-                                {{ form.cpu_id(class="form-select") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="ram" class="form-label">RAM</label>
-                                {{ form.ram(class="form-control") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="storage" class="form-label">Storage</label>
-                                {{ form.storage(class="form-control") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="os" class="form-label">Operating System</label>
-                                {{ form.os(class="form-select") }}
-                            </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            {{ form.description(class="form-control", rows="3") }}
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="cpu_benchmark" class="form-label">CPU Benchmark Score</label>
-                                {{ form.cpu_benchmark(class="form-control") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="usb_ports_status" class="form-label">USB Ports Test</label>
-                                {{ form.usb_ports_status(class="form-select") }}
-                                {{ form.usb_ports_notes(class="form-control mt-2", placeholder="USB Ports Test Notes") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="video_status" class="form-label">Video Test</label>
-                                {{ form.video_status(class="form-select") }}
-                                {{ form.video_notes(class="form-control mt-2", placeholder="Video Test Notes") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="network_status" class="form-label">Network Test</label>
-                                {{ form.network_status(class="form-select") }}
-                                {{ form.network_notes(class="form-control mt-2", placeholder="Network Test Notes") }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="general_notes" class="form-label">General Notes</label>
-                                {{ form.general_notes(class="form-control", rows="3") }}
-                            </div>
+                        <div class="mb-3">
+                            <label for="cost" class="form-label">Cost (USD)</label>
+                            {{ form.cost(class="form-control", type="number", step="0.01", min="0") }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="sell_price" class="form-label">Sell Price (USD)</label>
+                            {{ form.sell_price(class="form-control", type="number", step="0.01", min="0") }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchase_url" class="form-label">Purchase URL</label>
+                            {{ form.purchase_url(class="form-control", type="url", placeholder="https://...") }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="image_url" class="form-label">Image URL</label>
+                            {{ form.image_url(class="form-control", type="url", placeholder="https://...") }}
+                            <div id="imagePreview" class="mt-2"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            {{ form.tags(class="form-select", multiple=true) }}
+                            <div class="form-text">Hold Ctrl/Cmd to select multiple tags</div>
                         </div>
                     </div>
                 </div>
@@ -194,31 +150,6 @@
 {% block scripts %}
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-// Type toggle functionality
-document.getElementById('type').addEventListener('change', function() {
-    const generalFields = document.getElementById('generalFields');
-    const computerFields = document.getElementById('computerFields');
-    
-    if (this.value === 'computer') {
-        // Keep general fields visible but hide specific ones
-        generalFields.style.display = 'block';
-        // Hide specific general fields that don't apply to computers
-        document.querySelector('[for="reorder_threshold"]').parentElement.style.display = 'none';
-        document.querySelector('[for="sell_price"]').parentElement.style.display = 'none';
-        document.querySelector('[for="purchase_url"]').parentElement.style.display = 'none';
-        // Show computer specific fields
-        computerFields.style.display = 'block';
-    } else {
-        // Show all general fields
-        generalFields.style.display = 'block';
-        document.querySelector('[for="reorder_threshold"]').parentElement.style.display = 'block';
-        document.querySelector('[for="sell_price"]').parentElement.style.display = 'block';
-        document.querySelector('[for="purchase_url"]').parentElement.style.display = 'block';
-        // Hide computer fields
-        computerFields.style.display = 'none';
-    }
-});
-
 function showMessage(message, isError = false) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show`;
@@ -242,133 +173,51 @@ function showMessage(message, isError = false) {
     }
 }
 
-function testClick() {
-    console.log('Button clicked via onclick attribute!');
+// Image URL preview
+document.getElementById('image_url').addEventListener('change', function() {
+    const imageUrl = this.value;
+    const previewDiv = document.getElementById('imagePreview');
     
-    const barcode = document.getElementById('barcode').value.trim();
-    if (!barcode) {
-        showMessage('Please enter a barcode', true);
-        return;
-    }
-    
-    // Get CSRF token from meta tag or form input
-    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-    if (!csrfToken) {
-        showMessage('CSRF token not found', true);
-        return;
-    }
-    
-    // Show loading state
-    const lookupButton = document.getElementById('lookupButton');
-    const originalText = lookupButton.innerHTML;
-    lookupButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Looking up...';
-    lookupButton.disabled = true;
-    
-    // Make the API call
-    fetch('/api/scan_barcode', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ barcode: barcode })
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('API response:', data);
-        
-        if (data.error) {
-            showMessage(data.message || data.error, true);
-            return;
-        }
-        
-        // Check if product was actually found
-        if (!data.success || !data.name) {
-            showMessage('No product information found for this barcode', true);
-            return;
-        }
-        
-        // Fill in the form fields
-        if (data.name) document.getElementById('name').value = data.name;
-        if (data.description) document.getElementById('description').value = data.description;
-        if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
-        if (data.mpn) document.getElementById('mpn').value = data.mpn;
-        if (data.image_url) {
-            document.getElementById('image_url').value = data.image_url;
-            document.getElementById('imagePreview').innerHTML = 
-                `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
-        }
-        
-        showMessage('Product information found and filled in!');
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage(`Error looking up barcode: ${error.message}`, true);
-    })
-    .finally(() => {
-        // Restore button state
-        lookupButton.innerHTML = originalText;
-        lookupButton.disabled = false;
-    });
-}
-
-// Add barcode input enter key handler
-document.getElementById('barcode').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        testClick();
+    if (imageUrl) {
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.style.maxWidth = '200px';
+        img.style.maxHeight = '200px';
+        img.onerror = function() {
+            previewDiv.innerHTML = '<div class="text-danger">Invalid image URL</div>';
+        };
+        previewDiv.innerHTML = '';
+        previewDiv.appendChild(img);
+    } else {
+        previewDiv.innerHTML = '';
     }
 });
 
-// Add form submission handler
-document.getElementById('itemForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    console.log('Form submitted');
+// Barcode scanner functionality
+let html5QrcodeScanner = null;
+
+document.getElementById('scanButton').addEventListener('click', function() {
+    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+    modal.show();
     
-    const formData = new FormData(this);
-    const type = formData.get('type');
-    
-    // Log form data for debugging
-    for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
+    if (!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "scanner-container", { fps: 10, qrbox: 250 }
+        );
+        
+        html5QrcodeScanner.render((decodedText) => {
+            document.getElementById('barcode').value = decodedText;
+            html5QrcodeScanner.clear();
+            modal.hide();
+            document.getElementById('lookupButton').click();
+        });
     }
-    
-    // Submit the form
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showMessage('Item added successfully!');
-            // Redirect to dashboard after success
-            window.location.href = '/dashboard';
-        } else {
-            showMessage(data.message || 'Error adding item', true);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showMessage('Error submitting form: ' + error.message, true);
-    });
 });
 
-// Initialize type toggle
-document.getElementById('type').dispatchEvent(new Event('change'));
+document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+    }
+});
 </script>
 {% endblock %} 

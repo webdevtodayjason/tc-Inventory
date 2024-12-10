@@ -108,13 +108,7 @@ class ComputerSystemForm(FlaskForm):
     network_notes = TextAreaField('Network Notes')
     general_notes = TextAreaField('General Notes')
 
-class ItemForm(FlaskForm):
-    type = SelectField('Type', choices=[
-        ('general', 'General Item'),
-        ('computer', 'Computer System')
-    ], validators=[DataRequired()])
-    
-    # General Item Fields
+class GeneralItemForm(FlaskForm):
     category = SelectField('Category', coerce=int, validators=[DataRequired()])
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=128)])
     quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=0)], default=1)
@@ -136,93 +130,9 @@ class ItemForm(FlaskForm):
     # Tags
     tags = SelectMultipleField('Tags', coerce=int, validators=[Optional()])
     
-    # Computer System Fields
-    model_id = SelectField('Computer Model', coerce=int, validators=[Optional()])
-    cpu_id = SelectField('CPU', coerce=int, validators=[Optional()])
-    ram = StringField('RAM', validators=[Optional()])
-    storage = StringField('Storage', validators=[Optional()])
-    os = SelectField('Operating System', 
-                    choices=[
-                        ('Windows 10 Pro', 'Windows 10 Pro'),
-                        ('Windows 11 Pro', 'Windows 11 Pro'),
-                        ('Microsoft Server 2022', 'Microsoft Server 2022'),
-                        ('Linux', 'Linux')
-                    ],
-                    validators=[Optional()])
-    
-    # Computer Testing Fields
-    cpu_benchmark = FloatField('CPU Benchmark Score', validators=[Optional()])
-    usb_ports_status = SelectField('USB Ports Status',
-                                choices=[('PASSED', 'PASSED'), ('FAILED', 'FAILED')],
-                                validators=[Optional()])
-    usb_ports_notes = TextAreaField('USB Ports Notes', validators=[Optional()])
-    video_status = SelectField('Video Status',
-                            choices=[('PASSED', 'PASSED'), ('FAILED', 'FAILED')],
-                            validators=[Optional()])
-    video_notes = TextAreaField('Video Notes', validators=[Optional()])
-    network_status = SelectField('Network Status',
-                              choices=[('PASSED', 'PASSED'), ('FAILED', 'FAILED')],
-                              validators=[Optional()])
-    network_notes = TextAreaField('Network Notes', validators=[Optional()])
-    general_notes = TextAreaField('General Notes', validators=[Optional()])
-    
-    def validate(self):
-        if not super().validate():
-            return False
-            
-        if self.type.data == 'computer':
-            # Validate computer-specific fields
-            if not self.model_id.data:
-                self.model_id.errors.append('Computer model is required')
-                return False
-            if not self.cpu_id.data:
-                self.cpu_id.errors.append('CPU is required')
-                return False
-            if not self.ram.data:
-                self.ram.errors.append('RAM is required')
-                return False
-            if not self.storage.data:
-                self.storage.errors.append('Storage is required')
-                return False
-            if not self.os.data:
-                self.os.errors.append('Operating system is required')
-                return False
-            # Validate testing fields
-            if not self.usb_ports_status.data:
-                self.usb_ports_status.errors.append('USB ports test status is required')
-                return False
-            if not self.video_status.data:
-                self.video_status.errors.append('Video test status is required')
-                return False
-            if not self.network_status.data:
-                self.network_status.errors.append('Network test status is required')
-                return False
-        else:
-            # Validate general item fields
-            if not self.name.data:
-                self.name.errors.append('Name is required')
-                return False
-            if not self.category.data or self.category.data == 0:
-                self.category.errors.append('Category is required')
-                return False
-            if not self.quantity.data or self.quantity.data < 0:
-                self.quantity.errors.append('Quantity must be 0 or greater')
-                return False
-        
-        return True
-    
     def __init__(self, *args, **kwargs):
-        super(ItemForm, self).__init__(*args, **kwargs)
+        super(GeneralItemForm, self).__init__(*args, **kwargs)
         # Populate category choices
         self.category.choices = [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
-        
-        # Populate model choices
-        self.model_id.choices = [(m.id, f"{m.manufacturer} {m.model_name}") 
-                                for m in ComputerModel.query.order_by(ComputerModel.manufacturer).all()]
-        
-        # Populate CPU choices
-        self.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model} ({c.speed})") 
-                              for c in CPU.query.order_by(CPU.manufacturer, CPU.model).all()]
-        
         # Add tag choices
         self.tags.choices = [(t.id, t.name) for t in Tag.query.order_by(Tag.name).all()]
