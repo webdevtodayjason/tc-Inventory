@@ -229,11 +229,20 @@ def edit_item(id):
             # Update general fields
             form.populate_obj(item)
             
-            # Handle tags
-            if form.tags.data:
-                item.tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
-            else:
-                item.tags = []  # Clear tags if none selected
+            # Handle tags with detailed error logging
+            try:
+                if form.tags.data:
+                    current_app.logger.debug(f"Tags data from form: {form.tags.data}")
+                    tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
+                    current_app.logger.debug(f"Found tags: {tags}")
+                    item.tags = tags
+                else:
+                    item.tags = []  # Clear tags if none selected
+            except Exception as tag_error:
+                current_app.logger.error(f"Tag handling error: {str(tag_error)}")
+                current_app.logger.error(f"Tags data type: {type(form.tags.data)}")
+                current_app.logger.error(f"Tags data content: {form.tags.data}")
+                raise Exception(f"Tag handling error: {str(tag_error)}")
             
             db.session.commit()
             flash('Item updated successfully!', 'success')
@@ -241,7 +250,7 @@ def edit_item(id):
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f'Error updating item: {str(e)}')
-            flash(f'Error updating item: {str(e)}', 'danger')
+            flash(f'Error updating item: {str(e)} | Tags data: {form.tags.data} | Type: {type(form.tags.data)}', 'danger')
     else:
         for field, errors in form.errors.items():
             for error in errors:
