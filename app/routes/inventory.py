@@ -224,6 +224,11 @@ def edit_item(id):
     item = InventoryItem.query.get_or_404(id)
     form = GeneralItemForm(obj=item)
     
+    # Pre-populate tags field with existing tags
+    if request.method == 'GET':
+        current_app.logger.debug(f"Current item tags: {item.tags}")
+        form.tags.data = [tag.id for tag in item.tags]
+    
     if form.validate_on_submit():
         try:
             # Update general fields except tags
@@ -259,7 +264,9 @@ def edit_item(id):
             for error in errors:
                 flash(f'{field}: {error}', 'danger')
     
-    return render_template('inventory/edit_item.html', form=form, item=item)
+    # Get all available tags for the form
+    all_tags = Tag.query.order_by(Tag.name).all()
+    return render_template('inventory/edit_item.html', form=form, item=item, all_tags=all_tags)
 
 @bp.route('/item/<int:id>/delete', methods=['POST'])
 @login_required
