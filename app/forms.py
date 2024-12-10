@@ -79,6 +79,7 @@ class CPUForm(FlaskForm):
 
 class ComputerSystemForm(FlaskForm):
     tracking_id = StringField('Tracking ID', validators=[Optional()])
+    serial_tag = StringField('Serial/Service Tag', validators=[Optional(), Length(max=100)])
     model_id = SelectField('Computer Model', coerce=int, validators=[DataRequired()])
     cpu_id = SelectField('CPU', coerce=int, validators=[DataRequired()])
     ram = StringField('RAM', validators=[DataRequired()])

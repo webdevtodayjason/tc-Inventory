@@ -34,6 +34,16 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="serial_tag" class="form-label">Serial/Service Tag</label>
+                            {{ form.serial_tag(class="form-control", placeholder="Enter serial or service tag") }}
+                            {% if form.serial_tag.errors %}
+                                {% for error in form.serial_tag.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
                             <label for="cpu_id" class="form-label">CPU</label>
                             {{ form.cpu_id(class="form-select") }}
                             {% if form.cpu_id.errors %}

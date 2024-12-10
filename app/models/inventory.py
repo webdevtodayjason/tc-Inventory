@@ -80,6 +80,7 @@ class ComputerSystem(db.Model):
     __tablename__ = 'computer_systems'
     id = db.Column(db.Integer, primary_key=True)
     tracking_id = db.Column(db.String(50), unique=True)
+    serial_tag = db.Column(db.String(100))
     model_id = db.Column(db.Integer, db.ForeignKey('computer_model.id'), nullable=False)
     cpu_id = db.Column(db.Integer, db.ForeignKey('cpu.id'), nullable=False)
     ram = db.Column(db.String(64), nullable=False)

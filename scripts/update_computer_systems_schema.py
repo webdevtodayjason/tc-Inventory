@@ -23,11 +23,12 @@ def update_database():
                     CREATE TABLE IF NOT EXISTS computer_systems (
                         id SERIAL PRIMARY KEY,
                         tracking_id VARCHAR(50) UNIQUE,
-                        model_id INTEGER REFERENCES computer_model(id) NOT NULL,
-                        cpu_id INTEGER REFERENCES cpu(id) NOT NULL,
-                        ram VARCHAR(64) NOT NULL,
-                        storage VARCHAR(128) NOT NULL,
-                        os VARCHAR(50) NOT NULL,
+                        serial_tag VARCHAR(100),
+                        model_id INTEGER REFERENCES computer_model(id),
+                        cpu_id INTEGER REFERENCES cpu(id),
+                        ram VARCHAR(64),
+                        storage VARCHAR(128),
+                        os VARCHAR(50),
                         storage_location VARCHAR(100),
                         status VARCHAR(50) DEFAULT 'available',
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -45,26 +46,19 @@ def update_database():
                     )
                 """))
                 
-                # 2. Migrate data from old tables
-                print("Migrating data from old tables...")
+                # 2. Migrate data from items table
+                print("Migrating data from items table...")
                 conn.execute(text("""
                     INSERT INTO computer_systems (
-                        tracking_id, model_id, cpu_id, ram, storage, os,
-                        storage_location, status, created_at, updated_at,
-                        creator_id, cpu_benchmark, usb_ports_status,
-                        usb_ports_notes, video_status, video_notes,
-                        network_status, network_notes, general_notes, tested_by
+                        tracking_id, storage_location, status, created_at, 
+                        updated_at, creator_id
                     )
                     SELECT 
-                        i.tracking_id, cs.model_id, cs.cpu_id, cs.ram,
-                        cs.storage, cs.os, i.storage_location, i.status,
-                        i.created_at, i.updated_at, i.creator_id,
-                        cs.cpu_benchmark, cs.usb_ports_status,
-                        cs.usb_ports_notes, cs.video_status, cs.video_notes,
-                        cs.network_status, cs.network_notes,
-                        cs.general_notes, cs.tested_by
+                        i.tracking_id, i.storage_location, i.status, i.created_at,
+                        i.updated_at, i.creator_id
                     FROM items i
-                    JOIN computer_system cs ON cs.id = i.id
+                    JOIN category c ON i.category_id = c.id
+                    WHERE c.name = 'Computer System'
                     ON CONFLICT (tracking_id) DO NOTHING
                 """))
                 
@@ -72,21 +66,15 @@ def update_database():
                 print("Removing computer systems from items table...")
                 conn.execute(text("""
                     DELETE FROM items i
-                    WHERE EXISTS (
-                        SELECT 1 FROM computer_system cs
-                        WHERE cs.id = i.id
-                    )
+                    USING category c
+                    WHERE i.category_id = c.id
+                    AND c.name = 'Computer System'
                 """))
                 
-                # 4. Drop old computer_system table
-                print("Dropping old computer_system table...")
-                conn.execute(text("""
-                    DROP TABLE IF EXISTS computer_system CASCADE
-                """))
+                print("Database update completed successfully!")
                 
                 # Commit transaction
                 trans.commit()
-                print("Database update completed successfully!")
                 
             except Exception as e:
                 # Rollback in case of error
