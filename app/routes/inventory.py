@@ -611,17 +611,36 @@ def scan_barcode():
     try:
         current_app.logger.debug('Barcode scan request received')
         current_app.logger.debug(f'Request data: {request.get_json()}')
+        current_app.logger.debug(f'Request headers: {dict(request.headers)}')
         
         # Validate CSRF token from X-CSRFToken header
         csrf_token = request.headers.get('X-CSRFToken')
-        current_app.logger.debug(f'CSRF Token: {csrf_token}')
+        current_app.logger.debug(f'CSRF Token from header: {csrf_token}')
         
         if not csrf_token:
             current_app.logger.error('Missing CSRF token')
-            raise BadRequest('Missing CSRF token')
-        validate_csrf(csrf_token)
+            return jsonify({
+                'error': 'Missing CSRF token',
+                'message': 'Security token missing. Please refresh the page and try again.'
+            }), 400
+            
+        try:
+            validate_csrf(csrf_token)
+        except Exception as e:
+            current_app.logger.error(f'CSRF validation failed: {str(e)}')
+            return jsonify({
+                'error': 'Invalid CSRF token',
+                'message': 'Security token invalid. Please refresh the page and try again.'
+            }), 400
         
         data = request.get_json()
+        if not data:
+            current_app.logger.error('No JSON data in request')
+            return jsonify({
+                'error': 'Invalid request',
+                'message': 'No data provided'
+            }), 400
+            
         barcode = data.get('barcode')
         current_app.logger.debug(f'Barcode to lookup: {barcode}')
         
@@ -640,11 +659,19 @@ def scan_barcode():
                 'Accept': 'application/json'
             }
             
+            current_app.logger.debug(f'Making request to UPCItemDB: {url}')
             response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
+            current_app.logger.debug(f'UPCItemDB response status: {response.status_code}')
             
-            # Parse the response
-            data = response.json()
+            try:
+                response_data = response.json()
+                current_app.logger.debug(f'UPCItemDB response data: {response_data}')
+            except ValueError:
+                current_app.logger.error(f'Invalid JSON in UPCItemDB response: {response.text}')
+                return jsonify({
+                    'error': 'Invalid response from UPC database',
+                    'message': 'The UPC database returned an invalid response'
+                }), 500
             
             # Initialize product info
             product_info = {
@@ -658,8 +685,9 @@ def scan_barcode():
             }
             
             # Extract information from the response
-            if data.get('items') and len(data['items']) > 0:
-                item = data['items'][0]  # Get the first item
+            if response_data.get('items') and len(response_data['items']) > 0:
+                item = response_data['items'][0]  # Get the first item
+                current_app.logger.debug(f'Found product: {item.get("title")}')
                 
                 # Extract basic information
                 product_info.update({
@@ -675,21 +703,24 @@ def scan_barcode():
             return jsonify(product_info)
             
         except requests.exceptions.RequestException as e:
+            current_app.logger.error(f'UPCItemDB API error: {str(e)}')
             return jsonify({
                 'error': 'Failed to fetch product information',
                 'message': f'API Error: {str(e)}'
             }), 500
         except Exception as e:
+            current_app.logger.error(f'Error processing barcode lookup: {str(e)}')
             return jsonify({
                 'error': 'Error processing barcode',
                 'message': str(e)
             }), 500
             
-    except BadRequest as e:
+    except Exception as e:
+        current_app.logger.error(f'Unexpected error in scan_barcode: {str(e)}')
         return jsonify({
-            'error': 'Invalid request',
-            'message': str(e)
-        }), 400
+            'error': 'Server error',
+            'message': 'An unexpected error occurred'
+        }), 500
 
 def generate_tracking_id():
     """Generate a unique tracking ID"""
