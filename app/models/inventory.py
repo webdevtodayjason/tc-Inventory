@@ -56,8 +56,12 @@ class InventoryItem(db.Model):
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')
     
-    # Add tags relationship
-    tags = db.relationship('Tag', secondary=item_tags, backref=db.backref('items', lazy='dynamic'))
+    # Update tags relationship with cascade options
+    tags = db.relationship('Tag', 
+                         secondary=item_tags,
+                         backref=db.backref('items', lazy='dynamic'),
+                         lazy='joined',
+                         cascade='all, delete')
 
     def __repr__(self):
         return f'<InventoryItem {self.name}>'

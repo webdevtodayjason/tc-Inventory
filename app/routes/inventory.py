@@ -243,16 +243,14 @@ def edit_item(id):
                 # Get all selected tags first
                 if form.tags.data:
                     # Query all selected tags at once
-                    selected_tags = list(Tag.query.filter(Tag.id.in_(form.tags.data)).all())
+                    selected_tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
                     current_app.logger.debug(f"Found tags: {selected_tags}")
                     
-                    # Clear existing tags and add new ones
-                    item.tags.clear()
-                    for tag in selected_tags:
-                        item.tags.append(tag)
+                    # Update the tags association
+                    item.tags = selected_tags
                 else:
                     # Clear all tags if none selected
-                    item.tags.clear()
+                    item.tags = []
                 
                 current_app.logger.debug(f"Final tags: {item.tags}")
                 
@@ -260,6 +258,7 @@ def edit_item(id):
                 current_app.logger.error(f"Tag handling error: {str(tag_error)}")
                 current_app.logger.error(f"Tags data type: {type(form.tags.data)}")
                 current_app.logger.error(f"Tags data content: {form.tags.data}")
+                db.session.rollback()
                 raise Exception(f"Tag handling error: {str(tag_error)}")
             
             db.session.commit()
