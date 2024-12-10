@@ -10,7 +10,7 @@
             box-sizing: border-box;
         }
 
-        /* Set page size for printing */
+        /* Set page size for printing - 4x2 inches */
         @page {
             size: 4in 2in landscape;
             margin: 0;
@@ -25,63 +25,86 @@
             font-family: Arial, sans-serif;
             background: white;
             overflow: hidden;
+            zoom: 100%;
         }
 
         /* Label container */
         .label-container {
             width: 4in;
             height: 2in;
-            padding: 0.2in;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            padding: 0.15in;
+            display: grid;
+            grid-template-columns: 2.3in 1.5in;
+            gap: 0.1in;
             page-break-after: avoid;
             page-break-before: avoid;
             page-break-inside: avoid;
         }
 
+        /* Left side - Details */
+        .details-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Right side - Barcode */
+        .barcode-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
         /* Content styling */
         .item-name {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
-            white-space: nowrap;
+            line-height: 1.1;
+            max-height: 2.2em;
             overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .details {
-            font-size: 10pt;
+            font-size: 9pt;
             line-height: 1.2;
-            margin: 0.1in 0;
+            margin: 0.05in 0;
+        }
+
+        .details-row {
+            display: flex;
+            gap: 0.1in;
+        }
+
+        .details-label {
+            font-weight: bold;
+            min-width: 0.6in;
         }
 
         .storage-location {
             font-size: 10pt;
             font-weight: bold;
-            text-align: left;
-            margin: 0.1in 0;
             color: #000;
-        }
-
-        .barcode-container {
-            text-align: center;
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin-top: 0.05in;
         }
 
         .barcode-container img {
-            max-width: 3.5in;
-            max-height: 0.8in;
-            width: auto;
+            width: 1.4in;
             height: auto;
         }
 
         .tracking-id {
             font-size: 8pt;
             text-align: center;
-            margin-top: 0.1in;
+            margin-top: 0.05in;
+            font-weight: bold;
+        }
+
+        .company-logo {
+            font-size: 7pt;
+            text-align: center;
+            color: #666;
+            margin-top: 0.05in;
         }
 
         /* Print-specific styles */
@@ -101,9 +124,7 @@
     </style>
     <script>
         window.onload = function() {
-            // Auto-trigger print dialog
             window.print();
-            // Return to previous page after print dialog is closed
             window.onafterprint = function() {
                 window.close();
             };
@@ -112,27 +133,71 @@
 </head>
 <body>
     <div class="label-container">
-        <div class="item-name">{{ item.name }}</div>
-        
-        {% if item.type == 'computer_system' %}
-        <div class="details">
-            Model: {{ item.model.manufacturer }} {{ item.model.model_name }}<br>
-            CPU: {{ item.cpu.manufacturer }} {{ item.cpu.model }}<br>
-            RAM: {{ item.ram }}
+        <!-- Left side - Details -->
+        <div class="details-container">
+            <div class="item-name">{{ item.name }}</div>
+            
+            {% if item.type == 'computer_system' %}
+            <div class="details">
+                <div class="details-row">
+                    <span class="details-label">Model:</span>
+                    <span>{{ item.model.manufacturer }} {{ item.model.model_name }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">CPU:</span>
+                    <span>{{ item.cpu.manufacturer }} {{ item.cpu.model }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">RAM:</span>
+                    <span>{{ item.ram }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">Storage:</span>
+                    <span>{{ item.storage }}</span>
+                </div>
+                {% if item.serial_tag %}
+                <div class="details-row">
+                    <span class="details-label">S/N:</span>
+                    <span>{{ item.serial_tag }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="details">
+                {% if item.manufacturer %}
+                <div class="details-row">
+                    <span class="details-label">Mfr:</span>
+                    <span>{{ item.manufacturer }}</span>
+                </div>
+                {% endif %}
+                {% if item.mpn %}
+                <div class="details-row">
+                    <span class="details-label">MPN:</span>
+                    <span>{{ item.mpn }}</span>
+                </div>
+                {% endif %}
+                {% if item.category %}
+                <div class="details-row">
+                    <span class="details-label">Type:</span>
+                    <span>{{ item.category.name }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if item.storage_location %}
+            <div class="storage-location">
+                Location: {{ item.storage_location }}
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
-        
-        {% if item.storage_location %}
-        <div class="storage-location">
-            Location: {{ item.storage_location }}
-        </div>
-        {% endif %}
-        
+
+        <!-- Right side - Barcode -->
         <div class="barcode-container">
+            <div class="company-logo">TC INVENTORY</div>
             <img src="data:image/png;base64,{{ barcode }}" alt="Barcode">
+            <div class="tracking-id">{{ item.tracking_id }}</div>
         </div>
-        
-        <div class="tracking-id">{{ item.tracking_id }}</div>
     </div>
 </body>
 </html> 
