@@ -108,9 +108,20 @@ def dashboard():
 def add_item():
     form = ItemForm()
     categories = Category.query.order_by(Category.name).all()
+    
+    # Set category choices
+    category_choices = [(0, 'Select a category')]  # Add a default option
+    for category in categories:
+        if not category.parent_id:  # If it's a parent category
+            category_choices.append((category.id, category.name))
+            for child in category.children:  # Add children indented
+                category_choices.append((child.id, f"  - {child.name}"))
+    
+    form.category.choices = category_choices
+    
     computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
     cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
-    tags = Tag.query.order_by(Tag.name).all()  # Get all tags
+    tags = Tag.query.order_by(Tag.name).all()
     
     if form.validate_on_submit():
         try:
@@ -186,7 +197,7 @@ def add_item():
                          categories=categories,
                          computer_models=computer_models,
                          cpus=cpus,
-                         tags=tags)  # Pass tags to template
+                         tags=tags)
 
 @bp.route('/item/<int:id>/view')
 @login_required

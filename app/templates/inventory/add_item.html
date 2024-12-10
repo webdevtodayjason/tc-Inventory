@@ -41,21 +41,13 @@
                             <input type="text" class="form-control" id="name" name="name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="category_id" class="form-label">Category</label>
-                            <select class="form-select" id="category_id" name="category_id" required>
-                                <option value="">Select a category</option>
-                                {% for category in categories %}
-                                    {% if category.children %}
-                                        <optgroup label="{{ category.name }}">
-                                            {% for child in category.children %}
-                                                <option value="{{ child.id }}">{{ child.name }}</option>
-                                            {% endfor %}
-                                        </optgroup>
-                                    {% else %}
-                                        <option value="{{ category.id }}">{{ category.name }}</option>
-                                    {% endif %}
+                            <label for="category" class="form-label">Category</label>
+                            {{ form.category(class="form-select", required=true) }}
+                            {% if form.category.errors %}
+                                {% for error in form.category.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
                                 {% endfor %}
-                            </select>
+                            {% endif %}
                         </div>
                         <div class="mb-3">
                             <label for="quantity" class="form-label">Quantity</label>
