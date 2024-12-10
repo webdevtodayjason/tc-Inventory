@@ -619,13 +619,16 @@ def scan_barcode():
         barcode = data.get('barcode')
         
         if not barcode:
-            return jsonify({'error': 'No barcode provided'}), 400
+            return jsonify({
+                'error': 'No barcode provided',
+                'message': 'Please enter a barcode'
+            }), 400
         
         try:
             # UPCItemDB API endpoint
             url = f'https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}'
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': random.choice(CHROME_USER_AGENTS),
                 'Accept': 'application/json'
             }
             
@@ -637,6 +640,8 @@ def scan_barcode():
             
             # Initialize product info
             product_info = {
+                'success': False,
+                'message': 'No product information found',
                 'name': None,
                 'description': None,
                 'manufacturer': None,
@@ -649,24 +654,34 @@ def scan_barcode():
                 item = data['items'][0]  # Get the first item
                 
                 # Extract basic information
-                product_info['name'] = item.get('title')
-                product_info['description'] = item.get('description')
-                product_info['manufacturer'] = item.get('brand')
-                product_info['mpn'] = item.get('model')
-                
-                # Get the first image URL if available
-                if item.get('images') and len(item['images']) > 0:
-                    product_info['image_url'] = item['images'][0]
+                product_info.update({
+                    'success': True,
+                    'message': 'Product information found successfully',
+                    'name': item.get('title'),
+                    'description': item.get('description'),
+                    'manufacturer': item.get('brand'),
+                    'mpn': item.get('model'),
+                    'image_url': item.get('images', [None])[0] if item.get('images') else None
+                })
             
             return jsonify(product_info)
             
         except requests.exceptions.RequestException as e:
-            return jsonify({'error': f'Failed to fetch product information: {str(e)}'}), 500
+            return jsonify({
+                'error': 'Failed to fetch product information',
+                'message': f'API Error: {str(e)}'
+            }), 500
         except Exception as e:
-            return jsonify({'error': f'Error processing barcode: {str(e)}'}), 500
+            return jsonify({
+                'error': 'Error processing barcode',
+                'message': str(e)
+            }), 500
             
     except BadRequest as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({
+            'error': 'Invalid request',
+            'message': str(e)
+        }), 400
 
 def generate_tracking_id():
     """Generate a unique tracking ID"""

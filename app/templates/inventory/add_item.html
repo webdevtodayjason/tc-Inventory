@@ -144,6 +144,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const lookupStatus = document.getElementById('lookupStatus');
     const imagePreview = document.getElementById('imagePreview');
     
+    // Function to show flash message
+    function showFlash(message, type) {
+        const flashContainer = document.createElement('div');
+        flashContainer.className = `alert alert-${type} alert-dismissible fade show`;
+        flashContainer.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container').insertBefore(flashContainer, document.querySelector('.card'));
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            flashContainer.remove();
+        }, 5000);
+    }
+    
     // Function to perform barcode lookup
     function performBarcodeLookup(barcode) {
         lookupStatus.textContent = 'Looking up barcode...';
@@ -163,8 +179,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.error) {
-                lookupStatus.textContent = data.error;
+                lookupStatus.textContent = data.message || data.error;
                 lookupStatus.className = 'form-text text-danger mt-2';
+                showFlash(data.message || data.error, 'danger');
                 return;
             }
             
@@ -179,13 +196,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 imagePreview.innerHTML = `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
             }
             
-            lookupStatus.textContent = 'Product information found and filled in!';
+            lookupStatus.textContent = data.message || 'Product information found and filled in!';
             lookupStatus.className = 'form-text text-success mt-2';
+            showFlash(data.message || 'Product information found and filled in!', 'success');
         })
         .catch(error => {
             console.error('Error:', error);
-            lookupStatus.textContent = 'Error fetching product info';
+            const message = 'Error fetching product info';
+            lookupStatus.textContent = message;
             lookupStatus.className = 'form-text text-danger mt-2';
+            showFlash(message, 'danger');
         });
     }
     
@@ -195,8 +215,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (barcode) {
             performBarcodeLookup(barcode);
         } else {
-            lookupStatus.textContent = 'Please enter a barcode';
+            const message = 'Please enter a barcode';
+            lookupStatus.textContent = message;
             lookupStatus.className = 'form-text text-danger mt-2';
+            showFlash(message, 'danger');
         }
     });
     
