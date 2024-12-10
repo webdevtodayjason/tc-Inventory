@@ -144,7 +144,10 @@ def add_item():
                     # Get the Computer Systems category
                     computer_systems_category = Category.query.filter_by(name='Computer Systems').first()
                     if not computer_systems_category:
-                        flash('Error: Computer Systems category not found', 'danger')
+                        error_msg = 'Error: Computer Systems category not found'
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return jsonify({'success': False, 'message': error_msg})
+                        flash(error_msg, 'danger')
                         return redirect(url_for('inventory.dashboard'))
                     
                     # Create Computer System
@@ -196,15 +199,23 @@ def add_item():
                 current_app.logger.debug(f'Created item: {item}')
                 db.session.add(item)
                 db.session.commit()
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': True, 'message': 'Item added successfully!'})
+                
                 flash('Item added successfully!', 'success')
                 return redirect(url_for('inventory.dashboard'))
                 
             except Exception as e:
                 db.session.rollback()
                 current_app.logger.error(f'Error adding item: {str(e)}')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': f'Error adding item: {str(e)}'})
                 flash(f'Error adding item: {str(e)}', 'danger')
         else:
             current_app.logger.debug(f'Form validation failed. Errors: {form.errors}')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Form validation failed', 'errors': form.errors})
             for field, errors in form.errors.items():
                 for error in errors:
                     flash(f'{field}: {error}', 'danger')

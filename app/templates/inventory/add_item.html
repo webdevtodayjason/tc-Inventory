@@ -200,10 +200,21 @@ document.getElementById('type').addEventListener('change', function() {
     const computerFields = document.getElementById('computerFields');
     
     if (this.value === 'computer') {
-        generalFields.style.display = 'none';
+        // Keep general fields visible but hide specific ones
+        generalFields.style.display = 'block';
+        // Hide specific general fields that don't apply to computers
+        document.querySelector('[for="reorder_threshold"]').parentElement.style.display = 'none';
+        document.querySelector('[for="sell_price"]').parentElement.style.display = 'none';
+        document.querySelector('[for="purchase_url"]').parentElement.style.display = 'none';
+        // Show computer specific fields
         computerFields.style.display = 'block';
     } else {
+        // Show all general fields
         generalFields.style.display = 'block';
+        document.querySelector('[for="reorder_threshold"]').parentElement.style.display = 'block';
+        document.querySelector('[for="sell_price"]').parentElement.style.display = 'block';
+        document.querySelector('[for="purchase_url"]').parentElement.style.display = 'block';
+        // Hide computer fields
         computerFields.style.display = 'none';
     }
 });
@@ -313,6 +324,48 @@ document.getElementById('barcode').addEventListener('keypress', function(e) {
         e.preventDefault();
         testClick();
     }
+});
+
+// Add form submission handler
+document.getElementById('itemForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    console.log('Form submitted');
+    
+    const formData = new FormData(this);
+    const type = formData.get('type');
+    
+    // Log form data for debugging
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+    
+    // Submit the form
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showMessage('Item added successfully!');
+            // Redirect to dashboard after success
+            window.location.href = '/dashboard';
+        } else {
+            showMessage(data.message || 'Error adding item', true);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error submitting form: ' + error.message, true);
+    });
 });
 
 // Initialize type toggle
