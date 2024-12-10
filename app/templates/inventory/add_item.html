@@ -139,156 +139,76 @@
 {% block scripts %}
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
+console.log('Script loaded');
+
 document.addEventListener('DOMContentLoaded', function() {
-    let html5QrcodeScanner = null;
-    const lookupStatus = document.getElementById('lookupStatus');
-    const imagePreview = document.getElementById('imagePreview');
+    console.log('DOM Content Loaded');
     
-    // Function to show flash message
-    function showFlash(message, type) {
-        const flashContainer = document.createElement('div');
-        flashContainer.className = `alert alert-${type} alert-dismissible fade show`;
-        flashContainer.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.querySelector('.container').insertBefore(flashContainer, document.querySelector('.card'));
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            flashContainer.remove();
-        }, 5000);
-    }
+    const lookupButton = document.getElementById('lookupButton');
+    console.log('Lookup button found:', lookupButton);
     
-    // Function to perform barcode lookup
-    function performBarcodeLookup(barcode) {
-        lookupStatus.textContent = 'Looking up barcode...';
-        lookupStatus.className = 'form-text text-info mt-2';
+    if (lookupButton) {
+        // Add visual feedback styles
+        lookupButton.style.transition = 'background-color 0.2s';
         
-        // Get CSRF token
-        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-        
-        fetch('/api/scan_barcode', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ barcode: barcode })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                lookupStatus.textContent = data.message || data.error;
-                lookupStatus.className = 'form-text text-danger mt-2';
-                showFlash(data.message || data.error, 'danger');
-                return;
-            }
+        // Add click event using addEventListener
+        lookupButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Button clicked!');
             
-            // Fill in the form fields with the product data
-            if (data.name) document.getElementById('name').value = data.name;
-            if (data.description) document.getElementById('description').value = data.description;
-            if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
-            if (data.mpn) document.getElementById('mpn').value = data.mpn;
-            if (data.image_url) {
-                document.getElementById('image_url').value = data.image_url;
-                // Show image preview
-                imagePreview.innerHTML = `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
-            }
+            // Visual feedback
+            this.style.backgroundColor = '#0056b3';
+            setTimeout(() => this.style.backgroundColor = '', 200);
             
-            lookupStatus.textContent = data.message || 'Product information found and filled in!';
-            lookupStatus.className = 'form-text text-success mt-2';
-            showFlash(data.message || 'Product information found and filled in!', 'success');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            const message = 'Error fetching product info';
-            lookupStatus.textContent = message;
-            lookupStatus.className = 'form-text text-danger mt-2';
-            showFlash(message, 'danger');
-        });
-    }
-    
-    // Lookup button click handler
-    document.getElementById('lookupButton').addEventListener('click', function(e) {
-        e.preventDefault(); // Prevent any form submission
-        console.log('Lookup button clicked');
-        
-        const barcode = document.getElementById('barcode').value.trim();
-        console.log('Barcode value:', barcode);
-        
-        if (barcode) {
-            console.log('Making API call...');
-            performBarcodeLookup(barcode);
-        } else {
-            const message = 'Please enter a barcode';
-            lookupStatus.textContent = message;
-            lookupStatus.className = 'form-text text-danger mt-2';
-            showFlash(message, 'danger');
-        }
-    });
-    
-    // Barcode input enter key handler
-    document.getElementById('barcode').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault(); // Prevent form submission
-            const barcode = this.value.trim();
+            const barcode = document.getElementById('barcode').value.trim();
+            console.log('Barcode value:', barcode);
+            
             if (barcode) {
-                performBarcodeLookup(barcode);
+                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+                console.log('CSRF Token found:', csrfToken ? 'Yes' : 'No');
+                
+                fetch('/api/scan_barcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ barcode: barcode })
+                })
+                .then(response => {
+                    console.log('API Response:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Data:', data);
+                    if (data.error) {
+                        alert(data.message || data.error);
+                        return;
+                    }
+                    
+                    if (data.name) document.getElementById('name').value = data.name;
+                    if (data.description) document.getElementById('description').value = data.description;
+                    if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
+                    if (data.mpn) document.getElementById('mpn').value = data.mpn;
+                    if (data.image_url) {
+                        document.getElementById('image_url').value = data.image_url;
+                        document.getElementById('imagePreview').innerHTML = 
+                            `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
+                    }
+                    
+                    alert('Product information found!');
+                })
+                .catch(error => {
+                    console.error('API Error:', error);
+                    alert('Error looking up barcode');
+                });
+            } else {
+                alert('Please enter a barcode');
             }
-        }
-    });
-    
-    // Scanner button click handler
-    document.getElementById('scanButton').addEventListener('click', function() {
-        const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
-        modal.show();
-        
-        if (!html5QrcodeScanner) {
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "scanner-container", { fps: 10, qrbox: 250 }
-            );
-            
-            html5QrcodeScanner.render(onScanSuccess, onScanError);
-        }
-    });
-    
-    // Scan success handler
-    function onScanSuccess(decodedText, decodedResult) {
-        document.getElementById('barcode').value = decodedText;
-        document.getElementById('scanResult').textContent = 'Barcode scanned successfully!';
-        
-        // Perform lookup with scanned barcode
-        performBarcodeLookup(decodedText);
-        
-        // Close the modal after a short delay
-        setTimeout(() => {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('scannerModal'));
-            modal.hide();
-            html5QrcodeScanner.clear();
-        }, 1000);
+        });
+    } else {
+        console.error('Lookup button not found!');
     }
-    
-    function onScanError(errorMessage) {
-        console.error('Scan error:', errorMessage);
-    }
-    
-    // Clean up scanner when modal is closed
-    document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function () {
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear();
-        }
-    });
-    
-    // Image URL change handler for preview
-    document.getElementById('image_url').addEventListener('change', function() {
-        const url = this.value.trim();
-        if (url) {
-            imagePreview.innerHTML = `<img src="${url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
-        } else {
-            imagePreview.innerHTML = '';
-        }
-    });
 });
 </script>
 {% endblock %} 
