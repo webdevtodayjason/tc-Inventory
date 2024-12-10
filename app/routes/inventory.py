@@ -790,3 +790,63 @@ def delete_user(id):
     db.session.commit()
     flash('User deleted successfully', 'success')
     return redirect(url_for('inventory.manage_users'))
+
+@bp.route('/system/add', methods=['GET', 'POST'])
+@login_required
+def add_system():
+    form = ComputerSystemForm()
+    
+    # Set up computer model and CPU choices
+    computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
+    form.model_id.choices = [(m.id, f"{m.manufacturer} {m.model_name}") for m in computer_models]
+    
+    cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
+    form.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model}") for c in cpus]
+    
+    if request.method == 'POST':
+        if form.validate():
+            try:
+                # Get the model and CPU for naming
+                model = ComputerModel.query.get(form.model_id.data)
+                cpu = CPU.query.get(form.cpu_id.data)
+                
+                # Create Computer System
+                system = ComputerSystem(
+                    tracking_id=generate_tracking_id(),
+                    model_id=form.model_id.data,
+                    cpu_id=form.cpu_id.data,
+                    ram=form.ram.data,
+                    storage=form.storage.data,
+                    os=form.os.data,
+                    storage_location=form.storage_location.data,
+                    cpu_benchmark=form.cpu_benchmark.data,
+                    usb_ports_status=form.usb_ports_status.data,
+                    usb_ports_notes=form.usb_ports_notes.data,
+                    video_status=form.video_status.data,
+                    video_notes=form.video_notes.data,
+                    network_status=form.network_status.data,
+                    network_notes=form.network_notes.data,
+                    general_notes=form.general_notes.data,
+                    creator_id=current_user.id,
+                    tested_by=current_user.id
+                )
+                
+                db.session.add(system)
+                db.session.commit()
+                
+                flash('Computer system added successfully!', 'success')
+                return redirect(url_for('inventory.dashboard'))
+                
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f'Error adding computer system: {str(e)}')
+                flash(f'Error adding computer system: {str(e)}', 'danger')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{field}: {error}', 'danger')
+    
+    return render_template('inventory/add_system.html', 
+                         form=form,
+                         computer_models=computer_models,
+                         cpus=cpus)
