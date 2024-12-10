@@ -873,3 +873,51 @@ def add_system():
                          form=form,
                          computer_models=computer_models,
                          cpus=cpus)
+
+@bp.route('/system/<int:id>/view')
+@login_required
+def view_system(id):
+    system = ComputerSystem.query.get_or_404(id)
+    
+    # Generate barcode
+    barcode_io = io.BytesIO()
+    Code128(system.tracking_id, writer=ImageWriter()).write(barcode_io)
+    barcode_base64 = base64.b64encode(barcode_io.getvalue()).decode()
+    
+    return render_template('inventory/view_system.html', 
+                         system=system,
+                         barcode=barcode_base64)
+
+@bp.route('/system/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_system(id):
+    system = ComputerSystem.query.get_or_404(id)
+    form = ComputerSystemForm(obj=system)
+    
+    if form.validate_on_submit():
+        try:
+            form.populate_obj(system)
+            db.session.commit()
+            flash('Computer system updated successfully!', 'success')
+            return redirect(url_for('inventory.dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating computer system: {str(e)}', 'danger')
+            current_app.logger.error(f'Error updating computer system: {str(e)}')
+    
+    return render_template('inventory/edit_system.html', form=form, system=system)
+
+@bp.route('/system/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_system(id):
+    system = ComputerSystem.query.get_or_404(id)
+    try:
+        db.session.delete(system)
+        db.session.commit()
+        flash('Computer system deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting computer system: {str(e)}', 'danger')
+        current_app.logger.error(f'Error deleting computer system: {str(e)}')
+    
+    return redirect(url_for('inventory.dashboard'))
