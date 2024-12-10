@@ -226,18 +226,21 @@ def edit_item(id):
     
     if form.validate_on_submit():
         try:
-            # Update general fields
-            form.populate_obj(item)
+            # Update general fields except tags
+            for field in form._fields:
+                if field != 'tags' and hasattr(item, field):
+                    setattr(item, field, getattr(form, field).data)
             
             # Handle tags with detailed error logging
             try:
-                if form.tags.data:
+                if form.tags.data and len(form.tags.data) > 0:
                     current_app.logger.debug(f"Tags data from form: {form.tags.data}")
                     tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
                     current_app.logger.debug(f"Found tags: {tags}")
                     item.tags = tags
                 else:
-                    item.tags = []  # Clear tags if none selected
+                    current_app.logger.debug("No tags data, clearing tags")
+                    item.tags = []
             except Exception as tag_error:
                 current_app.logger.error(f"Tag handling error: {str(tag_error)}")
                 current_app.logger.error(f"Tags data type: {type(form.tags.data)}")
