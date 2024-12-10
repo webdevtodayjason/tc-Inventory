@@ -202,7 +202,11 @@ def view_item(id):
 @bp.route('/item/<int:id>/label')
 @login_required
 def print_label(id):
-    item = InventoryItem.query.get_or_404(id)
+    # Try to find item in both tables
+    item = InventoryItem.query.get(id)
+    if not item:
+        item = ComputerSystem.query.get_or_404(id)
+        item.type = 'computer_system'  # Add type attribute for template
     
     # Generate barcode image
     barcode_io = io.BytesIO()
@@ -921,3 +925,19 @@ def delete_system(id):
         current_app.logger.error(f'Error deleting computer system: {str(e)}')
     
     return redirect(url_for('inventory.dashboard'))
+
+@bp.route('/system/<int:id>/label')
+@login_required
+def print_system_label(id):
+    system = ComputerSystem.query.get_or_404(id)
+    system.type = 'computer_system'  # Add type attribute for template
+    
+    # Generate barcode image
+    barcode_io = io.BytesIO()
+    Code128(system.tracking_id, writer=ImageWriter()).write(barcode_io)
+    barcode_base64 = base64.b64encode(barcode_io.getvalue()).decode()
+    
+    # Return the print template
+    return render_template('inventory/print_label.html',
+                         item=system,
+                         barcode=barcode_base64)
