@@ -240,7 +240,7 @@ def edit_item(id):
                 # Handle tags
                 if request.form.getlist('tags'):
                     tag_ids = [int(tag_id) for tag_id in request.form.getlist('tags')]
-                    item.tags = [Tag.query.get(tag_id) for tag_id in tag_ids]
+                    item.tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
                 else:
                     item.tags = []  # Clear tags if none selected
                 
@@ -267,7 +267,7 @@ def edit_item(id):
                 # Handle tags
                 if request.form.getlist('tags'):
                     tag_ids = [int(tag_id) for tag_id in request.form.getlist('tags')]
-                    item.tags = [Tag.query.get(tag_id) for tag_id in tag_ids]
+                    item.tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
                 else:
                     item.tags = []  # Clear tags if none selected
                 
