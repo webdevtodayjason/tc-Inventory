@@ -210,9 +210,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Lookup button click handler
-    document.getElementById('lookupButton').addEventListener('click', function() {
+    document.getElementById('lookupButton').addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any form submission
+        console.log('Lookup button clicked');
+        
         const barcode = document.getElementById('barcode').value.trim();
+        console.log('Barcode value:', barcode);
+        
         if (barcode) {
+            console.log('Making API call...');
             performBarcodeLookup(barcode);
         } else {
             const message = 'Please enter a barcode';

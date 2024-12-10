@@ -609,16 +609,24 @@ CHROME_USER_AGENTS = [
 @login_required
 def scan_barcode():
     try:
+        current_app.logger.debug('Barcode scan request received')
+        current_app.logger.debug(f'Request data: {request.get_json()}')
+        
         # Validate CSRF token from X-CSRFToken header
         csrf_token = request.headers.get('X-CSRFToken')
+        current_app.logger.debug(f'CSRF Token: {csrf_token}')
+        
         if not csrf_token:
+            current_app.logger.error('Missing CSRF token')
             raise BadRequest('Missing CSRF token')
         validate_csrf(csrf_token)
         
         data = request.get_json()
         barcode = data.get('barcode')
+        current_app.logger.debug(f'Barcode to lookup: {barcode}')
         
         if not barcode:
+            current_app.logger.error('No barcode provided')
             return jsonify({
                 'error': 'No barcode provided',
                 'message': 'Please enter a barcode'
