@@ -2,6 +2,12 @@
 
 {% block title %}Edit Item - {{ item.name }}{% endblock %}
 
+{% block styles %}
+<!-- Add Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -136,12 +142,12 @@
             <div class="card-body">
                 <div class="mb-3">
                     {{ form.tags.label(class="form-label") }}
-                    <select class="form-select" id="tags" name="tags" multiple>
+                    <select class="form-select select2-tags" id="tags" name="tags" multiple>
                         {% for tag in all_tags %}
                             <option value="{{ tag.id }}" {% if tag in item.tags %}selected{% endif %}>{{ tag.name }}</option>
                         {% endfor %}
                     </select>
-                    <div class="form-text">Hold Ctrl/Cmd to select multiple tags</div>
+                    <div class="form-text">Click to select tags or type to search. You can select multiple tags.</div>
                 </div>
             </div>
         </div>
@@ -157,10 +163,18 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Add Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    // Initialize any JavaScript enhancements here
     document.addEventListener('DOMContentLoaded', function() {
-        // Add any form validation or enhancement code here
+        // Initialize Select2 for tags
+        $('.select2-tags').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Select tags...',
+            allowClear: true,
+            closeOnSelect: false
+        });
     });
 </script>
 {% endblock %} 
