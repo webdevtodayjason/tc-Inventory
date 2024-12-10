@@ -19,11 +19,11 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Scan or enter barcode">
+                                    <input type="text" class="form-control" id="barcode" name="barcode" placeholder="Scan or enter barcode" autocomplete="off">
                                     <button type="button" class="btn btn-outline-secondary" id="scanButton">
                                         <i class="fas fa-barcode"></i> Scan
                                     </button>
-                                    <button type="button" class="btn btn-primary" id="lookupButton">
+                                    <button type="button" class="btn btn-primary" id="lookupButton" onclick="testClick()">
                                         <i class="fas fa-search"></i> Lookup
                                     </button>
                                 </div>
@@ -139,76 +139,59 @@
 {% block scripts %}
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-console.log('Script loaded');
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded');
+function testClick() {
+    console.log('Button clicked via onclick attribute!');
+    alert('Button clicked!');
     
-    const lookupButton = document.getElementById('lookupButton');
-    console.log('Lookup button found:', lookupButton);
-    
-    if (lookupButton) {
-        // Add visual feedback styles
-        lookupButton.style.transition = 'background-color 0.2s';
-        
-        // Add click event using addEventListener
-        lookupButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Button clicked!');
-            
-            // Visual feedback
-            this.style.backgroundColor = '#0056b3';
-            setTimeout(() => this.style.backgroundColor = '', 200);
-            
-            const barcode = document.getElementById('barcode').value.trim();
-            console.log('Barcode value:', barcode);
-            
-            if (barcode) {
-                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-                console.log('CSRF Token found:', csrfToken ? 'Yes' : 'No');
-                
-                fetch('/api/scan_barcode', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({ barcode: barcode })
-                })
-                .then(response => {
-                    console.log('API Response:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('API Data:', data);
-                    if (data.error) {
-                        alert(data.message || data.error);
-                        return;
-                    }
-                    
-                    if (data.name) document.getElementById('name').value = data.name;
-                    if (data.description) document.getElementById('description').value = data.description;
-                    if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
-                    if (data.mpn) document.getElementById('mpn').value = data.mpn;
-                    if (data.image_url) {
-                        document.getElementById('image_url').value = data.image_url;
-                        document.getElementById('imagePreview').innerHTML = 
-                            `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
-                    }
-                    
-                    alert('Product information found!');
-                })
-                .catch(error => {
-                    console.error('API Error:', error);
-                    alert('Error looking up barcode');
-                });
-            } else {
-                alert('Please enter a barcode');
-            }
-        });
-    } else {
-        console.error('Lookup button not found!');
+    const barcode = document.getElementById('barcode').value.trim();
+    if (!barcode) {
+        alert('Please enter a barcode');
+        return;
     }
-});
+    
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    
+    // Make the API call
+    fetch('/api/scan_barcode', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ barcode: barcode })
+    })
+    .then(response => {
+        alert('Got response: ' + response.status);
+        return response.json();
+    })
+    .then(data => {
+        alert('Got data: ' + JSON.stringify(data));
+        
+        if (data.error) {
+            alert(data.message || data.error);
+            return;
+        }
+        
+        // Fill in the form fields
+        if (data.name) document.getElementById('name').value = data.name;
+        if (data.description) document.getElementById('description').value = data.description;
+        if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
+        if (data.mpn) document.getElementById('mpn').value = data.mpn;
+        if (data.image_url) {
+            document.getElementById('image_url').value = data.image_url;
+            document.getElementById('imagePreview').innerHTML = 
+                `<img src="${data.image_url}" alt="Product" class="img-thumbnail" style="max-height: 100px;">`;
+        }
+        
+        alert('Product information found!');
+    })
+    .catch(error => {
+        alert('Error: ' + error);
+    });
+}
+
+// Basic test that JavaScript is loading
+console.log('JavaScript is loaded and running');
+alert('JavaScript is loaded and running');
 </script>
 {% endblock %} 
