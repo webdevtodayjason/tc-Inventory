@@ -78,6 +78,7 @@ class CPUForm(FlaskForm):
             field.data = f"{speed:.2f} GHz"
 
 class ComputerSystemForm(FlaskForm):
+    tracking_id = StringField('Tracking ID', validators=[Optional()])
     model_id = SelectField('Computer Model', coerce=int, validators=[DataRequired()])
     cpu_id = SelectField('CPU', coerce=int, validators=[DataRequired()])
     ram = StringField('RAM', validators=[DataRequired()])
@@ -88,25 +89,36 @@ class ComputerSystemForm(FlaskForm):
         ('Microsoft Server 2022', 'Microsoft Server 2022'),
         ('Linux', 'Linux')
     ], validators=[DataRequired()])
+    storage_location = StringField('Storage Location', validators=[Optional(), Length(max=64)])
     
     # Testing fields
     cpu_benchmark = FloatField('CPU Benchmark Score', validators=[Optional()])
     usb_ports_status = SelectField('USB Ports Status', choices=[
         ('PASSED', 'PASSED'),
         ('FAILED', 'FAILED')
-    ])
+    ], validators=[DataRequired()])
     usb_ports_notes = TextAreaField('USB Ports Notes')
     video_status = SelectField('Video Status', choices=[
         ('PASSED', 'PASSED'),
         ('FAILED', 'FAILED')
-    ])
+    ], validators=[DataRequired()])
     video_notes = TextAreaField('Video Notes')
     network_status = SelectField('Network Status', choices=[
         ('PASSED', 'PASSED'),
         ('FAILED', 'FAILED')
-    ])
+    ], validators=[DataRequired()])
     network_notes = TextAreaField('Network Notes')
     general_notes = TextAreaField('General Notes')
+    
+    def __init__(self, *args, **kwargs):
+        super(ComputerSystemForm, self).__init__(*args, **kwargs)
+        # Populate model choices
+        self.model_id.choices = [(m.id, f"{m.manufacturer} {m.model_name}") 
+                                for m in ComputerModel.query.order_by(ComputerModel.manufacturer).all()]
+        
+        # Populate CPU choices
+        self.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model} ({c.speed})") 
+                              for c in CPU.query.order_by(CPU.manufacturer, CPU.model).all()]
 
 class GeneralItemForm(FlaskForm):
     category = SelectField('Category', coerce=int, validators=[DataRequired()])
