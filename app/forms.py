@@ -26,15 +26,9 @@ MANUFACTURER_CHOICES = [
 COMPUTER_TYPES = [
     ('desktop', 'Desktop'),
     ('laptop', 'Laptop'),
-    ('server', 'Server'),
     ('workstation', 'Workstation'),
-    ('mini-pc', 'Mini PC'),
-    ('all-in-one', 'All-in-One'),
-    ('tablet', 'Tablet'),
-    ('thin-client', 'Thin Client'),
-    ('gaming', 'Gaming PC'),
-    ('nas', 'NAS'),
-    ('custom', 'Custom Build')
+    ('server', 'Server'),
+    ('tablet', 'Tablet')
 ]
 
 class ComputerModelForm(FlaskForm):
