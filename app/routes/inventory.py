@@ -8,9 +8,9 @@ from app.models.inventory import (
 from app.models.config import Configuration
 from app.utils.email import send_stock_alert
 from app.forms import (
-    ComputerModelForm, CPUForm, ItemForm, 
+    ComputerModelForm, CPUForm, GeneralItemForm, 
     ComputerSystemForm, MANUFACTURER_CHOICES, 
-    COMPUTER_TYPES, GeneralItemForm
+    COMPUTER_TYPES
 )
 from app import db
 import uuid
@@ -231,7 +231,7 @@ def edit_item(id):
             
         return render_template('inventory/edit_computer_system.html', form=form, item=item)
     else:
-        form = ItemForm(obj=item)
+        form = GeneralItemForm(obj=item)
         if form.validate_on_submit():
             try:
                 # Update fields using form data
