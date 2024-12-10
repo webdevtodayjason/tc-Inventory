@@ -239,21 +239,24 @@ def edit_item(id):
             # Handle tags with detailed error logging
             try:
                 current_app.logger.debug(f"Tags data from form: {form.tags.data}")
+                # Clear existing tags
+                item.tags = []
+                db.session.flush()
+                
                 if form.tags.data:
-                    # Query for Tag objects using the IDs from the form
-                    tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
-                    current_app.logger.debug(f"Found tags: {tags}")
-                    # Map of tag IDs to Tag objects for verification
-                    found_tag_ids = {str(tag.id) for tag in tags}
-                    # Check if all requested tags were found
-                    requested_tag_ids = {str(tag_id) for tag_id in form.tags.data}
-                    missing_tags = requested_tag_ids - found_tag_ids
-                    if missing_tags:
-                        raise ValueError(f"Some tags were not found: {missing_tags}")
-                    item.tags = tags
-                else:
-                    current_app.logger.debug("No tags data, clearing tags")
-                    item.tags = []
+                    # Get Tag objects for selected IDs
+                    selected_tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
+                    current_app.logger.debug(f"Found tags: {selected_tags}")
+                    
+                    # Verify all tags were found
+                    found_ids = {tag.id for tag in selected_tags}
+                    missing_ids = set(form.tags.data) - found_ids
+                    if missing_ids:
+                        raise ValueError(f"Some tags were not found: {missing_ids}")
+                    
+                    # Assign tags to item
+                    item.tags = selected_tags
+                
             except Exception as tag_error:
                 current_app.logger.error(f"Tag handling error: {str(tag_error)}")
                 current_app.logger.error(f"Tags data type: {type(form.tags.data)}")
