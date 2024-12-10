@@ -55,6 +55,9 @@ class InventoryItem(db.Model):
     status = db.Column('status', db.String(50), default='available')
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')
+    
+    # Add tags relationship
+    tags = db.relationship('Tag', secondary=item_tags, backref=db.backref('items', lazy='dynamic'))
 
     def __repr__(self):
         return f'<InventoryItem {self.name}>'
