@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head>
     <title>Print Label - {{ item.tracking_id }}</title>
@@ -10,7 +9,7 @@
             box-sizing: border-box;
         }
 
-        /* Set page size for printing - 4x2 inches */
+        /* Set page size for printing */
         @page {
             size: 4in 2in landscape;
             margin: 0;
@@ -25,100 +24,63 @@
             font-family: Arial, sans-serif;
             background: white;
             overflow: hidden;
-            zoom: 100%;
         }
 
         /* Label container */
         .label-container {
             width: 4in;
             height: 2in;
-            padding: 0.15in;
-            display: grid;
-            grid-template-columns: 2.3in 1.5in;
-            gap: 0.1in;
+            padding: 0.2in;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             page-break-after: avoid;
             page-break-before: avoid;
             page-break-inside: avoid;
         }
 
-        /* Left side - Details */
-        .details-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
         /* Content styling */
         .item-name {
-            font-size: 11pt;
+            font-size: 12pt;
             font-weight: bold;
-            line-height: 1.1;
-            max-height: 2.2em;
+            white-space: nowrap;
             overflow: hidden;
-        }
-
-        .creation-info {
-            font-size: 8pt;
-            margin-bottom: 0.05in;
+            text-overflow: ellipsis;
         }
 
         .details {
-            font-size: 9pt;
+            font-size: 10pt;
             line-height: 1.2;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .details-row {
-            display: flex;
-            gap: 0.1in;
-            margin-bottom: 0.05in;
-        }
-
-        .details-label {
-            font-weight: bold;
-            min-width: 0.6in;
-        }
-
-        .bottom-info {
-            margin-top: auto;
-            padding-top: 0.05in;
-        }
-
-        .creator-info {
-            font-size: 8pt;
-            margin-bottom: 0.02in;
+            margin: 0.1in 0;
         }
 
         .storage-location {
             font-size: 10pt;
             font-weight: bold;
+            text-align: left;
+            margin: 0.1in 0;
+            color: #000;
         }
 
-        /* Right side - Barcode */
         .barcode-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            height: 100%;
-        }
-
-        .company-logo {
-            font-size: 7pt;
             text-align: center;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .barcode-container img {
-            width: 1.4in;
+            max-width: 3.5in;
+            max-height: 0.8in;
+            width: auto;
             height: auto;
-            margin: auto 0;
         }
 
         .tracking-id {
             font-size: 8pt;
             text-align: center;
-            font-weight: bold;
+            margin-top: 0.1in;
         }
 
         /* Print-specific styles */
@@ -138,7 +100,9 @@
     </style>
     <script>
         window.onload = function() {
+            // Auto-trigger print dialog
             window.print();
+            // Return to previous page after print dialog is closed
             window.onafterprint = function() {
                 window.close();
             };
@@ -147,84 +111,27 @@
 </head>
 <body>
     <div class="label-container">
-        <!-- Left side - Details -->
-        <div class="details-container">
-            <div>
-                <div class="item-name">{{ item.name }}</div>
-                <div class="creation-info">Created: {{ item.created_at.strftime('%m/%d/%Y') }}</div>
-            </div>
-            
-            {% if item.type == 'computer_system' %}
-            <div class="details">
-                <div class="details-row">
-                    <span class="details-label">Model:</span>
-                    <span>{{ item.model.manufacturer }} {{ item.model.model_name }}</span>
-                </div>
-                <div class="details-row">
-                    <span class="details-label">CPU:</span>
-                    <span>{{ item.cpu.manufacturer }} {{ item.cpu.model }}</span>
-                </div>
-                {% if item.cpu_benchmark %}
-                <div class="details-row">
-                    <span class="details-label">Bench:</span>
-                    <span>{{ "%.1f"|format(item.cpu_benchmark) }}</span>
-                </div>
-                {% endif %}
-                <div class="details-row">
-                    <span class="details-label">RAM:</span>
-                    <span>{{ item.ram }}</span>
-                </div>
-                <div class="details-row">
-                    <span class="details-label">Storage:</span>
-                    <span>{{ item.storage }}</span>
-                </div>
-                {% if item.serial_tag %}
-                <div class="details-row">
-                    <span class="details-label">S/N:</span>
-                    <span>{{ item.serial_tag }}</span>
-                </div>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="details">
-                {% if item.manufacturer %}
-                <div class="details-row">
-                    <span class="details-label">Mfr:</span>
-                    <span>{{ item.manufacturer }}</span>
-                </div>
-                {% endif %}
-                {% if item.mpn %}
-                <div class="details-row">
-                    <span class="details-label">MPN:</span>
-                    <span>{{ item.mpn }}</span>
-                </div>
-                {% endif %}
-                {% if item.category %}
-                <div class="details-row">
-                    <span class="details-label">Type:</span>
-                    <span>{{ item.category.name }}</span>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-            
-            <div class="bottom-info">
-                {% if item.creator %}
-                <div class="creator-info">Added by: {{ item.creator.username }}</div>
-                {% endif %}
-                
-                {% if item.storage_location %}
-                <div class="storage-location">Location: {{ item.storage_location }}</div>
-                {% endif %}
-            </div>
+        <div class="item-name">{{ item.name }}</div>
+        
+        {% if item.type == 'computer_system' %}
+        <div class="details">
+            Model: {{ item.model.manufacturer }} {{ item.model.model_name }}<br>
+            CPU: {{ item.cpu.manufacturer }} {{ item.cpu.model }}<br>
+            RAM: {{ item.ram }}
         </div>
-
-        <!-- Right side - Barcode -->
+        {% endif %}
+        
+        {% if item.storage_location %}
+        <div class="storage-location">
+            Location: {{ item.storage_location }}
+        </div>
+        {% endif %}
+        
         <div class="barcode-container">
-            <div class="company-logo">TC INVENTORY</div>
             <img src="data:image/png;base64,{{ barcode }}" alt="Barcode">
-            <div class="tracking-id">{{ item.tracking_id }}</div>
         </div>
+        
+        <div class="tracking-id">{{ item.tracking_id }}</div>
     </div>
 </body>
 </html> 
