@@ -222,60 +222,94 @@ def print_label(id):
 @login_required
 def edit_item(id):
     try:
-        print("=== Starting edit_item route ===")
-        print(f"Request method: {request.method}")
-        print(f"Request form data: {request.form}")
-        print(f"Request args: {request.args}")
+        print("\n=== Starting edit_item route ===")
+        print(f"Method: {request.method}")
         
         # Get the item
-        print(f"Fetching item with id: {id}")
         item = InventoryItem.query.get_or_404(id)
-        print(f"Found item: {item}")
+        print(f"Found item: {item.name} (ID: {item.id})")
         
         # Create form
-        print("Creating form")
         form = GeneralItemForm(obj=item)
-        print("Form created successfully")
         
         if request.method == 'POST':
-            print("=== Processing POST request ===")
+            print("\n=== Processing POST request ===")
+            print(f"Form data: {request.form.to_dict()}")
+            
             try:
-                # Log form data
-                print(f"Form data: {request.form}")
-                print(f"Initial item state: {item}")
+                # Handle category first
+                category_id = request.form.get('category')
+                if category_id:
+                    category = Category.query.get(int(category_id))
+                    if not category:
+                        raise ValueError(f"Category not found: {category_id}")
+                    item.category = category
+                print(f"Category updated: {item.category.name if item.category else 'None'}")
                 
-                # Update general fields EXCEPT tags
-                for field in form._fields:
-                    if field != 'tags' and hasattr(item, field):
-                        print(f"Processing field: {field}")
-                        print(f"Current value: {getattr(item, field)}")
-                        print(f"New value: {getattr(form, field).data}")
-                        setattr(item, field, getattr(form, field).data)
+                # Update other fields
+                item.name = request.form.get('name')
+                item.quantity = int(request.form.get('quantity', 0))
+                item.reorder_threshold = int(request.form.get('reorder_threshold', 0))
+                item.storage_location = request.form.get('storage_location')
+                item.barcode = request.form.get('barcode')
+                item.manufacturer = request.form.get('manufacturer')
+                item.mpn = request.form.get('mpn')
+                item.image_url = request.form.get('image_url')
+                item.description = request.form.get('description')
                 
-                # Handle tags separately
-                print("=== Processing tags ===")
-                tag_ids = form.tags.data if form.tags.data else []
-                print(f"Tag IDs from form: {tag_ids}")
-                
-                try:
-                    # Clear existing tags
-                    item.tags = []
-                    db.session.flush()
+                # Handle optional decimal fields
+                cost = request.form.get('cost')
+                if cost and cost.strip():
+                    item.cost = float(cost)
+                else:
+                    item.cost = None
                     
-                    if tag_ids:
-                        # Fetch Tag objects
-                        selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                        print(f"Selected Tag objects: {selected_tags}")
-                        item.tags.extend(selected_tags)
+                sell_price = request.form.get('sell_price')
+                if sell_price and sell_price.strip():
+                    item.sell_price = float(sell_price)
+                else:
+                    item.sell_price = None
                     
-                    print("Tag processing completed successfully")
-                    
-                except Exception as e:
-                    print(f"Error processing tags: {str(e)}")
-                    db.session.rollback()
-                    raise
+                item.purchase_url = request.form.get('purchase_url')
+                print("Basic fields updated")
                 
-                print("Committing changes to database")
+                # Handle tags
+                print("\n=== Processing tags ===")
+                raw_tags = request.form.getlist('tags')
+                print(f"Raw tags from form: {raw_tags}")
+                
+                # Convert to integers and validate
+                tag_ids = []
+                for tag_id in raw_tags:
+                    try:
+                        tag_ids.append(int(tag_id))
+                    except (ValueError, TypeError) as e:
+                        print(f"Invalid tag ID {tag_id}: {str(e)}")
+                
+                print(f"Processed tag IDs: {tag_ids}")
+                
+                # Clear existing tags
+                item.tags = []
+                db.session.flush()
+                print("Cleared existing tags")
+                
+                if tag_ids:
+                    # Fetch and validate tags
+                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                    found_ids = [t.id for t in tags]
+                    print(f"Found tags: {found_ids}")
+                    
+                    # Check if all requested tags were found
+                    missing = set(tag_ids) - set(found_ids)
+                    if missing:
+                        raise ValueError(f"Some tags were not found: {missing}")
+                    
+                    # Add tags one by one
+                    for tag in tags:
+                        item.tags.append(tag)
+                        print(f"Added tag: {tag.id} - {tag.name}")
+                
+                print("\n=== Saving changes ===")
                 db.session.commit()
                 print("Changes committed successfully")
                 
@@ -284,31 +318,32 @@ def edit_item(id):
                 
             except Exception as e:
                 db.session.rollback()
-                print("=== Error in POST processing ===")
-                print(f'Error type: {type(e)}')
-                print(f'Error message: {str(e)}')
-                print(f'Item data: {item}')
-                print(f'Form data: {form.data}')
-                print(f'Request form data: {request.form}')
-                flash(f'Error updating item: {str(e)} | Tags data: {form.tags.data} | Type: {type(form.tags.data)}', 'danger')
-        else:
-            print("=== Processing GET request ===")
-            print(f"Current item tags: {item.tags}")
-            form.tags.data = [tag.id for tag in item.tags]
+                print(f"\n=== Error in POST processing ===")
+                print(f"Error type: {type(e)}")
+                print(f"Error message: {str(e)}")
+                print(f"Item data: {item}")
+                print(f"Form data: {form.data}")
+                flash(f'Error updating item: {str(e)}', 'danger')
         
-        # Get all available tags for the form
-        print("Fetching all available tags")
+        # GET request - populate form
+        print("\n=== Processing GET request ===")
+        print(f"Current item tags: {[t.id for t in item.tags]}")
+        
+        # Get all available tags
         all_tags = Tag.query.order_by(Tag.name).all()
-        print(f"Found {len(all_tags)} tags")
+        print(f"Available tags: {[(t.id, t.name) for t in all_tags]}")
         
-        return render_template('inventory/edit_item.html', form=form, item=item, all_tags=all_tags)
+        return render_template('inventory/edit_item.html', 
+                             form=form, 
+                             item=item, 
+                             all_tags=all_tags)
         
     except Exception as e:
-        print("=== Unexpected error in edit_item route ===")
-        print(f'Error type: {type(e)}')
-        print(f'Error message: {str(e)}')
+        print("\n=== Unexpected error in edit_item route ===")
+        print(f"Error type: {type(e)}")
+        print(f"Error message: {str(e)}")
         import traceback
-        print(f'Stack trace: {traceback.format_exc()}')
+        print(f"Stack trace: {traceback.format_exc()}")
         flash(f'An unexpected error occurred: {str(e)}', 'danger')
         return redirect(url_for('inventory.dashboard'))
 
