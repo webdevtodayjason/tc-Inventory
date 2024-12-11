@@ -266,7 +266,9 @@ def edit_item(id):
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f'Error updating item: {str(e)}')
-            flash(f'Error updating item: {str(e)}', 'danger')
+            current_app.logger.error(f'Item data: {item}')
+            current_app.logger.error(f'Form data: {form.data}')
+            flash(f'Error updating item: {str(e)} | Tags data: {form.tags.data} | Type: {type(form.tags.data)}', 'danger')
     
     # For GET request, prepare the form
     current_app.logger.debug(f"Current item tags: {item.tags}")
