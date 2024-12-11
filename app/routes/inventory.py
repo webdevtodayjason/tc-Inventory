@@ -254,28 +254,26 @@ def edit_item(id):
                 
                 # Handle tags separately
                 print("=== Processing tags ===")
-                tag_ids = []
-                form_tags = request.form.getlist('tags')
-                print(f"Raw tags from form: {form_tags}")
+                tag_ids = form.tags.data if form.tags.data else []
+                print(f"Tag IDs from form: {tag_ids}")
                 
-                # Convert tag IDs to integers and handle both single and multiple values
-                for tag_id in form_tags:
-                    try:
-                        tag_ids.append(int(tag_id))
-                    except (ValueError, TypeError):
-                        print(f"Invalid tag ID: {tag_id}")
-                        continue
-                
-                print(f"Processed tag IDs: {tag_ids}")
-                
-                if tag_ids:
-                    # Fetch Tag objects
-                    selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                    print(f"Selected Tag objects: {selected_tags}")
-                    item.tags = selected_tags
-                else:
-                    print("No tags selected, clearing tags")
+                try:
+                    # Clear existing tags
                     item.tags = []
+                    db.session.flush()
+                    
+                    if tag_ids:
+                        # Fetch Tag objects
+                        selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                        print(f"Selected Tag objects: {selected_tags}")
+                        item.tags.extend(selected_tags)
+                    
+                    print("Tag processing completed successfully")
+                    
+                except Exception as e:
+                    print(f"Error processing tags: {str(e)}")
+                    db.session.rollback()
+                    raise
                 
                 print("Committing changes to database")
                 db.session.commit()
