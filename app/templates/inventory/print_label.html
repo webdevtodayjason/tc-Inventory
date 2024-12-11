@@ -172,6 +172,12 @@
                     <span class="details-label">CPU:</span>
                     <span>{{ item.cpu.manufacturer }} {{ item.cpu.model }}</span>
                 </div>
+                {% if item.cpu_benchmark %}
+                <div class="details-row">
+                    <span class="details-label">Bench:</span>
+                    <span>{{ "%.1f"|format(item.cpu_benchmark) }}</span>
+                </div>
+                {% endif %}
                 <div class="details-row">
                     <span class="details-label">RAM:</span>
                     <span>{{ item.ram }}</span>
