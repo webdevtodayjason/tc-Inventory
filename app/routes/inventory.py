@@ -235,10 +235,38 @@ def edit_item(id):
                     current_app.logger.debug(f"Updating field: {field} with value: {getattr(form, field).data}")
                     setattr(item, field, getattr(form, field).data)
             
-            # Log the updated state of the item
-            current_app.logger.debug(f"Updated item state: {item}")
-            
+            # Commit the item update
             db.session.commit()
+            current_app.logger.debug("Item fields updated successfully")
+            
+            # Handle tags separately
+            try:
+                # Get tag IDs from request
+                tag_ids = request.form.getlist('tags')
+                current_app.logger.debug(f"Tag IDs from request: {tag_ids}")
+                
+                # Clear existing tags
+                db.session.execute(
+                    'DELETE FROM item_tags WHERE item_id = :item_id',
+                    {'item_id': item.id}
+                )
+                
+                # Insert new tag associations
+                for tag_id in tag_ids:
+                    db.session.execute(
+                        'INSERT INTO item_tags (item_id, tag_id) VALUES (:item_id, :tag_id)',
+                        {'item_id': item.id, 'tag_id': tag_id}
+                    )
+                
+                db.session.commit()
+                current_app.logger.debug("Tags updated successfully")
+                
+            except Exception as tag_error:
+                current_app.logger.error(f"Tag handling error: {str(tag_error)}")
+                current_app.logger.error(f"Tag IDs: {tag_ids}")
+                db.session.rollback()
+                raise Exception(f"Tag handling error: {str(tag_error)}")
+            
             flash('Item updated successfully!', 'success')
             return redirect(url_for('inventory.dashboard'))
             
