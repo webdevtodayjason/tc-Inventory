@@ -237,6 +237,10 @@ def edit_item(id):
                 tag_ids = request.form.getlist('tags')
                 current_app.logger.debug(f"Tag IDs from request: {tag_ids}")
                 
+                # Fetch Tag objects
+                selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                current_app.logger.debug(f"Selected Tag objects: {selected_tags}")
+                
                 # Clear existing tags
                 db.session.execute(
                     'DELETE FROM item_tags WHERE item_id = :item_id',
@@ -244,12 +248,12 @@ def edit_item(id):
                 )
                 
                 # Insert new tag associations
-                if tag_ids:
-                    for tag_id in tag_ids:
-                        db.session.execute(
-                            'INSERT INTO item_tags (item_id, tag_id) VALUES (:item_id, :tag_id)',
-                            {'item_id': item.id, 'tag_id': tag_id}
-                        )
+                for tag in selected_tags:
+                    current_app.logger.debug(f"Inserting tag: {tag}")
+                    db.session.execute(
+                        'INSERT INTO item_tags (item_id, tag_id) VALUES (:item_id, :tag_id)',
+                        {'item_id': item.id, 'tag_id': tag.id}
+                    )
                 
                 current_app.logger.debug("Tags updated successfully")
                 
