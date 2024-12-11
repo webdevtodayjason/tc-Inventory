@@ -231,23 +231,25 @@ def edit_item(id):
                 if field != 'tags' and hasattr(item, field):
                     setattr(item, field, getattr(form, field).data)
             
-            # Handle tags separately from the form
+            # Handle tags separately using direct SQL
             try:
                 # Get tag IDs from request
                 tag_ids = request.form.getlist('tags')
                 current_app.logger.debug(f"Tag IDs from request: {tag_ids}")
                 
                 # Clear existing tags
-                db.session.execute(db.text(
-                    'DELETE FROM item_tags WHERE item_id = :item_id'
-                ), {'item_id': item.id})
+                db.session.execute(
+                    'DELETE FROM item_tags WHERE item_id = :item_id',
+                    {'item_id': item.id}
+                )
                 
                 # Insert new tag associations
                 if tag_ids:
                     for tag_id in tag_ids:
-                        db.session.execute(db.text(
-                            'INSERT INTO item_tags (item_id, tag_id) VALUES (:item_id, :tag_id)'
-                        ), {'item_id': item.id, 'tag_id': tag_id})
+                        db.session.execute(
+                            'INSERT INTO item_tags (item_id, tag_id) VALUES (:item_id, :tag_id)',
+                            {'item_id': item.id, 'tag_id': tag_id}
+                        )
                 
                 current_app.logger.debug("Tags updated successfully")
                 
