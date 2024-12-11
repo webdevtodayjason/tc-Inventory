@@ -229,38 +229,26 @@ def edit_item(id):
             # Log the initial state of the item
             current_app.logger.debug(f"Initial item state: {item}")
             
-            # Update general fields
+            # Update general fields EXCEPT tags
             for field in form._fields:
-                if hasattr(item, field):
+                if field != 'tags' and hasattr(item, field):
                     current_app.logger.debug(f"Updating field: {field} with value: {getattr(form, field).data}")
                     setattr(item, field, getattr(form, field).data)
             
-            # Commit the item update
-            db.session.commit()
-            current_app.logger.debug("Item fields updated successfully")
-            
             # Handle tags separately
-            try:
-                # Get tag IDs from request
-                tag_ids = request.form.getlist('tags')
-                current_app.logger.debug(f"Tag IDs from request: {tag_ids}")
-                
+            tag_ids = request.form.getlist('tags')
+            current_app.logger.debug(f"Tag IDs from request: {tag_ids}")
+            
+            if tag_ids:
                 # Fetch Tag objects
                 selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
                 current_app.logger.debug(f"Selected Tag objects: {selected_tags}")
-                
-                # Assign Tag objects to item.tags
                 item.tags = selected_tags
-                
-                db.session.commit()
-                current_app.logger.debug("Tags updated successfully")
-                
-            except Exception as tag_error:
-                current_app.logger.error(f"Tag handling error: {str(tag_error)}")
-                current_app.logger.error(f"Tag IDs: {tag_ids}")
-                db.session.rollback()
-                raise Exception(f"Tag handling error: {str(tag_error)}")
+            else:
+                # Clear tags if none selected
+                item.tags = []
             
+            db.session.commit()
             flash('Item updated successfully!', 'success')
             return redirect(url_for('inventory.dashboard'))
             
