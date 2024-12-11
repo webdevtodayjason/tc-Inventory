@@ -327,7 +327,16 @@ def edit_item(id):
         
         # GET request - populate form
         print("\n=== Processing GET request ===")
-        print(f"Current item tags: {[t.id for t in item.tags]}")
+        
+        # Pre-select current category
+        if item.category:
+            form.category.data = item.category.id
+            print(f"Pre-selected category: {item.category.name} (ID: {item.category.id})")
+        
+        # Pre-select current tags
+        current_tag_ids = [tag.id for tag in item.tags]
+        form.tags.data = current_tag_ids
+        print(f"Pre-selected tags: {current_tag_ids}")
         
         # Get all available tags
         all_tags = Tag.query.order_by(Tag.name).all()
