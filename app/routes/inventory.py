@@ -224,54 +224,51 @@ def edit_item(id):
     item = InventoryItem.query.get_or_404(id)
     form = GeneralItemForm(obj=item)
     
-    # Pre-populate tags field with existing tags
-    if request.method == 'GET':
-        current_app.logger.debug(f"Current item tags: {item.tags}")
-        form.tags.data = [tag.id for tag in item.tags]
-    
-    if form.validate_on_submit():
+    if request.method == 'POST':
         try:
             # Update general fields except tags
             for field in form._fields:
                 if field != 'tags' and hasattr(item, field):
                     setattr(item, field, getattr(form, field).data)
             
-            # Handle tags with detailed error logging
+            # Handle tags separately from the form
             try:
-                current_app.logger.debug(f"Tags data from form: {form.tags.data}")
+                # Get tag IDs from request
+                tag_ids = request.form.getlist('tags')
+                current_app.logger.debug(f"Tag IDs from request: {tag_ids}")
                 
-                # Get all selected tags first
-                if form.tags.data:
-                    # Query all selected tags at once
-                    selected_tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
-                    current_app.logger.debug(f"Found tags: {selected_tags}")
-                    
-                    # Update the tags association
-                    item.tags = selected_tags
-                else:
-                    # Clear all tags if none selected
-                    item.tags = []
+                # Clear existing tags
+                db.session.execute(db.text(
+                    'DELETE FROM item_tags WHERE item_id = :item_id'
+                ), {'item_id': item.id})
                 
-                current_app.logger.debug(f"Final tags: {item.tags}")
+                # Insert new tag associations
+                if tag_ids:
+                    for tag_id in tag_ids:
+                        db.session.execute(db.text(
+                            'INSERT INTO item_tags (item_id, tag_id) VALUES (:item_id, :tag_id)'
+                        ), {'item_id': item.id, 'tag_id': tag_id})
+                
+                current_app.logger.debug("Tags updated successfully")
                 
             except Exception as tag_error:
                 current_app.logger.error(f"Tag handling error: {str(tag_error)}")
-                current_app.logger.error(f"Tags data type: {type(form.tags.data)}")
-                current_app.logger.error(f"Tags data content: {form.tags.data}")
+                current_app.logger.error(f"Tag IDs: {tag_ids}")
                 db.session.rollback()
                 raise Exception(f"Tag handling error: {str(tag_error)}")
             
             db.session.commit()
             flash('Item updated successfully!', 'success')
             return redirect(url_for('inventory.dashboard'))
+            
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f'Error updating item: {str(e)}')
-            flash(f'Error updating item: {str(e)} | Tags data: {form.tags.data} | Type: {type(form.tags.data)}', 'danger')
-    else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f'{field}: {error}', 'danger')
+            flash(f'Error updating item: {str(e)}', 'danger')
+    
+    # For GET request, prepare the form
+    current_app.logger.debug(f"Current item tags: {item.tags}")
+    form.tags.data = [tag.id for tag in item.tags]
     
     # Get all available tags for the form
     all_tags = Tag.query.order_by(Tag.name).all()
