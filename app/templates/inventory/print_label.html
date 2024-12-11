@@ -45,16 +45,7 @@
         .details-container {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             height: 100%;
-        }
-
-        /* Right side - Barcode */
-        .barcode-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
         }
 
         /* Content styling */
@@ -64,18 +55,18 @@
             line-height: 1.1;
             max-height: 2.2em;
             overflow: hidden;
-            margin-bottom: 0.05in;
         }
 
         .creation-info {
             font-size: 8pt;
-            margin-bottom: 0.1in;
+            margin-bottom: 0.05in;
         }
 
         .details {
             font-size: 9pt;
             line-height: 1.2;
-            margin: 0.05in 0;
+            flex: 1;
+            overflow: hidden;
         }
 
         .details-row {
@@ -91,11 +82,12 @@
 
         .bottom-info {
             margin-top: auto;
+            padding-top: 0.05in;
         }
 
         .creator-info {
             font-size: 8pt;
-            margin-bottom: 0.05in;
+            margin-bottom: 0.02in;
         }
 
         .storage-location {
@@ -109,23 +101,23 @@
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
+            height: 100%;
         }
 
         .company-logo {
             font-size: 7pt;
             text-align: center;
-            margin-top: 0.05in;
         }
 
         .barcode-container img {
             width: 1.4in;
             height: auto;
+            margin: auto 0;
         }
 
         .tracking-id {
             font-size: 8pt;
             text-align: center;
-            margin-top: 0.05in;
             font-weight: bold;
         }
 
