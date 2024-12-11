@@ -226,42 +226,10 @@ def edit_item(id):
     
     if request.method == 'POST':
         try:
-            # Update general fields except tags
+            # Update general fields
             for field in form._fields:
-                if field != 'tags' and hasattr(item, field):
+                if hasattr(item, field):
                     setattr(item, field, getattr(form, field).data)
-            
-            # Handle tags separately using direct SQL
-            try:
-                # Get tag IDs from request
-                tag_ids = request.form.getlist('tags')
-                current_app.logger.debug(f"Tag IDs from request: {tag_ids}")
-                
-                # Fetch Tag objects
-                selected_tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                current_app.logger.debug(f"Selected Tag objects: {selected_tags}")
-                
-                # Clear existing tags
-                db.session.execute(
-                    'DELETE FROM item_tags WHERE item_id = :item_id',
-                    {'item_id': item.id}
-                )
-                
-                # Insert new tag associations
-                for tag in selected_tags:
-                    current_app.logger.debug(f"Inserting tag: {tag}")
-                    db.session.execute(
-                        'INSERT INTO item_tags (item_id, tag_id) VALUES (:item_id, :tag_id)',
-                        {'item_id': item.id, 'tag_id': tag.id}
-                    )
-                
-                current_app.logger.debug("Tags updated successfully")
-                
-            except Exception as tag_error:
-                current_app.logger.error(f"Tag handling error: {str(tag_error)}")
-                current_app.logger.error(f"Tag IDs: {tag_ids}")
-                db.session.rollback()
-                raise Exception(f"Tag handling error: {str(tag_error)}")
             
             db.session.commit()
             flash('Item updated successfully!', 'success')
