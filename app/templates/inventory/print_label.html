@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
     <title>Print Label - {{ item.tracking_id }}</title>
@@ -8,13 +9,11 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         /* Set page size for printing */
         @page {
             size: 4in 2in landscape;
             margin: 0;
         }
-
         /* Main container */
         html, body {
             width: 4in;
@@ -25,7 +24,6 @@
             background: white;
             overflow: hidden;
         }
-
         /* Label container */
         .label-container {
             width: 4in;
@@ -38,7 +36,6 @@
             page-break-before: avoid;
             page-break-inside: avoid;
         }
-
         /* Content styling */
         .item-name {
             font-size: 12pt;
@@ -47,13 +44,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .details {
             font-size: 10pt;
             line-height: 1.2;
             margin: 0.1in 0;
         }
-
         .storage-location {
             font-size: 10pt;
             font-weight: bold;
@@ -61,7 +56,6 @@
             margin: 0.1in 0;
             color: #000;
         }
-
         .barcode-container {
             text-align: center;
             flex-grow: 1;
@@ -69,20 +63,17 @@
             align-items: center;
             justify-content: center;
         }
-
         .barcode-container img {
             max-width: 3.5in;
             max-height: 0.8in;
             width: auto;
             height: auto;
         }
-
         .tracking-id {
             font-size: 8pt;
             text-align: center;
             margin-top: 0.1in;
         }
-
         /* Print-specific styles */
         @media print {
             html, body {
