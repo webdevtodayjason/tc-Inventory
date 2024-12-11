@@ -226,10 +226,17 @@ def edit_item(id):
     
     if request.method == 'POST':
         try:
+            # Log the initial state of the item
+            current_app.logger.debug(f"Initial item state: {item}")
+            
             # Update general fields
             for field in form._fields:
                 if hasattr(item, field):
+                    current_app.logger.debug(f"Updating field: {field} with value: {getattr(form, field).data}")
                     setattr(item, field, getattr(form, field).data)
+            
+            # Log the updated state of the item
+            current_app.logger.debug(f"Updated item state: {item}")
             
             db.session.commit()
             flash('Item updated successfully!', 'success')
