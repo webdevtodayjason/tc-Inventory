@@ -253,8 +253,20 @@ def edit_item(id):
                         setattr(item, field, getattr(form, field).data)
                 
                 # Handle tags separately
-                tag_ids = request.form.getlist('tags')
-                print(f"Tag IDs from request: {tag_ids}")
+                print("=== Processing tags ===")
+                tag_ids = []
+                form_tags = request.form.getlist('tags')
+                print(f"Raw tags from form: {form_tags}")
+                
+                # Convert tag IDs to integers and handle both single and multiple values
+                for tag_id in form_tags:
+                    try:
+                        tag_ids.append(int(tag_id))
+                    except (ValueError, TypeError):
+                        print(f"Invalid tag ID: {tag_id}")
+                        continue
+                
+                print(f"Processed tag IDs: {tag_ids}")
                 
                 if tag_ids:
                     # Fetch Tag objects

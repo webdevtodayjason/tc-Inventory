@@ -26,6 +26,7 @@ var/
 
 # Database
 scripts/setup_database.py
+app.db
 
 # IDE
 .idea/

@@ -142,11 +142,7 @@
             <div class="card-body">
                 <div class="mb-3">
                     {{ form.tags.label(class="form-label") }}
-                    <select class="form-select select2-tags" id="tags" name="tags" multiple>
-                        {% for tag in all_tags %}
-                            <option value="{{ tag.id }}" {% if tag in item.tags %}selected{% endif %}>{{ tag.name }}</option>
-                        {% endfor %}
-                    </select>
+                    {{ form.tags(class="form-select select2-tags", multiple=true) }}
                     <div class="form-text">Click to select tags or type to search. You can select multiple tags.</div>
                 </div>
             </div>
