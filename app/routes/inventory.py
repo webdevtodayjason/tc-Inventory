@@ -221,18 +221,25 @@ def print_label(id):
 @bp.route('/item/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_item(id):
+    current_app.logger.debug(f"Starting edit_item route for id: {id}")
     item = InventoryItem.query.get_or_404(id)
+    current_app.logger.debug(f"Found item: {item}")
     form = GeneralItemForm(obj=item)
+    current_app.logger.debug(f"Created form with item data")
     
     if request.method == 'POST':
+        current_app.logger.debug("Processing POST request")
         try:
-            # Log the initial state of the item
+            # Log form data
+            current_app.logger.debug(f"Form data: {request.form}")
             current_app.logger.debug(f"Initial item state: {item}")
             
             # Update general fields EXCEPT tags
             for field in form._fields:
                 if field != 'tags' and hasattr(item, field):
-                    current_app.logger.debug(f"Updating field: {field} with value: {getattr(form, field).data}")
+                    current_app.logger.debug(f"Processing field: {field}")
+                    current_app.logger.debug(f"Current value: {getattr(item, field)}")
+                    current_app.logger.debug(f"New value: {getattr(form, field).data}")
                     setattr(item, field, getattr(form, field).data)
             
             # Handle tags separately
@@ -245,10 +252,13 @@ def edit_item(id):
                 current_app.logger.debug(f"Selected Tag objects: {selected_tags}")
                 item.tags = selected_tags
             else:
-                # Clear tags if none selected
+                current_app.logger.debug("No tags selected, clearing tags")
                 item.tags = []
             
+            current_app.logger.debug("Committing changes to database")
             db.session.commit()
+            current_app.logger.debug("Changes committed successfully")
+            
             flash('Item updated successfully!', 'success')
             return redirect(url_for('inventory.dashboard'))
             
@@ -257,14 +267,18 @@ def edit_item(id):
             current_app.logger.error(f'Error updating item: {str(e)}')
             current_app.logger.error(f'Item data: {item}')
             current_app.logger.error(f'Form data: {form.data}')
+            current_app.logger.error(f'Request form data: {request.form}')
+            current_app.logger.error(f'Exception type: {type(e)}')
             flash(f'Error updating item: {str(e)} | Tags data: {form.tags.data} | Type: {type(form.tags.data)}', 'danger')
-    
-    # For GET request, prepare the form
-    current_app.logger.debug(f"Current item tags: {item.tags}")
-    form.tags.data = [tag.id for tag in item.tags]
+    else:
+        current_app.logger.debug("Processing GET request")
+        current_app.logger.debug(f"Current item tags: {item.tags}")
+        form.tags.data = [tag.id for tag in item.tags]
     
     # Get all available tags for the form
     all_tags = Tag.query.order_by(Tag.name).all()
+    current_app.logger.debug(f"Available tags: {all_tags}")
+    
     return render_template('inventory/edit_item.html', form=form, item=item, all_tags=all_tags)
 
 @bp.route('/item/<int:id>/delete', methods=['POST'])
