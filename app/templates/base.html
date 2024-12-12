@@ -385,32 +385,41 @@
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggle = document.getElementById('themeToggle');
             const themeIcon = document.getElementById('theme-icon');
-            let isDark = localStorage.getItem('darkMode') === 'true';
+            const navbar = document.querySelector('.navbar');
+            
+            // Check for saved theme preference or default to light
+            const isDark = localStorage.getItem('darkMode') === 'true';
             
             // Set initial theme
             if (isDark) {
                 document.body.classList.add('dark-mode');
                 themeIcon.classList.remove('fa-sun');
                 themeIcon.classList.add('fa-moon');
+                navbar.classList.remove('navbar-light', 'bg-light');
+                navbar.classList.add('navbar-dark', 'bg-dark');
             } else {
                 document.body.classList.remove('dark-mode');
                 themeIcon.classList.remove('fa-moon');
                 themeIcon.classList.add('fa-sun');
+                navbar.classList.remove('navbar-dark', 'bg-dark');
+                navbar.classList.add('navbar-light', 'bg-light');
             }
             
             // Toggle theme on click
             themeToggle.addEventListener('click', function() {
-                isDark = !isDark;
-                localStorage.setItem('darkMode', isDark);
+                const isDarkMode = document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
                 
-                if (isDark) {
-                    document.body.classList.add('dark-mode');
+                if (isDarkMode) {
                     themeIcon.classList.remove('fa-sun');
                     themeIcon.classList.add('fa-moon');
+                    navbar.classList.remove('navbar-light', 'bg-light');
+                    navbar.classList.add('navbar-dark', 'bg-dark');
                 } else {
-                    document.body.classList.remove('dark-mode');
                     themeIcon.classList.remove('fa-moon');
                     themeIcon.classList.add('fa-sun');
+                    navbar.classList.remove('navbar-dark', 'bg-dark');
+                    navbar.classList.add('navbar-light', 'bg-light');
                 }
             });
             
