@@ -62,7 +62,7 @@
                     <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
                             id="themeToggle" 
                             type="button" 
-                            title="Toggle dark mode">
+                            title="Toggle theme">
                         <i class="fas fa-sun" id="theme-icon"></i>
                     </button>
 
@@ -70,7 +70,8 @@
                     <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
                             type="button" 
                             data-bs-toggle="modal" 
-                            data-bs-target="#helpModal">
+                            data-bs-target="#helpModal"
+                            title="Help">
                         <i class="fas fa-life-ring"></i>
                     </button>
                     {% if current_user.is_authenticated %}
@@ -417,13 +418,7 @@
             
             // Update icon based on theme
             function updateThemeIcon(theme) {
-                if (theme === 'dark') {
-                    themeIcon.classList.remove('fa-sun');
-                    themeIcon.classList.add('fa-moon');
-                } else {
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
-                }
+                themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
             }
         });
     </script>
