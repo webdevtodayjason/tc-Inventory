@@ -12,7 +12,7 @@ from app.routes.inventory import admin_required
 from app import db
 from app.models.user import User
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from urllib.parse import urlparse
 import csv
@@ -319,15 +319,83 @@ def manage_config():
 @login_required
 @admin_required
 def view_logs():
-    """View system logs"""
     try:
-        # Get the most recent logs
-        logs = get_recent_logs(max_lines=100)
-        return render_template('admin/logs.html', logs=logs)
+        log_file = 'logs/app.log'
+        logs = []
+        
+        if os.path.exists(log_file):
+            with open(log_file, 'r') as f:
+                logs = f.readlines()[-100:]  # Get last 100 lines
+            logs.reverse()  # Show newest first
+            
+            # Get log date range
+            log_start_date = None
+            log_end_date = None
+            
+            if logs:
+                # Parse dates from log entries
+                for log in logs:
+                    try:
+                        date_str = log.split('[')[0].strip()
+                        date = datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
+                        if log_start_date is None or date < log_start_date:
+                            log_start_date = date
+                        if log_end_date is None or date > log_end_date:
+                            log_end_date = date
+                    except:
+                        continue
+            
+            # Format dates for template
+            log_start_date = log_start_date.strftime('%Y-%m-%d') if log_start_date else datetime.now().strftime('%Y-%m-%d')
+            log_end_date = log_end_date.strftime('%Y-%m-%d') if log_end_date else datetime.now().strftime('%Y-%m-%d')
+            
+        return render_template('admin/logs.html', logs=logs, log_start_date=log_start_date, log_end_date=log_end_date)
     except Exception as e:
         current_app.logger.error(f"Error viewing logs: {str(e)}")
-        flash('Error retrieving logs', 'error')
-        return render_template('admin/logs.html', logs=[])
+        return render_template('admin/logs.html', logs=["Error loading logs"])
+
+@bp.route('/admin/logs/download', methods=['POST'])
+@login_required
+@admin_required
+def download_logs():
+    try:
+        start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d')
+        end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d')
+        # Add one day to end_date to include the entire day
+        end_date = end_date + timedelta(days=1)
+        
+        log_file = 'logs/app.log'
+        filtered_logs = []
+        
+        if os.path.exists(log_file):
+            with open(log_file, 'r') as f:
+                for line in f:
+                    try:
+                        date_str = line.split('[')[0].strip()
+                        log_date = datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
+                        if start_date <= log_date <= end_date:
+                            filtered_logs.append(line)
+                    except:
+                        continue
+        
+        # Create in-memory file
+        mem_file = io.StringIO()
+        mem_file.write(''.join(filtered_logs))
+        mem_file.seek(0)
+        
+        # Generate filename with date range
+        filename = f"logs_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.log"
+        
+        return send_file(
+            io.BytesIO(mem_file.getvalue().encode('utf-8')),
+            mimetype='text/plain',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error downloading logs: {str(e)}")
+        return "Error downloading logs", 500
 
 @bp.route('/admin/backup', methods=['GET', 'POST'])
 @login_required

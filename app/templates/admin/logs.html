@@ -5,9 +5,14 @@
 {% block content %}
 <div class="container">
     <div class="row mb-4">
-        <div class="col">
+        <div class="col-md-8">
             <h2>System Logs</h2>
             <p class="text-muted">Showing last 100 log entries (most recent first)</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#downloadLogsModal">
+                <i class="fas fa-download"></i> Download Logs
+            </button>
         </div>
     </div>
 
@@ -32,6 +37,38 @@
     </div>
 </div>
 
+<!-- Download Logs Modal -->
+<div class="modal fade" id="downloadLogsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Download Logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.download_logs') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    </div>
+                    <div class="form-text">
+                        Logs are available from {{ log_start_date }} to {{ log_end_date }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Download</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .log-entry {
         padding: 2px 0;
@@ -48,5 +85,39 @@
     [data-bs-theme="dark"] .log-entry {
         border-bottom-color: rgba(255,255,255,.05);
     }
+
+    /* Set max date input width */
+    input[type="date"] {
+        max-width: 200px;
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date range (last 7 days)
+    var today = new Date();
+    var lastWeek = new Date(today);
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    document.getElementById('end_date').value = today.toISOString().split('T')[0];
+    document.getElementById('start_date').value = lastWeek.toISOString().split('T')[0];
+    
+    // Validate date range
+    document.getElementById('end_date').addEventListener('change', function() {
+        var startDate = document.getElementById('start_date').value;
+        if (startDate && this.value < startDate) {
+            this.value = startDate;
+            alert('End date cannot be earlier than start date');
+        }
+    });
+    
+    document.getElementById('start_date').addEventListener('change', function() {
+        var endDate = document.getElementById('end_date').value;
+        if (endDate && this.value > endDate) {
+            this.value = endDate;
+            alert('Start date cannot be later than end date');
+        }
+    });
+});
+</script>
 {% endblock %} 
