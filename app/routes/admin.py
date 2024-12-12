@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response
 from flask_login import login_required, current_user
 from app.models.config import Configuration
 from app.models.inventory import Tag
@@ -7,6 +7,8 @@ from app import db
 from app.models.user import User
 import subprocess
 from datetime import datetime
+import os
+from urllib.parse import urlparse
 
 bp = Blueprint('admin', __name__)
 
@@ -315,41 +317,118 @@ def view_logs():
         flash('Log file not found', 'error')
         return render_template('admin/logs.html', logs=[])
 
-@bp.route('/admin/backup')
+@bp.route('/admin/backup', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def backup():
+    if request.method == 'POST':
+        try:
+            # Create pg_dump command
+            db_url = current_app.config['DATABASE_URL']
+            parsed = urlparse(db_url)
+            
+            # Extract database connection info
+            dbname = parsed.path[1:]  # Remove leading slash
+            user = parsed.username
+            password = parsed.password
+            host = parsed.hostname
+            port = parsed.port or 5432
+            
+            # Set environment variables for pg_dump
+            env = os.environ.copy()
+            env['PGPASSWORD'] = password
+            
+            # Generate timestamp for filename
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'tc_inventory_backup_{timestamp}.sql'
+            
+            # Create pg_dump command
+            command = [
+                'pg_dump',
+                '-h', host,
+                '-p', str(port),
+                '-U', user,
+                '-F', 'p',  # Plain text format
+                '-f', filename,
+                dbname
+            ]
+            
+            # Execute pg_dump
+            result = subprocess.run(command, env=env, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                # Read the backup file
+                with open(filename, 'rb') as f:
+                    backup_data = f.read()
+                
+                # Delete the temporary file
+                os.remove(filename)
+                
+                # Create response with file download
+                response = make_response(backup_data)
+                response.headers['Content-Type'] = 'application/sql'
+                response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+                
+                flash('Backup created successfully!', 'success')
+                return response
+            else:
+                flash(f'Backup failed: {result.stderr}', 'danger')
+                
+        except Exception as e:
+            flash(f'Error creating backup: {str(e)}', 'danger')
+            current_app.logger.error(f'Backup error: {str(e)}')
+    
+    # Get backup settings from configuration
+    backup_settings = {
+        'auto_backup_enabled': Configuration.get_setting('auto_backup_enabled', 'false'),
+        'backup_frequency': Configuration.get_setting('backup_frequency', 'daily'),
+        'backup_retention_days': Configuration.get_setting('backup_retention_days', '30'),
+        'backup_time': Configuration.get_setting('backup_time', '00:00'),
+    }
+    
+    return render_template('admin/backup.html', settings=backup_settings)
+
+@bp.route('/admin/backup/settings', methods=['POST'])
+@login_required
+@admin_required
+def save_backup_settings():
     try:
-        # Get database URL from config
-        db_url = Configuration.get_setting('DATABASE_URL')
-        if not db_url:
-            flash('Database URL not configured', 'error')
-            return redirect(url_for('admin.manage_config'))
-
-        # Create backup filename with timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_file = f'backup_{timestamp}.sql'
+        # Update configuration settings
+        Configuration.query.filter_by(key='auto_backup_enabled').delete()
+        Configuration.query.filter_by(key='backup_frequency').delete()
+        Configuration.query.filter_by(key='backup_retention_days').delete()
+        Configuration.query.filter_by(key='backup_time').delete()
         
-        # Execute pg_dump
-        result = subprocess.run([
-            'pg_dump',
-            '-F', 'c',  # Custom format
-            '-f', backup_file,
-            db_url
-        ], capture_output=True, text=True)
-
-        if result.returncode == 0:
-            flash('Database backup created successfully', 'success')
-            # Send the file to the user
-            return send_file(
-                backup_file,
-                as_attachment=True,
-                download_name=backup_file
-            )
-        else:
-            flash(f'Backup failed: {result.stderr}', 'error')
-            return redirect(url_for('admin.manage_config'))
-
+        db.session.add(Configuration(
+            key='auto_backup_enabled',
+            value=request.form.get('auto_backup_enabled', 'false'),
+            description='Enable automatic database backups'
+        ))
+        
+        db.session.add(Configuration(
+            key='backup_frequency',
+            value=request.form.get('backup_frequency', 'daily'),
+            description='Frequency of automatic backups'
+        ))
+        
+        db.session.add(Configuration(
+            key='backup_retention_days',
+            value=request.form.get('backup_retention_days', '30'),
+            description='Number of days to retain backups'
+        ))
+        
+        db.session.add(Configuration(
+            key='backup_time',
+            value=request.form.get('backup_time', '00:00'),
+            description='Time to run automatic backups'
+        ))
+        
+        db.session.commit()
+        flash('Backup settings updated successfully!', 'success')
+        
     except Exception as e:
-        flash(f'Error creating backup: {str(e)}', 'error')
-        return redirect(url_for('admin.manage_config'))
+        db.session.rollback()
+        flash(f'Error saving backup settings: {str(e)}', 'danger')
+        current_app.logger.error(f'Backup settings error: {str(e)}')
+    
+    return redirect(url_for('admin.backup'))

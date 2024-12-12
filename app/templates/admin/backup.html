@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Database Backup{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Database Backup</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Manual Backup -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Manual Backup</h5>
+                </div>
+                <div class="card-body">
+                    <p>Create and download a backup of the entire database.</p>
+                    <form method="POST" action="{{ url_for('admin.backup') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary">
+                            Create Backup
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Backup Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.save_backup_settings') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_backup_enabled" name="auto_backup_enabled" 
+                                       {% if settings.auto_backup_enabled == 'true' %}checked{% endif %}>
+                                <label class="form-check-label" for="auto_backup_enabled">Enable Automatic Backups</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Backup Frequency</label>
+                            <select class="form-select" name="backup_frequency">
+                                <option value="daily" {% if settings.backup_frequency == 'daily' %}selected{% endif %}>Daily</option>
+                                <option value="weekly" {% if settings.backup_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                                <option value="monthly" {% if settings.backup_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Backup Time</label>
+                            <input type="time" class="form-control" name="backup_time" 
+                                   value="{{ settings.backup_time }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Retention Period (days)</label>
+                            <input type="number" class="form-control" name="backup_retention_days" 
+                                   value="{{ settings.backup_retention_days }}" min="1" max="365">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Instructions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Backup Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <h6>How to Restore a Backup:</h6>
+                    <ol>
+                        <li>Open TablePlus or your preferred PostgreSQL client</li>
+                        <li>Connect to your database server</li>
+                        <li>Select "Import" or "Restore" from the menu</li>
+                        <li>Choose the downloaded backup file</li>
+                        <li>Follow the prompts to complete the restoration</li>
+                    </ol>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Backups are in PostgreSQL plain text format (.sql) and can be restored using any PostgreSQL-compatible tool.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
