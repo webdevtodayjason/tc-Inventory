@@ -78,7 +78,11 @@
                         <span class="nav-link">Welcome, {{ current_user.username }}</span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        <a href="{{ url_for('auth.logout') }}" 
+                           class="btn btn-link nav-link py-2 px-0 px-lg-2"
+                           title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
