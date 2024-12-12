@@ -323,4 +323,51 @@ main.container {
 [data-bs-theme="dark"] .checkout-user {
     color: #FFD700;  /* Gold text */
     background-color: rgba(0, 0, 0, 0.3);  /* Darker background */
+}
+
+/* Footer Styles */
+.footer {
+    margin-top: 3rem;
+    padding: 1rem 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light Mode */
+.footer {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+.footer hr {
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.footer a {
+    color: #212529;
+}
+
+.footer a:hover {
+    color: #0d6efd;
+}
+
+/* Dark Mode */
+[data-bs-theme="dark"] .footer {
+    background-color: #212529;
+    color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .footer hr {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .footer a {
+    color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] .footer a:hover {
+    color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .footer .text-muted {
+    color: #adb5bd !important;
 } 
