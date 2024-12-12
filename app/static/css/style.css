@@ -456,4 +456,72 @@ main.container {
     padding: 2rem;
     text-align: center;
     color: var(--bs-secondary-color);
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #1a1d20;
+    color: #e9ecef;
+}
+
+/* Dark mode navbar */
+body.dark-mode .navbar {
+    background-color: #212529 !important;
+}
+
+/* Dark mode cards */
+body.dark-mode .card {
+    background-color: #212529;
+    border-color: #2c3034;
+}
+
+/* Dark mode inputs */
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: #2c3034;
+    border-color: #373b3e;
+    color: #e9ecef;
+}
+
+/* Dark mode tables */
+body.dark-mode .table {
+    color: #e9ecef;
+}
+
+body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Dark mode modals */
+body.dark-mode .modal-content {
+    background-color: #212529;
+    border-color: #2c3034;
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: #2c3034;
+}
+
+body.dark-mode .modal-footer {
+    border-top-color: #2c3034;
+}
+
+/* Dark mode alerts */
+body.dark-mode .alert {
+    background-color: #2c3034;
+    border-color: #373b3e;
+}
+
+/* Dark mode dropdowns */
+body.dark-mode .dropdown-menu {
+    background-color: #212529;
+    border-color: #2c3034;
+}
+
+body.dark-mode .dropdown-item {
+    color: #e9ecef;
+}
+
+body.dark-mode .dropdown-item:hover {
+    background-color: #2c3034;
 } 
