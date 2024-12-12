@@ -55,7 +55,6 @@ class InventoryItem(db.Model):
     status = db.Column('status', db.String(50), default='available')
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')
-    category = db.relationship('Category', backref='items')
     
     # Update tags relationship with cascade options
     tags = db.relationship('Tag', 
