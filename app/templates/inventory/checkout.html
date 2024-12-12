@@ -88,7 +88,7 @@
                         <div class="list-group-item">
                             <div class="d-flex w-100 justify-content-between">
                                 <h5 class="mb-1">{{ transaction.item.name }}</h5>
-                                <small>{{ transaction.timestamp.strftime('%H:%M:%S') }}</small>
+                                <small>{{ transaction.created_at.strftime('%H:%M:%S') }}</small>
                             </div>
                             <p class="mb-1">{{ transaction.notes }}</p>
                             <small>Checked out by {{ transaction.user.username }}</small>

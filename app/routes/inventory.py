@@ -583,7 +583,7 @@ def checkout():
     if current_tech:
         recent_transactions = InventoryTransaction.query\
             .filter_by(transaction_type='check_out')\
-            .order_by(InventoryTransaction.timestamp.desc())\
+            .order_by(InventoryTransaction.created_at.desc())\
             .limit(5)\
             .all()
     
@@ -597,8 +597,18 @@ def verify_pin():
     """Verify tech PIN and start checkout session"""
     pin = request.form.get('pin')
     
-    # Find user by PIN
-    tech = User.query.filter_by(pin_code=pin).first()
+    if not pin:
+        flash('Please enter a PIN', 'danger')
+        return redirect(url_for('inventory.checkout'))
+    
+    # Find all users and check their PINs
+    users = User.query.all()
+    tech = None
+    for user in users:
+        if user.check_pin(pin):
+            tech = user
+            break
+    
     if not tech:
         flash('Invalid PIN code', 'danger')
         return redirect(url_for('inventory.checkout'))
