@@ -42,7 +42,7 @@ def create_app(config_class=Config):
     login_manager.login_message_category = 'info'
 
     # Import models to ensure they're known to Flask-Migrate
-    from app.models import user, inventory
+    from app.models import user, inventory, config
 
     # Register blueprints
     from app.routes import auth, inventory, admin, system
@@ -54,6 +54,12 @@ def create_app(config_class=Config):
     # Register CLI commands
     from app import cli
     cli.init_app(app)
+
+    # Add template context processor
+    @app.context_processor
+    def utility_processor():
+        from app.models.config import Configuration
+        return dict(Configuration=Configuration)
 
     # Register the root route directly in the app
     @app.route('/')
