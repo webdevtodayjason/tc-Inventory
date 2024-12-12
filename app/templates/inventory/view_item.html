@@ -230,7 +230,7 @@
                 <div class="card-body">
                     {% if item.transactions %}
                         <div class="list-group">
-                            {% for transaction in item.transactions|sort(attribute='timestamp', reverse=true) %}
+                            {% for transaction in item.transactions|sort(attribute='created_at', reverse=true) %}
                             {% if transaction.transaction_type == 'check_out' %}
                             <div class="list-group-item">
                                 <div class="d-flex w-100 justify-content-between">
