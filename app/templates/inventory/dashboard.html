@@ -17,22 +17,27 @@
     </div>
 
     <!-- Tabs -->
-    <ul class="nav nav-tabs mb-4" id="inventoryTabs" role="tablist">
+    <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab" aria-controls="items" aria-selected="true">
-                General Items
+            <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
+                <i class="fas fa-box"></i> Items
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="systems-tab" data-bs-toggle="tab" data-bs-target="#systems" type="button" role="tab" aria-controls="systems" aria-selected="false">
-                Computer Systems
+            <button class="nav-link" id="systems-tab" data-bs-toggle="tab" data-bs-target="#systems" type="button" role="tab">
+                <i class="fas fa-desktop"></i> Computer Systems
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="wiki-tab" data-bs-toggle="tab" data-bs-target="#wiki" type="button" role="tab">
+                <i class="fas fa-book"></i> Wiki
             </button>
         </li>
     </ul>
 
-    <div class="tab-content" id="inventoryTabContent">
-        <!-- General Items Tab -->
-        <div class="tab-pane fade show active" id="items" role="tabpanel" aria-labelledby="items-tab">
+    <div class="tab-content mt-3" id="inventoryTabContent">
+        <!-- Items Tab -->
+        <div class="tab-pane fade show active" id="items" role="tabpanel">
             <!-- Search Form -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -160,8 +165,8 @@
             </div>
         </div>
 
-        <!-- Computer Systems Tab -->
-        <div class="tab-pane fade" id="systems" role="tabpanel" aria-labelledby="systems-tab">
+        <!-- Systems Tab -->
+        <div class="tab-pane fade" id="systems" role="tabpanel">
             <!-- Systems Search Form -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -268,6 +273,76 @@
                     </nav>
                     {% endif %}
                 </div>
+            </div>
+        </div>
+
+        <!-- Wiki Tab -->
+        <div class="tab-pane fade" id="wiki" role="tabpanel">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <form class="d-flex" action="{{ url_for('wiki.wiki_home') }}" method="GET">
+                        <input type="text" name="search" class="form-control me-2" placeholder="Search Wiki..." value="{{ search }}">
+                        <select name="category" class="form-select me-2" style="width: auto;">
+                            <option value="">All Categories</option>
+                            {% for category in wiki_categories %}
+                            <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('wiki.new_page') }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> New Wiki Page
+                    </a>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Author</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for page in wiki_pages %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('wiki.view_page', id=page.id) }}">{{ page.title }}</a>
+                            </td>
+                            <td>{{ page.category.name }}</td>
+                            <td>{{ page.author.username }}</td>
+                            <td>{{ page.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if page.can_edit(current_user) %}
+                                <a href="{{ url_for('wiki.edit_page', id=page.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                {% if page.can_delete(current_user) %}
+                                <form action="{{ url_for('wiki.delete_page', id=page.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this page?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No wiki pages found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

@@ -140,3 +140,38 @@ class BenchmarkResult(db.Model):
     details = db.Column(db.JSON)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     technician_id = db.Column(db.Integer, db.ForeignKey('users.id')) 
+
+class WikiCategory(db.Model):
+    __tablename__ = 'wiki_category'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    pages = db.relationship('WikiPage', backref='category', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<WikiCategory {self.name}>'
+
+class WikiPage(db.Model):
+    __tablename__ = 'wiki_page'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('wiki_category.id'), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    author = db.relationship('User', backref='wiki_pages')
+
+    def __repr__(self):
+        return f'<WikiPage {self.title}>'
+
+    def can_edit(self, user):
+        """Check if user can edit this page"""
+        return user.is_admin or user.id == self.author_id
+
+    def can_delete(self, user):
+        """Check if user can delete this page"""
+        return user.is_admin
+ 

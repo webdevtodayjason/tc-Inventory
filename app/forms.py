@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField, DecimalField, SelectMultipleField, PasswordField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp, ValidationError, URL, EqualTo
 from app.models.inventory import ComputerModel, Category, CPU, Tag
+from app.models.wiki import WikiCategory, WikiPage
 
 # Define choices as constants for easy maintenance
 MANUFACTURER_CHOICES = [
@@ -164,3 +165,23 @@ class ChangePasswordForm(FlaskForm):
         DataRequired(),
         EqualTo('new_password', message='Passwords must match')
     ])
+
+class WikiCategoryForm(FlaskForm):
+    name = StringField('Category Name', validators=[
+        DataRequired(),
+        Length(min=2, max=100)
+    ])
+
+class WikiPageForm(FlaskForm):
+    title = StringField('Title', validators=[
+        DataRequired(),
+        Length(min=3, max=200)
+    ])
+    category_id = SelectField('Category', coerce=int, validators=[DataRequired()])
+    content = TextAreaField('Content', validators=[DataRequired()])
+
+    def __init__(self, *args, **kwargs):
+        super(WikiPageForm, self).__init__(*args, **kwargs)
+        self.category_id.choices = [
+            (c.id, c.name) for c in WikiCategory.query.order_by(WikiCategory.name).all()
+        ]
