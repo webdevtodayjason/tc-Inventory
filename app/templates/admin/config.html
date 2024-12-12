@@ -169,15 +169,33 @@
 
 {% block scripts %}
 <script>
+function createFlashMessage(message, category) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${category} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    return alertDiv;
+}
+
 function submitAllForms() {
     // Collect all form data
     const forms = document.querySelectorAll('form');
     const allData = new FormData();
     
+    // Add CSRF token from the first form
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    allData.append('csrf_token', csrfToken);
+    
     forms.forEach(form => {
         const formData = new FormData(form);
         for(let pair of formData.entries()) {
-            allData.append(pair[0], pair[1]);
+            // Skip duplicate CSRF tokens from other forms
+            if (pair[0] !== 'csrf_token') {
+                allData.append(pair[0], pair[1]);
+            }
         }
     });
     
@@ -185,21 +203,40 @@ function submitAllForms() {
     fetch(window.location.href, {
         method: 'POST',
         body: allData,
+        credentials: 'same-origin',
         headers: {
-            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Response:', data);
         if(data.success) {
-            window.location.reload();
+            // Find the flash message container
+            const container = document.querySelector('.main-content');
+            const existingMessages = container.querySelector('.alert');
+            if (existingMessages) {
+                existingMessages.remove();
+            }
+            
+            // Create and insert the flash message
+            const flashMessage = createFlashMessage('Settings saved successfully', 'success');
+            container.insertBefore(flashMessage, container.firstChild);
+            
+            // Scroll to top to show the message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-            alert('Error saving settings: ' + data.error);
+            alert('Error saving settings: ' + (data.error || 'Unknown error'));
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Error saving settings');
+        console.error('Error details:', error);
+        alert('An error occurred while saving settings. Check the browser console for details.');
     });
 }
 </script>

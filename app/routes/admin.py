@@ -143,6 +143,9 @@ def delete_user(id):
 def manage_config():
     if request.method == 'POST':
         try:
+            # Debug: Log form data
+            current_app.logger.debug(f"Form data: {request.form}")
+
             # User Management Settings
             Configuration.set_setting(
                 'allow_public_registration',
@@ -209,14 +212,18 @@ def manage_config():
                 'Email address for system notifications'
             )
 
+            db.session.commit()
+
             # Return JSON response for AJAX request
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': True})
+                return jsonify({'success': True, 'message': 'Settings saved successfully'})
             
             flash('Configuration updated successfully', 'success')
             return redirect(url_for('admin.manage_config'))
             
         except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating configuration: {str(e)}")
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'success': False, 'error': str(e)})
             flash(f'Error updating configuration: {str(e)}', 'error')
