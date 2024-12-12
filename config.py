@@ -1,5 +1,9 @@
 import os
+from dotenv import load_dotenv
 from datetime import timedelta
+
+basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir, '.env'))
 
 class Config:
     # Database configuration
@@ -17,7 +21,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     
     # Application settings
     ITEMS_PER_PAGE = int(os.environ.get('ITEMS_PER_PAGE', 20))
@@ -29,3 +33,4 @@ class Config:
     # Add additional configuration settings
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     UPLOAD_FOLDER = 'app/static/uploads'
+    TINYMCE_API_KEY = os.environ.get('TINYMCE_API_KEY')

@@ -4,23 +4,58 @@
 
 {% block head %}
 <!-- TinyMCE -->
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/{{ config.get('TINYMCE_API_KEY') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
     tinymce.init({
         selector: '#content',
-        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange export formatpainter pageembed linkchecker a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage tableofcontents footnotes mergetags autocorrect typography inlinecss',
-        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-        tinycomments_mode: 'embedded',
-        tinycomments_author: '{{ current_user.username }}',
-        mergetags_list: [
-            { value: 'First.Name', title: 'First Name' },
-            { value: 'Email', title: 'Email' },
-        ],
         height: 500,
-        menubar: true,
-        automatic_uploads: true,
-        images_upload_url: '/upload',
-        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'help', 'wordcount', 'codesample'
+        ],
+        toolbar: 'undo redo | styles | bold italic underline strikethrough | ' +
+                'alignleft aligncenter alignright alignjustify | ' +
+                'bullist numlist outdent indent | link image codesample | ' +
+                'removeformat | help',
+        menubar: 'file edit view insert format tools table help',
+        content_style: `
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                font-size: 16px;
+                line-height: 1.6;
+                color: #333;
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 1rem;
+            }
+            p { margin: 0 0 1rem 0; }
+            table { border-collapse: collapse; }
+            table td, table th { border: 1px solid #ccc; padding: 0.4rem; }
+            pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; }
+            img { max-width: 100%; height: auto; }
+        `,
+        skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
+        content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
+        branding: false,
+        promotion: false,
+        link_default_target: '_blank',
+        link_assume_external_targets: true,
+        paste_data_images: true,
+        image_advtab: true,
+        codesample_languages: [
+            { text: 'Python', value: 'python' },
+            { text: 'HTML/XML', value: 'markup' },
+            { text: 'JavaScript', value: 'javascript' },
+            { text: 'CSS', value: 'css' },
+            { text: 'Bash', value: 'bash' },
+            { text: 'SQL', value: 'sql' }
+        ],
+        setup: function(editor) {
+            editor.on('change', function() {
+                editor.save();
+            });
+        }
     });
 </script>
 {% endblock %}
@@ -64,7 +99,7 @@
 
                         <div class="mb-3">
                             <label for="content" class="form-label">Content</label>
-                            {{ form.content(class="form-control", rows="20") }}
+                            {{ form.content(class="form-control") }}
                             {% if form.content.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.content.errors %}
