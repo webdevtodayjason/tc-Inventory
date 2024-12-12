@@ -40,8 +40,8 @@
                     <form method="POST" action="{{ url_for('admin.export_table') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
-                            <label for="table_name" class="form-label">Select Table</label>
-                            <select class="form-select" id="table_name" name="table_name" required>
+                            <label for="export_table_name" class="form-label">Select Table</label>
+                            <select class="form-select" id="export_table_name" name="table_name" required>
                                 <option value="">Choose a table...</option>
                                 <option value="items">Inventory Items</option>
                                 <option value="computer_systems">Computer Systems</option>
@@ -55,6 +55,68 @@
                         </div>
                         <button type="submit" class="btn btn-primary">
                             Download CSV
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import from CSV -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Import from CSV</h5>
+                </div>
+                <div class="card-body">
+                    <p>Import data from a CSV file. Download a template first to ensure correct format.</p>
+                    
+                    <!-- Template Download -->
+                    <form method="POST" action="{{ url_for('admin.download_template') }}" class="mb-3">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="template_table_name" class="form-label">Select Table</label>
+                            <select class="form-select" id="template_table_name" name="table_name" required>
+                                <option value="">Choose a table...</option>
+                                <option value="items">Inventory Items</option>
+                                <option value="computer_systems">Computer Systems</option>
+                                <option value="categories">Categories</option>
+                                <option value="tags">Tags</option>
+                                <option value="computer_models">Computer Models</option>
+                                <option value="cpus">CPUs</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">
+                            Download Template
+                        </button>
+                    </form>
+
+                    <!-- File Upload -->
+                    <form method="POST" action="{{ url_for('admin.import_table') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="import_table_name" class="form-label">Select Target Table</label>
+                            <select class="form-select" id="import_table_name" name="table_name" required>
+                                <option value="">Choose a table...</option>
+                                <option value="items">Inventory Items</option>
+                                <option value="computer_systems">Computer Systems</option>
+                                <option value="categories">Categories</option>
+                                <option value="tags">Tags</option>
+                                <option value="computer_models">Computer Models</option>
+                                <option value="cpus">CPUs</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="csv_file" class="form-label">Choose CSV File</label>
+                            <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="skip_header" name="skip_header" checked>
+                            <label class="form-check-label" for="skip_header">
+                                Skip header row
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Import Data
                         </button>
                     </form>
                 </div>

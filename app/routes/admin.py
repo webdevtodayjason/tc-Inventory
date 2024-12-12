@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 import csv
 import io
 from sqlalchemy import create_engine
+import uuid
 
 bp = Blueprint('admin', __name__)
 
@@ -521,6 +522,183 @@ def export_table():
         
     except Exception as e:
         error_msg = f'Error exporting table: {str(e)}'
+        current_app.logger.error(error_msg)
+        flash(error_msg, 'danger')
+        return redirect(url_for('admin.backup'))
+
+@bp.route('/admin/download-template', methods=['POST'])
+@login_required
+@admin_required
+def download_template():
+    try:
+        table_name = request.form.get('table_name')
+        if not table_name:
+            flash('Please select a table', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        # Define template fields for each table
+        template_fields = {
+            'items': [
+                'name', 'category_id', 'quantity', 'reorder_threshold',
+                'storage_location', 'barcode', 'manufacturer', 'mpn',
+                'image_url', 'description', 'cost', 'sell_price',
+                'purchase_url'
+            ],
+            'computer_systems': [
+                'model_id', 'cpu_id', 'ram', 'storage', 'os',
+                'storage_location', 'serial_tag', 'cpu_benchmark',
+                'usb_ports_status', 'usb_ports_notes', 'video_status',
+                'video_notes', 'network_status', 'network_notes',
+                'general_notes'
+            ],
+            'categories': ['name'],
+            'tags': ['name'],
+            'computer_models': ['manufacturer', 'model_name', 'model_type'],
+            'cpus': ['manufacturer', 'model', 'speed', 'cores']
+        }
+        
+        if table_name not in template_fields:
+            flash('Invalid table selected', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers
+        writer.writerow(template_fields[table_name])
+        
+        # Add example row
+        example_data = {
+            'items': [
+                'Example Item', '1', '10', '5', 'Shelf A1', '123456789',
+                'Example Mfr', 'MPN123', '', 'Example description',
+                '10.99', '15.99', ''
+            ],
+            'computer_systems': [
+                '1', '1', '16GB', '512GB SSD', 'Windows 10 Pro',
+                'Room 101', 'ABC123', '1000', 'PASSED', '',
+                'PASSED', '', 'PASSED', '', 'Test notes'
+            ],
+            'categories': ['Example Category'],
+            'tags': ['Example Tag'],
+            'computer_models': ['Dell', 'Latitude 5520', 'laptop'],
+            'cpus': ['Intel', 'Core i7-11800H', '2.30 GHz', '8']
+        }
+        writer.writerow(example_data[table_name])
+        
+        # Create the response
+        output.seek(0)
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename={table_name}_template.csv'
+        
+        return response
+        
+    except Exception as e:
+        error_msg = f'Error creating template: {str(e)}'
+        current_app.logger.error(error_msg)
+        flash(error_msg, 'danger')
+        return redirect(url_for('admin.backup'))
+
+@bp.route('/admin/import-table', methods=['POST'])
+@login_required
+@admin_required
+def import_table():
+    try:
+        table_name = request.form.get('table_name')
+        if not table_name:
+            flash('Please select a table', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        if 'csv_file' not in request.files:
+            flash('No file uploaded', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        file = request.files['csv_file']
+        if file.filename == '':
+            flash('No file selected', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        if not file.filename.endswith('.csv'):
+            flash('Please upload a CSV file', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        # Define model mappings
+        model_mappings = {
+            'items': InventoryItem,
+            'computer_systems': ComputerSystem,
+            'categories': Category,
+            'tags': Tag,
+            'computer_models': ComputerModel,
+            'cpus': CPU
+        }
+        
+        if table_name not in model_mappings:
+            flash('Invalid table selected', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        # Get model class
+        model = model_mappings[table_name]
+        
+        # Read CSV file
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_reader = csv.DictReader(stream)
+        
+        # Start transaction
+        try:
+            # Track statistics
+            rows_added = 0
+            errors = []
+            
+            for row in csv_reader:
+                try:
+                    # Clean up the row data
+                    data = {k: v.strip() if isinstance(v, str) else v for k, v in row.items()}
+                    
+                    # Handle special cases
+                    if table_name == 'items':
+                        # Generate tracking ID
+                        data['tracking_id'] = f"TC-{str(uuid.uuid4())[:8].upper()}"
+                        data['created_by'] = current_user.id
+                        data['created_at'] = datetime.now()
+                        
+                        # Convert numeric fields
+                        if data.get('cost'):
+                            data['cost'] = float(data['cost']) if data['cost'] else None
+                        if data.get('sell_price'):
+                            data['sell_price'] = float(data['sell_price']) if data['sell_price'] else None
+                        if data.get('quantity'):
+                            data['quantity'] = int(data['quantity'])
+                        if data.get('reorder_threshold'):
+                            data['reorder_threshold'] = int(data['reorder_threshold'])
+                    
+                    # Create new record
+                    record = model(**data)
+                    db.session.add(record)
+                    rows_added += 1
+                    
+                except Exception as row_error:
+                    errors.append(f"Row {rows_added + 1}: {str(row_error)}")
+            
+            if errors:
+                # Rollback if there were any errors
+                db.session.rollback()
+                error_list = "\n".join(errors)
+                flash(f'Import failed with errors:\n{error_list}', 'danger')
+            else:
+                # Commit if all rows were successful
+                db.session.commit()
+                flash(f'Successfully imported {rows_added} records', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error during import: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin.backup'))
+        
+    except Exception as e:
+        error_msg = f'Error importing data: {str(e)}'
         current_app.logger.error(error_msg)
         flash(error_msg, 'danger')
         return redirect(url_for('admin.backup'))
