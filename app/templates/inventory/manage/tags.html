@@ -1,23 +1,29 @@
 {% extends "base.html" %}
 
+{% block title %}Manage Tags{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Manage Tags</h2>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTagModal">
-            <i class="fas fa-plus"></i> Add Tag
-        </button>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Manage Tags</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTagModal">
+                <i class="fas fa-plus"></i> Add Tag
+            </button>
+        </div>
     </div>
 
     {% if tags %}
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Items Count</th>
+                            <th>Items</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -31,22 +37,22 @@
                             <td>{{ tag_counts[tag.id] }}</td>
                             <td>{{ tag.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                             <td>
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-outline-primary" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#editTagModal" 
-                                            data-tag-id="{{ tag.id }}"
-                                            data-tag-name="{{ tag.name }}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#deleteTagModal"
-                                            data-tag-id="{{ tag.id }}"
-                                            data-tag-name="{{ tag.name }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
+                                <button type="button" 
+                                        class="btn btn-sm btn-warning" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editTagModal"
+                                        data-tag-id="{{ tag.id }}"
+                                        data-tag-name="{{ tag.name }}">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteTagModal"
+                                        data-tag-id="{{ tag.id }}"
+                                        data-tag-name="{{ tag.name }}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -70,7 +76,7 @@
                 <h5 class="modal-title">Add New Tag</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ url_for('admin.add_tag') }}">
+            <form method="POST" action="{{ url_for('inventory.add_tag') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
@@ -95,7 +101,7 @@
                 <h5 class="modal-title">Edit Tag</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST">
+            <form action="{{ url_for('inventory.edit_tag', id=0) }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
@@ -120,7 +126,7 @@
                 <h5 class="modal-title">Delete Tag</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST">
+            <form action="{{ url_for('inventory.delete_tag', id=0) }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <p>Are you sure you want to delete the tag "<span id="deleteTagName"></span>"?</p>
@@ -135,38 +141,37 @@
     </div>
 </div>
 
-{% endblock %}
-
 {% block scripts %}
 <script>
-// Store URLs in variables to avoid string concatenation issues
-const editUrlTemplate = "{{ url_for('admin.edit_tag', id=0) }}";
-const deleteUrlTemplate = "{{ url_for('admin.delete_tag', id=0) }}";
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle Edit Modal
-    const editModal = document.getElementById('editTagModal');
-    editModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const tagId = button.getAttribute('data-tag-id');
-        const tagName = button.getAttribute('data-tag-name');
+    // Update the URL templates
+    const editUrlTemplate = "{{ url_for('inventory.edit_tag', id=0) }}";
+    const deleteUrlTemplate = "{{ url_for('inventory.delete_tag', id=0) }}";
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle Edit Modal
+        const editModal = document.getElementById('editTagModal');
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const tagId = button.getAttribute('data-tag-id');
+            const tagName = button.getAttribute('data-tag-name');
+            
+            const form = this.querySelector('form');
+            form.action = editUrlTemplate.replace('/0/', `/${tagId}/`);
+            editModal.querySelector('#editTagName').value = tagName;
+        });
         
-        const form = editModal.querySelector('form');
-        form.action = editUrlTemplate.replace('/0/', `/${tagId}/`);
-        editModal.querySelector('#editTagName').value = tagName;
+        // Handle Delete Modal
+        const deleteModal = document.getElementById('deleteTagModal');
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const tagId = button.getAttribute('data-tag-id');
+            const tagName = button.getAttribute('data-tag-name');
+            
+            const form = this.querySelector('form');
+            form.action = deleteUrlTemplate.replace('/0/', `/${tagId}/`);
+            deleteModal.querySelector('#deleteTagName').textContent = tagName;
+        });
     });
-
-    // Handle Delete Modal
-    const deleteModal = document.getElementById('deleteTagModal');
-    deleteModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const tagId = button.getAttribute('data-tag-id');
-        const tagName = button.getAttribute('data-tag-name');
-        
-        const form = deleteModal.querySelector('form');
-        form.action = deleteUrlTemplate.replace('/0/', `/${tagId}/`);
-        deleteModal.querySelector('#deleteTagName').textContent = tagName;
-    });
-});
 </script>
+{% endblock %}
 {% endblock %} 

@@ -5,7 +5,7 @@ from flask import (
 from flask_login import login_required, current_user
 from app.models.config import Configuration
 from app.models.inventory import (
-    Tag, InventoryItem, ComputerSystem, Category, 
+    InventoryItem, ComputerSystem, Category, 
     ComputerModel, CPU, InventoryTransaction
 )
 from app.routes.inventory import admin_required
@@ -136,81 +136,6 @@ def delete_user(id):
         flash(f'Error deleting user: {str(e)}', 'error')
 
     return redirect(url_for('admin.manage_users'))
-
-@bp.route('/admin/tags')
-@login_required
-@admin_required
-def manage_tags():
-    tags = Tag.query.order_by(Tag.name).all()
-    return render_template('admin/tags.html', tags=tags)
-
-@bp.route('/admin/tags/add', methods=['POST'])
-@login_required
-@admin_required
-def add_tag():
-    name = request.form.get('name')
-    if not name:
-        flash('Tag name is required', 'error')
-        return redirect(url_for('admin.manage_tags'))
-    
-    # Check if tag already exists
-    if Tag.query.filter_by(name=name).first():
-        flash('Tag already exists', 'error')
-        return redirect(url_for('admin.manage_tags'))
-    
-    try:
-        tag = Tag(name=name)
-        db.session.add(tag)
-        db.session.commit()
-        flash('Tag added successfully', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error adding tag: {str(e)}', 'error')
-    
-    return redirect(url_for('admin.manage_tags'))
-
-@bp.route('/admin/tags/<int:id>/edit', methods=['POST'])
-@login_required
-@admin_required
-def edit_tag(id):
-    tag = Tag.query.get_or_404(id)
-    name = request.form.get('name')
-    
-    if not name:
-        flash('Tag name is required', 'error')
-        return redirect(url_for('admin.manage_tags'))
-    
-    # Check if new name already exists for a different tag
-    existing_tag = Tag.query.filter_by(name=name).first()
-    if existing_tag and existing_tag.id != id:
-        flash('Tag name already exists', 'error')
-        return redirect(url_for('admin.manage_tags'))
-    
-    try:
-        tag.name = name
-        db.session.commit()
-        flash('Tag updated successfully', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error updating tag: {str(e)}', 'error')
-    
-    return redirect(url_for('admin.manage_tags'))
-
-@bp.route('/admin/tags/<int:id>/delete', methods=['POST'])
-@login_required
-@admin_required
-def delete_tag(id):
-    tag = Tag.query.get_or_404(id)
-    
-    try:
-        db.session.delete(tag)
-        db.session.commit()
-        flash('Tag deleted successfully', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error deleting tag: {str(e)}', 'error')
-    
-    return redirect(url_for('admin.manage_tags'))
 
 @bp.route('/admin/config', methods=['GET', 'POST'])
 @login_required
@@ -539,7 +464,6 @@ def export_table():
             'items': InventoryItem,
             'computer_systems': ComputerSystem,
             'categories': Category,
-            'tags': Tag,
             'computer_models': ComputerModel,
             'cpus': CPU,
             'users': User,
@@ -622,7 +546,6 @@ def download_template():
                 'general_notes'
             ],
             'categories': ['name'],
-            'tags': ['name'],
             'computer_models': ['manufacturer', 'model_name', 'model_type'],
             'cpus': ['manufacturer', 'model', 'speed', 'cores']
         }
@@ -651,7 +574,6 @@ def download_template():
                 'PASSED', '', 'PASSED', '', 'Test notes'
             ],
             'categories': ['Example Category'],
-            'tags': ['Example Tag'],
             'computer_models': ['Dell', 'Latitude 5520', 'laptop'],
             'cpus': ['Intel', 'Core i7-11800H', '2.30 GHz', '8']
         }
@@ -699,7 +621,6 @@ def import_table():
             'items': InventoryItem,
             'computer_systems': ComputerSystem,
             'categories': Category,
-            'tags': Tag,
             'computer_models': ComputerModel,
             'cpus': CPU
         }

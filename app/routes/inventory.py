@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
-    InventoryTransaction, ComputerModel, CPU, Tag
+    InventoryTransaction, ComputerModel, CPU, Tag, item_tags
 )
 from app.models.config import Configuration
 from app.utils.email import send_stock_alert
@@ -1042,3 +1042,69 @@ def print_system_label(id):
     return render_template('inventory/print_label.html',
                          item=system,
                          barcode=barcode_base64)
+
+@bp.route('/manage/tags')
+@login_required
+@admin_required
+def manage_tags():
+    tags = Tag.query.order_by(Tag.name).all()
+    
+    # Count items for each tag
+    tag_counts = {}
+    for tag in tags:
+        count = db.session.query(item_tags).filter_by(tag_id=tag.id).count()
+        tag_counts[tag.id] = count
+    
+    return render_template('inventory/manage/tags.html', 
+                         tags=tags,
+                         tag_counts=tag_counts)
+
+@bp.route('/manage/tags/add', methods=['POST'])
+@login_required
+@admin_required
+def add_tag():
+    name = request.form.get('name')
+    if not name:
+        flash('Tag name is required', 'error')
+        return redirect(url_for('inventory.manage_tags'))
+    
+    if Tag.query.filter_by(name=name).first():
+        flash('Tag already exists', 'error')
+        return redirect(url_for('inventory.manage_tags'))
+    
+    tag = Tag(name=name)
+    db.session.add(tag)
+    db.session.commit()
+    flash('Tag added successfully', 'success')
+    return redirect(url_for('inventory.manage_tags'))
+
+@bp.route('/manage/tags/<int:id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def edit_tag(id):
+    tag = Tag.query.get_or_404(id)
+    name = request.form.get('name')
+    
+    if not name:
+        flash('Tag name is required', 'error')
+        return redirect(url_for('inventory.manage_tags'))
+    
+    existing = Tag.query.filter_by(name=name).first()
+    if existing and existing.id != id:
+        flash('Tag name already exists', 'error')
+        return redirect(url_for('inventory.manage_tags'))
+    
+    tag.name = name
+    db.session.commit()
+    flash('Tag updated successfully', 'success')
+    return redirect(url_for('inventory.manage_tags'))
+
+@bp.route('/manage/tags/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_tag(id):
+    tag = Tag.query.get_or_404(id)
+    db.session.delete(tag)
+    db.session.commit()
+    flash('Tag deleted successfully', 'success')
+    return redirect(url_for('inventory.manage_tags'))
