@@ -3,6 +3,7 @@ import click
 from app import db
 from app.models.inventory import Category, ComputerModel, CPU, Tag
 from app.models.user import User
+from app.utils.version import increment_build_number
 
 def init_app(app):
     app.cli.add_command(create_category_command)
@@ -12,6 +13,7 @@ def init_app(app):
     app.cli.add_command(create_cpus_command)
     app.cli.add_command(create_tags_command)
     app.cli.add_command(set_user_pin_command)
+    app.cli.add_command(increment_version)
 
 @click.command('create-category')
 @with_appcontext
@@ -276,4 +278,14 @@ def set_user_pin_command(username):
             
     except Exception as e:
         db.session.rollback()
-        print(f"Error setting PIN: {str(e)}") 
+        print(f"Error setting PIN: {str(e)}")
+
+@click.command('increment-version')
+@with_appcontext
+def increment_version():
+    """Increment the application version number"""
+    new_version = increment_build_number()
+    if new_version:
+        click.echo(f"Version incremented to {new_version}")
+    else:
+        click.echo("Failed to increment version") 
