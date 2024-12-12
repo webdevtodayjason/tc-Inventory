@@ -3,6 +3,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.models.user import User
 from app.models.config import Configuration
 from app import db
+from app.forms import ChangePasswordForm
+from app.utils.activity_logger import log_user_activity
 
 bp = Blueprint('auth', __name__)
 
@@ -99,3 +101,22 @@ def logout():
     logout_user()
     flash('You have been logged out', 'info')
     return redirect(url_for('auth.login'))
+
+@bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if current_user.check_password(form.current_password.data):
+            current_user.set_password(form.new_password.data)
+            db.session.commit()
+            
+            # Log the password change
+            log_user_activity('update', current_user, {'action': 'password_change'})
+            
+            flash('Your password has been updated successfully.', 'success')
+            return redirect(url_for('inventory.dashboard'))
+        else:
+            flash('Current password is incorrect.', 'error')
+    
+    return render_template('auth/change_password.html', form=form)

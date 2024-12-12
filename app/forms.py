@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField, DecimalField, SelectMultipleField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp, ValidationError, URL
+from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField, DecimalField, SelectMultipleField, PasswordField
+from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp, ValidationError, URL, EqualTo
 from app.models.inventory import ComputerModel, Category, CPU, Tag
 
 # Define choices as constants for easy maintenance
@@ -149,3 +149,18 @@ class GeneralItemForm(FlaskForm):
         self.category.choices = [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
         # Add tag choices
         self.tags.choices = [(t.id, t.name) for t in Tag.query.order_by(Tag.name).all()]
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Current Password', validators=[DataRequired()])
+    new_password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=8, message='Password must be at least 8 characters long'),
+        Regexp(r'.*[a-z].*', message='Password must contain at least one lowercase letter'),
+        Regexp(r'.*[A-Z].*', message='Password must contain at least one uppercase letter'),
+        Regexp(r'.*[0-9].*', message='Password must contain at least one number'),
+        Regexp(r'.*[!@#$%^&*(),.?":{}|<>].*', message='Password must contain at least one special character')
+    ])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(),
+        EqualTo('new_password', message='Passwords must match')
+    ])

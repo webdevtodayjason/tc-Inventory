@@ -76,17 +76,20 @@
                         </button>
 
                         {% if current_user.is_authenticated %}
-                        <!-- User Greeting -->
-                        <span class="nav-link px-2" id="userGreeting">
-                            Welcome, {{ current_user.username }}
-                        </span>
-                        
-                        <!-- Logout Button -->
-                        <a href="{{ url_for('auth.logout') }}" 
-                           class="btn btn-link nav-link py-2 px-0 px-lg-2"
-                           title="Logout">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </a>
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user"></i> {{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">
+                                    <i class="fas fa-key"></i> Change Password
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a></li>
+                            </ul>
+                        </div>
                         {% endif %}
                     </ul>
                 </div>
