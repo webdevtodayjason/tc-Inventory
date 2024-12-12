@@ -76,6 +76,11 @@
                         </button>
 
                         {% if current_user.is_authenticated %}
+                        <!-- User Greeting -->
+                        <span class="nav-link px-2" id="userGreeting">
+                            Welcome!
+                        </span>
+                        
                         <div class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user"></i> {{ current_user.username }}
@@ -457,6 +462,22 @@
             // Update greeting immediately and every minute
             updateGreeting();
             setInterval(updateGreeting, 60000);
+        });
+    </script>
+
+    <!-- Welcome message animation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const greeting = document.getElementById('userGreeting');
+            if (greeting) {
+                setTimeout(function() {
+                    greeting.style.transition = 'opacity 1s ease-out';
+                    greeting.style.opacity = '0';
+                    setTimeout(function() {
+                        greeting.style.display = 'none';
+                    }, 1000);
+                }, 3000);
+            }
         });
     </script>
 
