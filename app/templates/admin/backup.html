@@ -29,8 +29,42 @@
             </div>
         </div>
 
-        <!-- Backup Settings -->
+        <!-- Export Table as CSV -->
         <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Export Table as CSV</h5>
+                </div>
+                <div class="card-body">
+                    <p>Download a specific table as a CSV file with headers.</p>
+                    <form method="POST" action="{{ url_for('admin.export_table') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="table_name" class="form-label">Select Table</label>
+                            <select class="form-select" id="table_name" name="table_name" required>
+                                <option value="">Choose a table...</option>
+                                <option value="items">Inventory Items</option>
+                                <option value="computer_systems">Computer Systems</option>
+                                <option value="categories">Categories</option>
+                                <option value="tags">Tags</option>
+                                <option value="computer_models">Computer Models</option>
+                                <option value="cpus">CPUs</option>
+                                <option value="users">Users</option>
+                                <option value="inventory_transactions">Inventory Transactions</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Download CSV
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Settings -->
+    <div class="row">
+        <div class="col-md-12 mb-4">
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Backup Settings</h5>
@@ -94,6 +128,7 @@
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
                         Backups are in PostgreSQL plain text format (.sql) and can be restored using any PostgreSQL-compatible tool.
+                        CSV exports are provided for easy data analysis and importing into other applications.
                     </div>
                 </div>
             </div>

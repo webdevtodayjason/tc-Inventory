@@ -9,6 +9,9 @@ import subprocess
 from datetime import datetime
 import os
 from urllib.parse import urlparse
+import csv
+import io
+from sqlalchemy import create_engine
 
 bp = Blueprint('admin', __name__)
 
@@ -439,3 +442,79 @@ def save_backup_settings():
         current_app.logger.error(f'Backup settings error: {str(e)}')
     
     return redirect(url_for('admin.backup'))
+
+@bp.route('/admin/export-table', methods=['POST'])
+@login_required
+@admin_required
+def export_table():
+    try:
+        table_name = request.form.get('table_name')
+        if not table_name:
+            flash('Please select a table to export', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        # Create database connection
+        db_url = current_app.config['DATABASE_URL']
+        engine = create_engine(db_url)
+        
+        # Define table mappings
+        table_mappings = {
+            'items': InventoryItem,
+            'computer_systems': ComputerSystem,
+            'categories': Category,
+            'tags': Tag,
+            'computer_models': ComputerModel,
+            'cpus': CPU,
+            'users': User,
+            'inventory_transactions': InventoryTransaction
+        }
+        
+        if table_name not in table_mappings:
+            flash('Invalid table selected', 'danger')
+            return redirect(url_for('admin.backup'))
+        
+        # Get model class
+        model = table_mappings[table_name]
+        
+        # Query data
+        data = model.query.all()
+        
+        if not data:
+            flash('No data found in selected table', 'warning')
+            return redirect(url_for('admin.backup'))
+        
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers
+        headers = [column.name for column in model.__table__.columns]
+        writer.writerow(headers)
+        
+        # Write data
+        for row in data:
+            csv_row = []
+            for header in headers:
+                value = getattr(row, header)
+                # Handle relationships and complex types
+                if hasattr(value, 'name'):  # For foreign key relations that have a name
+                    value = value.name
+                elif isinstance(value, datetime):  # Format datetime
+                    value = value.strftime('%Y-%m-%d %H:%M:%S')
+                csv_row.append(str(value) if value is not None else '')
+            writer.writerow(csv_row)
+        
+        # Create the response
+        output.seek(0)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename={table_name}_{timestamp}.csv'
+        
+        return response
+        
+    except Exception as e:
+        error_msg = f'Error exporting table: {str(e)}'
+        current_app.logger.error(error_msg)
+        flash(error_msg, 'danger')
+        return redirect(url_for('admin.backup'))
