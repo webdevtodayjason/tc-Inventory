@@ -24,7 +24,8 @@ def create_app(config_class=Config):
 
     # Set up logging
     formatter = logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        '%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %I:%M:%S %p'
     )
     
     # Log to file

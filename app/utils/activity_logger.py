@@ -2,28 +2,54 @@ from flask import current_app
 from flask_login import current_user
 from datetime import datetime
 
+def format_details(details):
+    """Format details dictionary into a readable string"""
+    if not details:
+        return ""
+    
+    formatted = []
+    for key, value in details.items():
+        if key == 'name':
+            formatted.append(f"'{value}'")
+        elif key == 'category':
+            formatted.append(f"in {value}" if value else "")
+        elif key == 'quantity':
+            formatted.append(f"(qty: {value})")
+        elif key == 'location':
+            formatted.append(f"at {value}" if value else "")
+        elif key == 'remaining':
+            formatted.append(f"({value} remaining)")
+    
+    return " ".join(s for s in formatted if s)
+
 def log_activity(action, item_type, item_id, details=None):
     """
-    Log database activity with user information.
-    
-    Args:
-        action (str): The action performed (e.g., 'add', 'update', 'delete', 'checkout')
-        item_type (str): Type of item affected (e.g., 'inventory_item', 'computer_system')
-        item_id: Identifier of the affected item
-        details (dict, optional): Additional details about the action
+    Log database activity with user information in a human-readable format.
     """
     try:
         # Get user info
-        user_id = current_user.id if not current_user.is_anonymous else None
         username = current_user.username if not current_user.is_anonymous else 'Anonymous'
         
-        # Format the log message
-        timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
-        message = f"[DATABASE] {timestamp} - User {username} (ID: {user_id}) performed {action} on {item_type} (ID: {item_id})"
+        # Make item type more readable
+        item_type = item_type.replace('_', ' ').title()
         
-        # Add details if provided
-        if details:
-            message += f" - Details: {details}"
+        # Format the details
+        details_str = format_details(details)
+        
+        # Create readable action phrase
+        if action == 'add':
+            action_phrase = 'added new'
+        elif action == 'update':
+            action_phrase = 'updated'
+        elif action == 'delete':
+            action_phrase = 'deleted'
+        elif action == 'checkout':
+            action_phrase = 'checked out'
+        else:
+            action_phrase = action
+        
+        # Format the log message
+        message = f"User {username} {action_phrase} {item_type} {details_str}"
         
         # Log the activity
         current_app.logger.info(message)
