@@ -2,6 +2,7 @@ from flask import Flask, render_template, current_app, request
 import logging
 from logging.handlers import RotatingFileHandler
 import sys
+import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -17,19 +18,35 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Ensure logs directory exists
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+
     # Set up logging
     formatter = logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
     )
     
+    # Log to file
+    file_handler = RotatingFileHandler(
+        'logs/app.log',
+        maxBytes=10240000,  # 10MB
+        backupCount=10
+    )
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.INFO)
+    
     # Log to stdout for Railway/Docker
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(formatter)
     stream_handler.setLevel(logging.DEBUG)
-    app.logger.addHandler(stream_handler)
     
-    # Set overall logging level
+    # Set handlers and level
+    app.logger.addHandler(file_handler)
+    app.logger.addHandler(stream_handler)
     app.logger.setLevel(logging.DEBUG)
+    
+    # Initial log message
     app.logger.info('TC Inventory startup')
 
     # Initialize Flask extensions

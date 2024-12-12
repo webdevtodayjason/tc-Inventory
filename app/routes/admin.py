@@ -19,6 +19,7 @@ import csv
 import io
 from sqlalchemy import create_engine
 import uuid
+from app.utils.logs import get_recent_logs
 
 bp = Blueprint('admin', __name__)
 
@@ -318,13 +319,14 @@ def manage_config():
 @login_required
 @admin_required
 def view_logs():
-    # Get the last 100 log entries
+    """View system logs"""
     try:
-        with open('app.log', 'r') as f:
-            logs = f.readlines()[-100:]
+        # Get the most recent logs
+        logs = get_recent_logs(max_lines=100)
         return render_template('admin/logs.html', logs=logs)
-    except FileNotFoundError:
-        flash('Log file not found', 'error')
+    except Exception as e:
+        current_app.logger.error(f"Error viewing logs: {str(e)}")
+        flash('Error retrieving logs', 'error')
         return render_template('admin/logs.html', logs=[])
 
 @bp.route('/admin/backup', methods=['GET', 'POST'])
