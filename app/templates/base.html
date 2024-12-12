@@ -13,6 +13,7 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     
     {% block extra_css %}{% endblock %}
+    {% block head %}{% endblock %}
 </head>
 <body>
     <div class="wrapper">
@@ -28,6 +29,9 @@
                         {% if current_user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('inventory.dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('wiki.wiki_home') }}">Wiki</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('inventory.checkout') }}">Checkout</a>
@@ -53,6 +57,7 @@
                                 <li><a class="dropdown-item" href="{{ url_for('admin.manage_users') }}">Users</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('admin.view_logs') }}">Logs</a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('admin.backup') }}">Backup</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.manage_config') }}">System Config</a></li>
                             </ul>
                         </li>
                         {% endif %}

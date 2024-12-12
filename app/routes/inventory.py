@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
-    InventoryTransaction, ComputerModel, CPU, Tag, item_tags
+    InventoryTransaction, ComputerModel, CPU, Tag, item_tags,
+    WikiPage, WikiCategory
 )
 from app.models.config import Configuration
 from app.utils.email import send_stock_alert
@@ -118,6 +119,24 @@ def dashboard():
     categories = Category.query.order_by(Category.name).all()
     computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
     
+    # Get Wiki pages
+    wiki_search = request.args.get('wiki_search', '')
+    wiki_category = request.args.get('wiki_category', type=int)
+    
+    wiki_query = WikiPage.query
+    if wiki_search:
+        wiki_query = wiki_query.filter(
+            db.or_(
+                WikiPage.title.ilike(f'%{wiki_search}%'),
+                WikiPage.content.ilike(f'%{wiki_search}%')
+            )
+        )
+    if wiki_category:
+        wiki_query = wiki_query.filter_by(category_id=wiki_category)
+    
+    wiki_pages = wiki_query.order_by(WikiPage.updated_at.desc()).limit(10).all()
+    wiki_categories = WikiCategory.query.order_by(WikiCategory.name).all()
+    
     form = FlaskForm()  # For CSRF protection
     
     return render_template('inventory/dashboard.html',
@@ -125,6 +144,8 @@ def dashboard():
                          systems=systems,
                          categories=categories,
                          computer_models=computer_models,
+                         wiki_pages=wiki_pages,
+                         wiki_categories=wiki_categories,
                          form=form)
 
 @bp.route('/item/add', methods=['GET', 'POST'])

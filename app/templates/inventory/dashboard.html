@@ -278,71 +278,66 @@
 
         <!-- Wiki Tab -->
         <div class="tab-pane fade" id="wiki" role="tabpanel">
-            <div class="row mb-3">
-                <div class="col-md-8">
-                    <form class="d-flex" action="{{ url_for('wiki.wiki_home') }}" method="GET">
-                        <input type="text" name="search" class="form-control me-2" placeholder="Search Wiki..." value="{{ search }}">
-                        <select name="category" class="form-select me-2" style="width: auto;">
-                            <option value="">All Categories</option>
-                            {% for category in wiki_categories %}
-                            <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
-                                {{ category.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-primary">Search</button>
+            <!-- Search Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" name="wiki_search" 
+                                   value="{{ request.args.get('wiki_search', '') }}" 
+                                   placeholder="Search wiki pages...">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="wiki_category" class="form-select">
+                                <option value="">All Categories</option>
+                                {% for category in wiki_categories %}
+                                <option value="{{ category.id }}" {% if request.args.get('wiki_category')|int == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <a href="{{ url_for('wiki.new_page') }}" class="btn btn-success w-100">
+                                <i class="fas fa-plus"></i> New Wiki Page
+                            </a>
+                        </div>
                     </form>
                 </div>
-                <div class="col-md-4 text-end">
-                    <a href="{{ url_for('wiki.new_page') }}" class="btn btn-success">
-                        <i class="fas fa-plus"></i> New Wiki Page
-                    </a>
-                </div>
             </div>
-            
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Category</th>
-                            <th>Author</th>
-                            <th>Last Updated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+
+            <!-- Wiki Pages List -->
+            <div class="card">
+                <div class="card-body">
+                    {% if wiki_pages %}
+                    <div class="list-group">
                         {% for page in wiki_pages %}
-                        <tr>
-                            <td>
-                                <a href="{{ url_for('wiki.view_page', id=page.id) }}">{{ page.title }}</a>
-                            </td>
-                            <td>{{ page.category.name }}</td>
-                            <td>{{ page.author.username }}</td>
-                            <td>{{ page.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>
-                                {% if page.can_edit(current_user) %}
-                                <a href="{{ url_for('wiki.edit_page', id=page.id) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                {% endif %}
-                                {% if page.can_delete(current_user) %}
-                                <form action="{{ url_for('wiki.delete_page', id=page.id) }}" method="POST" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this page?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center">No wiki pages found.</td>
-                        </tr>
+                        {% set content = page.content|striptags %}
+                        <a href="{{ url_for('wiki.view_page', id=page.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ page.title }}</h5>
+                                <small class="text-muted">{{ page.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">
+                                {{ content[:140] }}{% if content|length > 140 %}... <span class="text-primary">Read More</span>{% endif %}
+                            </p>
+                            <small class="text-muted">
+                                Category: {{ page.category.name if page.category else 'Uncategorized' }} | 
+                                Author: {{ page.author.username if page.author else 'Unknown' }}
+                            </small>
+                        </a>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No wiki pages found.</p>
+                        <a href="{{ url_for('wiki.new_page') }}" class="btn btn-primary">Create First Page</a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

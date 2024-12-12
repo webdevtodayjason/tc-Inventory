@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from app import db
 from app.models.inventory import WikiCategory, WikiPage
@@ -53,13 +53,34 @@ def new_page():
         flash('Wiki page created successfully', 'success')
         return redirect(url_for('wiki.view_page', id=page.id))
     
-    return render_template('wiki/edit.html', form=form, is_new=True)
+    api_key = current_app.config.get('TINYMCE_API_KEY')
+    current_app.logger.debug(f'TinyMCE API Key: {api_key}')
+    
+    if not api_key:
+        flash('TinyMCE API key is not configured', 'error')
+        current_app.logger.error('TinyMCE API key is missing')
+    
+    return render_template('wiki/edit.html', form=form, is_new=True, tinymce_api_key=api_key)
+
+@bp.route('/wiki/category/<int:category_id>')
+@login_required
+def category_view(category_id):
+    category = WikiCategory.query.get_or_404(category_id)
+    pages = WikiPage.query.filter_by(category_id=category_id).order_by(WikiPage.updated_at.desc()).all()
+    categories = WikiCategory.query.order_by(WikiCategory.name).all()
+    return render_template('wiki/category.html',
+                         category=category,
+                         pages=pages,
+                         categories=categories)
 
 @bp.route('/wiki/<int:id>')
 @login_required
 def view_page(id):
     page = WikiPage.query.get_or_404(id)
-    return render_template('wiki/view.html', page=page)
+    category = WikiCategory.query.get(page.category_id) if page.category_id else None
+    return render_template('wiki/view.html',
+                         page=page,
+                         category=category)
 
 @bp.route('/wiki/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -80,7 +101,12 @@ def edit_page(id):
         flash('Wiki page updated successfully', 'success')
         return redirect(url_for('wiki.view_page', id=page.id))
     
-    return render_template('wiki/edit.html', form=form, page=page, is_new=False)
+    api_key = current_app.config.get('TINYMCE_API_KEY')
+    if not api_key:
+        flash('TinyMCE API key is not configured', 'error')
+        current_app.logger.error('TinyMCE API key is missing')
+    
+    return render_template('wiki/edit.html', form=form, page=page, is_new=False, tinymce_api_key=api_key)
 
 @bp.route('/wiki/<int:id>/delete', methods=['POST'])
 @login_required

@@ -9,7 +9,9 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('wiki.wiki_home') }}">Wiki</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('wiki.wiki_home', category=page.category_id) }}">{{ page.category.name }}</a></li>
+                    {% if category %}
+                    <li class="breadcrumb-item"><a href="{{ url_for('wiki.category_view', category_id=category.id) }}">{{ category.name }}</a></li>
+                    {% endif %}
                     <li class="breadcrumb-item active">{{ page.title }}</li>
                 </ol>
             </nav>

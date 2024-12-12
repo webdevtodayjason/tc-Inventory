@@ -18,6 +18,20 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Debug logging for environment variables
+    app.logger.debug(f"Environment variables loaded:")
+    app.logger.debug(f"TINYMCE_API_KEY: {app.config.get('TINYMCE_API_KEY')}")
+    app.logger.debug(f"FLASK_ENV: {app.config.get('FLASK_ENV')}")
+
+    # Add custom Jinja filters
+    @app.template_filter('slice')
+    def slice_list(value, start, end):
+        """Slice a list in a template"""
+        try:
+            return value[start:end]
+        except (TypeError, ValueError):
+            return value
+
     # Ensure logs directory exists
     if not os.path.exists('logs'):
         os.makedirs('logs')

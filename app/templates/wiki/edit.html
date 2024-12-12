@@ -3,61 +3,8 @@
 {% block title %}{% if is_new %}New Wiki Page{% else %}Edit Wiki Page{% endif %}{% endblock %}
 
 {% block head %}
-<!-- TinyMCE -->
-<script src="https://cdn.tiny.cloud/1/{{ config.get('TINYMCE_API_KEY') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-<script>
-    tinymce.init({
-        selector: '#content',
-        height: 500,
-        plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'help', 'wordcount', 'codesample'
-        ],
-        toolbar: 'undo redo | styles | bold italic underline strikethrough | ' +
-                'alignleft aligncenter alignright alignjustify | ' +
-                'bullist numlist outdent indent | link image codesample | ' +
-                'removeformat | help',
-        menubar: 'file edit view insert format tools table help',
-        content_style: `
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-                font-size: 16px;
-                line-height: 1.6;
-                color: #333;
-                max-width: 900px;
-                margin: 0 auto;
-                padding: 1rem;
-            }
-            p { margin: 0 0 1rem 0; }
-            table { border-collapse: collapse; }
-            table td, table th { border: 1px solid #ccc; padding: 0.4rem; }
-            pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; }
-            img { max-width: 100%; height: auto; }
-        `,
-        skin: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oxide-dark' : 'oxide'),
-        content_css: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'),
-        branding: false,
-        promotion: false,
-        link_default_target: '_blank',
-        link_assume_external_targets: true,
-        paste_data_images: true,
-        image_advtab: true,
-        codesample_languages: [
-            { text: 'Python', value: 'python' },
-            { text: 'HTML/XML', value: 'markup' },
-            { text: 'JavaScript', value: 'javascript' },
-            { text: 'CSS', value: 'css' },
-            { text: 'Bash', value: 'bash' },
-            { text: 'SQL', value: 'sql' }
-        ],
-        setup: function(editor) {
-            editor.on('change', function() {
-                editor.save();
-            });
-        }
-    });
-</script>
+<!-- Place the first <script> tag in your HTML's <head> -->
+<script src="https://cdn.tiny.cloud/1/c3mffxpkjjeum84fglia6ubmnb2hcnot0495wpne82i4eb89/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 {% endblock %}
 
 {% block content %}
@@ -99,7 +46,7 @@
 
                         <div class="mb-3">
                             <label for="content" class="form-label">Content</label>
-                            {{ form.content(class="form-control") }}
+                            <textarea name="content">Welcome to TinyMCE!</textarea>
                             {% if form.content.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.content.errors %}
@@ -121,4 +68,50 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if dark mode is enabled
+        const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        
+        tinymce.init({
+            selector: 'textarea',
+            plugins: [
+                'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 
+                'searchreplace', 'table', 'visualblocks', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+            height: 500,
+            skin: isDarkMode ? 'oxide-dark' : 'oxide',
+            content_css: isDarkMode ? ['dark', '{{ url_for("static", filename="css/tinymce-dark.css") }}'] : 'default',
+            content_style: `
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    padding: 1rem;
+                }
+            `,
+            setup: function(editor) {
+                // Listen for theme changes
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.attributeName === 'data-bs-theme') {
+                            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                            editor.setOption('skin', isDark ? 'oxide-dark' : 'oxide');
+                            editor.setOption('content_css', isDark ? ['dark', '{{ url_for("static", filename="css/tinymce-dark.css") }}'] : 'default');
+                        }
+                    });
+                });
+
+                observer.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['data-bs-theme']
+                });
+            }
+        });
+    });
+</script>
 {% endblock %} 
