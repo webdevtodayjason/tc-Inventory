@@ -25,10 +25,6 @@ class Tag(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    items = db.relationship('InventoryItem', 
-                          secondary=item_tags,
-                          backref='item_tags',
-                          lazy='dynamic')
 
     def __repr__(self):
         return f'<Tag {self.name}>'
@@ -60,12 +56,10 @@ class InventoryItem(db.Model):
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     creator = db.relationship('User', backref='items_created')
     
-    # Update tags relationship with cascade options
+    # Define the many-to-many relationship with Tag
     tags = db.relationship('Tag', 
                          secondary=item_tags,
-                         backref=db.backref('items', lazy='dynamic'),
-                         lazy='joined',
-                         cascade='all, delete')
+                         lazy='joined')
 
     def __repr__(self):
         return f'<InventoryItem {self.name}>'
