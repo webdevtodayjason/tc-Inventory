@@ -28,6 +28,9 @@ var/
 scripts/setup_database.py
 app.db
 
+# Scripts (for security)
+scripts/
+
 # IDE
 .idea/
 .vscode/
