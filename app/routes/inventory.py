@@ -725,7 +725,6 @@ def scan_barcode():
     try:
         current_app.logger.debug('Barcode scan request received')
         current_app.logger.debug(f'Request data: {request.get_json()}')
-        current_app.logger.debug(f'Request headers: {dict(request.headers)}')
         
         # Validate CSRF token from X-CSRFToken header
         csrf_token = request.headers.get('X-CSRFToken')
@@ -754,7 +753,7 @@ def scan_barcode():
                 'error': 'Invalid request',
                 'message': 'No data provided'
             }), 400
-            
+
         barcode = data.get('barcode')
         current_app.logger.debug(f'Barcode to lookup: {barcode}')
         
@@ -766,14 +765,23 @@ def scan_barcode():
             }), 400
         
         try:
-            # UPCItemDB API endpoint
-            url = f'https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}'
+            # Get API key from environment
+            api_key = current_app.config.get('UPCITEMDB_API_KEY')
+            if not api_key or api_key == 'your_api_key_here':
+                current_app.logger.error('UPCItemDB API key not configured')
+                return jsonify({
+                    'error': 'API key not configured',
+                    'message': 'Please configure the UPCItemDB API key in your environment variables'
+                }), 500
+
+            # UPCItemDB API endpoint with user_key parameter
+            url = f'https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}&user_key={api_key}'
             headers = {
                 'User-Agent': random.choice(CHROME_USER_AGENTS),
                 'Accept': 'application/json'
             }
             
-            current_app.logger.debug(f'Making request to UPCItemDB: {url}')
+            current_app.logger.debug(f'Making request to UPCItemDB')
             response = requests.get(url, headers=headers, timeout=10)
             current_app.logger.debug(f'UPCItemDB response status: {response.status_code}')
             
@@ -786,7 +794,7 @@ def scan_barcode():
                     'error': 'Invalid response from UPC database',
                     'message': 'The UPC database returned an invalid response'
                 }), 500
-            
+
             # Initialize product info
             product_info = {
                 'success': False,
