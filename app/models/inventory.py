@@ -27,7 +27,7 @@ class Tag(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     items = db.relationship('InventoryItem', 
                           secondary=item_tags,
-                          backref=db.backref('tags', lazy='joined'),
+                          backref='item_tags',
                           lazy='dynamic')
 
     def __repr__(self):
