@@ -259,10 +259,12 @@ def edit_item(id):
                 item.quantity = int(request.form.get('quantity', 0))
                 item.reorder_threshold = int(request.form.get('reorder_threshold', 0))
                 item.storage_location = request.form.get('storage_location')
-                item.barcode = request.form.get('barcode')
-                item.manufacturer = request.form.get('manufacturer')
-                item.mpn = request.form.get('mpn')
-                item.image_url = request.form.get('image_url')
+                
+                # Handle empty fields - convert empty strings to None
+                for field in ['barcode', 'manufacturer', 'mpn', 'image_url', 'purchase_url']:
+                    value = request.form.get(field, '').strip()
+                    setattr(item, field, value or None)
+                
                 item.description = request.form.get('description')
                 
                 # Handle optional decimal fields
@@ -278,7 +280,6 @@ def edit_item(id):
                 else:
                     item.sell_price = None
                     
-                item.purchase_url = request.form.get('purchase_url')
                 print("Basic fields updated")
                 
                 # Handle tags
@@ -339,7 +340,7 @@ def edit_item(id):
                 print(f"Item data: {item}")
                 print(f"Form data: {form.data}")
                 flash(f'Error updating item: {str(e)}', 'danger')
-        
+                
         # GET request - populate form
         print("\n=== Processing GET request ===")
         
