@@ -59,26 +59,12 @@
                 </ul>
                 <ul class="navbar-nav">
                     <!-- Theme Toggle -->
-                    <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center"
-                        id="bd-theme"
-                        type="button"
-                        aria-expanded="false"
-                        data-bs-toggle="dropdown"
-                        data-bs-display="static">
-                        <i class="fas fa-sun theme-icon-active" id="theme-icon"></i>
+                    <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
+                            id="themeToggle" 
+                            type="button" 
+                            title="Toggle dark mode">
+                        <i class="fas fa-sun" id="theme-icon"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme">
-                        <li>
-                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light">
-                                <i class="fas fa-sun me-2"></i> Light
-                            </button>
-                        </li>
-                        <li>
-                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark">
-                                <i class="fas fa-moon me-2"></i> Dark
-                            </button>
-                        </li>
-                    </ul>
 
                     <!-- Help Button -->
                     <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
@@ -403,5 +389,39 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Theme toggling
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('theme-icon');
+            
+            // Check for saved theme preference or default to light
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', currentTheme);
+            updateThemeIcon(currentTheme);
+            
+            // Toggle theme on click
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            });
+            
+            // Update icon based on theme
+            function updateThemeIcon(theme) {
+                if (theme === 'dark') {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                } else {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                }
+            }
+        });
+    </script>
 </body>
 </html> 
