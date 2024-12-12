@@ -34,6 +34,7 @@ import random
 import time
 from werkzeug.security import generate_password_hash
 from functools import wraps
+from app.utils.activity_logger import log_inventory_activity, log_system_activity
 
 bp = Blueprint('inventory', __name__)
 
@@ -156,6 +157,13 @@ def add_item():
                 
                 db.session.add(item)
                 db.session.commit()
+                
+                # Log the activity
+                log_inventory_activity('add', item, {
+                    'name': item.name,
+                    'category': item.category.name if item.category else None,
+                    'quantity': item.quantity
+                })
                 
                 flash('Item added successfully!', 'success')
                 return redirect(url_for('inventory.dashboard'))
@@ -313,6 +321,13 @@ def edit_item(id):
                 db.session.commit()
                 print("Changes committed successfully")
                 
+                # Log the activity
+                log_inventory_activity('update', item, {
+                    'name': item.name,
+                    'category': item.category.name if item.category else None,
+                    'quantity': item.quantity
+                })
+                
                 flash('Item updated successfully!', 'success')
                 return redirect(url_for('inventory.dashboard'))
                 
@@ -361,12 +376,21 @@ def edit_item(id):
 def delete_item(id):
     item = InventoryItem.query.get_or_404(id)
     try:
+        # Log the activity before deletion
+        log_inventory_activity('delete', item, {
+            'name': item.name,
+            'category': item.category.name if item.category else None
+        })
+        
         db.session.delete(item)
         db.session.commit()
         flash('Item deleted successfully!', 'success')
+        
     except Exception as e:
         db.session.rollback()
-        flash(f'Error deleting item: {str(e)}', 'danger')
+        current_app.logger.error(f"Error deleting item: {str(e)}")
+        flash('Error deleting item', 'error')
+        
     return redirect(url_for('inventory.dashboard'))
 
 @bp.route('/manage/models')
@@ -633,6 +657,12 @@ def process_checkout():
         
         db.session.add(transaction)
         db.session.commit()
+        
+        # Log the activity
+        log_inventory_activity('checkout', item, {
+            'quantity': quantity,
+            'remaining': item.quantity
+        })
         
         flash(f'Successfully checked out {quantity} {item.name}', 'success')
         return redirect(url_for('inventory.checkout'))
@@ -923,6 +953,13 @@ def add_system():
                 
                 db.session.add(system)
                 db.session.commit()
+                
+                # Log the activity
+                log_system_activity('add', system, {
+                    'name': system.name,
+                    'category': system.category.name if system.category else None,
+                    'quantity': system.quantity
+                })
                 
                 flash('Computer system added successfully!', 'success')
                 return redirect(url_for('inventory.dashboard'))
