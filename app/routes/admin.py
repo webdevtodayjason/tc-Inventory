@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response, current_app
 from flask_login import login_required, current_user
 from app.models.config import Configuration
 from app.models.inventory import Tag
@@ -353,16 +353,20 @@ def backup():
                 dbname
             ]
             
+            current_app.logger.info(f"Executing backup command: {' '.join(command)}")
+            
             # Execute pg_dump
             result = subprocess.run(command, env=env, capture_output=True, text=True)
             
             if result.returncode == 0:
+                current_app.logger.info("Backup file created successfully")
                 # Read the backup file
                 with open(filename, 'rb') as f:
                     backup_data = f.read()
                 
                 # Delete the temporary file
                 os.remove(filename)
+                current_app.logger.info("Temporary backup file deleted")
                 
                 # Create response with file download
                 response = make_response(backup_data)
@@ -372,11 +376,14 @@ def backup():
                 flash('Backup created successfully!', 'success')
                 return response
             else:
-                flash(f'Backup failed: {result.stderr}', 'danger')
+                error_msg = f'Backup failed: {result.stderr}'
+                current_app.logger.error(error_msg)
+                flash(error_msg, 'danger')
                 
         except Exception as e:
-            flash(f'Error creating backup: {str(e)}', 'danger')
-            current_app.logger.error(f'Backup error: {str(e)}')
+            error_msg = f'Error creating backup: {str(e)}'
+            current_app.logger.error(error_msg)
+            flash(error_msg, 'danger')
     
     # Get backup settings from configuration
     backup_settings = {
