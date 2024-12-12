@@ -58,11 +58,35 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <button class="btn theme-toggle text-light" id="themeToggle" title="Toggle dark mode">
-                            <i class="bi bi-moon-fill"></i>
-                        </button>
-                    </li>
+                    <!-- Theme Toggle -->
+                    <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center"
+                        id="bd-theme"
+                        type="button"
+                        aria-expanded="false"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static">
+                        <i class="fas fa-sun theme-icon-active" id="theme-icon"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme">
+                        <li>
+                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light">
+                                <i class="fas fa-sun me-2"></i> Light
+                            </button>
+                        </li>
+                        <li>
+                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark">
+                                <i class="fas fa-moon me-2"></i> Dark
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Help Button -->
+                    <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
+                            type="button" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#helpModal">
+                        <i class="fas fa-life-ring"></i>
+                    </button>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <span class="nav-link">Welcome, {{ current_user.username }}</span>
@@ -121,5 +145,263 @@
             <p class="text-muted small mt-1">Build {{ Configuration.get_setting('build_number', '1.0.0') }}</p>
         </div>
     </footer>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">Help & Documentation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" id="helpTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">Items</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="systems-tab" data-bs-toggle="tab" data-bs-target="#systems" type="button" role="tab">Computer Systems</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="models-tab" data-bs-toggle="tab" data-bs-target="#models" type="button" role="tab">Models & CPUs</button>
+                        </li>
+                        {% if current_user.is_admin %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">Admin</button>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <div class="tab-content pt-3" id="helpTabContent">
+                        <!-- Overview Tab -->
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                            <h4>Welcome to TC Inventory System</h4>
+                            <p>This inventory management system helps you track both general inventory items and computer systems efficiently.</p>
+                            
+                            <div class="mb-4">
+                                <h5>Quick Start</h5>
+                                <ol>
+                                    <li>Use the navigation menu to access different sections</li>
+                                    <li>Add items or computer systems using the respective "Add" buttons</li>
+                                    <li>Use the search bar to find specific items</li>
+                                    <li>Toggle between light and dark mode using the sun/moon icon</li>
+                                </ol>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5>Key Features</h5>
+                                <ul>
+                                    <li>Barcode scanning for quick item addition</li>
+                                    <li>Location tracking and management</li>
+                                    <li>Automatic stock alerts</li>
+                                    <li>Label printing with QR codes</li>
+                                    <li>CSV import/export functionality</li>
+                                </ul>
+                            </div>
+
+                            <!-- Image placeholder -->
+                            <div class="text-center mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    [Dashboard Overview Screenshot]
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Tab -->
+                        <div class="tab-pane fade" id="items" role="tabpanel">
+                            <h4>Managing Inventory Items</h4>
+                            
+                            <div class="mb-4">
+                                <h5>Adding Items</h5>
+                                <ol>
+                                    <li>Click the "Add Item" button on the dashboard</li>
+                                    <li>Fill in the required information:
+                                        <ul>
+                                            <li>Name and description</li>
+                                            <li>Category and location</li>
+                                            <li>Quantity and reorder threshold</li>
+                                        </ul>
+                                    </li>
+                                    <li>Use the barcode scanner or enter details manually</li>
+                                    <li>Add tags for better organization</li>
+                                </ol>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5>Managing Stock</h5>
+                                <ul>
+                                    <li>Update quantities from the item view</li>
+                                    <li>Set reorder thresholds for automatic alerts</li>
+                                    <li>Track item locations and movements</li>
+                                    <li>View stock history and transactions</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5>Labels and Barcodes</h5>
+                                <ol>
+                                    <li>Select items to print labels</li>
+                                    <li>Choose the 4x2 label format</li>
+                                    <li>Labels include:
+                                        <ul>
+                                            <li>Item name and details</li>
+                                            <li>QR code for quick scanning</li>
+                                            <li>Location information</li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                            </div>
+
+                            <!-- Image placeholders -->
+                            <div class="text-center mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    [Add Item Form Screenshot]
+                                </div>
+                            </div>
+                            <div class="text-center mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    [Label Print Preview]
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Systems Tab -->
+                        <div class="tab-pane fade" id="systems" role="tabpanel">
+                            <h4>Computer Systems Management</h4>
+                            
+                            <div class="mb-4">
+                                <h5>Adding Computer Systems</h5>
+                                <ol>
+                                    <li>Click "Add System" on the systems tab</li>
+                                    <li>Select or add a computer model</li>
+                                    <li>Enter system specifications:
+                                        <ul>
+                                            <li>CPU and RAM configuration</li>
+                                            <li>Storage details</li>
+                                            <li>Operating system</li>
+                                        </ul>
+                                    </li>
+                                    <li>Add serial tag and location</li>
+                                </ol>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5>Testing and Status</h5>
+                                <ul>
+                                    <li>Record benchmark results</li>
+                                    <li>Track testing status for:
+                                        <ul>
+                                            <li>USB ports</li>
+                                            <li>Video output</li>
+                                            <li>Network connectivity</li>
+                                        </ul>
+                                    </li>
+                                    <li>Add testing notes and observations</li>
+                                </ul>
+                            </div>
+
+                            <!-- Image placeholder -->
+                            <div class="text-center mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    [System Details View]
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Models & CPUs Tab -->
+                        <div class="tab-pane fade" id="models" role="tabpanel">
+                            <h4>Models and CPUs Management</h4>
+                            
+                            <div class="mb-4">
+                                <h5>Computer Models</h5>
+                                <ol>
+                                    <li>Access the Models section</li>
+                                    <li>Add new models with:
+                                        <ul>
+                                            <li>Manufacturer selection</li>
+                                            <li>Model name and type</li>
+                                            <li>Standard specifications</li>
+                                        </ul>
+                                    </li>
+                                    <li>Edit existing models as needed</li>
+                                </ol>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5>CPU Management</h5>
+                                <ul>
+                                    <li>Add new CPU types</li>
+                                    <li>Track specifications:
+                                        <ul>
+                                            <li>Clock speed and cores</li>
+                                            <li>Generation and family</li>
+                                            <li>Performance metrics</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Image placeholder -->
+                            <div class="text-center mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    [Model Management Interface]
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Tab -->
+                        {% if current_user.is_admin %}
+                        <div class="tab-pane fade" id="admin" role="tabpanel">
+                            <h4>Administrative Functions</h4>
+                            
+                            <div class="mb-4">
+                                <h5>User Management</h5>
+                                <ul>
+                                    <li>Create and manage user accounts</li>
+                                    <li>Assign roles and permissions</li>
+                                    <li>Reset passwords and PINs</li>
+                                    <li>Monitor user activity</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5>System Configuration</h5>
+                                <ul>
+                                    <li>Configure email notifications</li>
+                                    <li>Manage system settings</li>
+                                    <li>View system logs</li>
+                                    <li>Perform database backups</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5>Data Management</h5>
+                                <ol>
+                                    <li>Import/Export data via CSV</li>
+                                    <li>Download log files</li>
+                                    <li>Manage database backups</li>
+                                    <li>Configure automatic notifications</li>
+                                </ol>
+                            </div>
+
+                            <!-- Image placeholder -->
+                            <div class="text-center mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    [Admin Dashboard View]
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

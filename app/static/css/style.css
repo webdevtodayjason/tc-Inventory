@@ -407,4 +407,53 @@ main.container {
 
 [data-bs-theme="dark"] .form-text {
     color: #9ca3af;
+}
+
+/* Help Modal Styling */
+#helpModal .modal-xl {
+    max-width: 1200px;
+}
+
+#helpModal .nav-tabs {
+    border-bottom-color: var(--bs-border-color);
+}
+
+#helpModal .nav-tabs .nav-link {
+    color: var(--bs-body-color);
+}
+
+#helpModal .nav-tabs .nav-link.active {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    border-bottom-color: var(--bs-body-bg);
+    color: var(--bs-primary);
+}
+
+#helpModal .tab-content {
+    background-color: var(--bs-body-bg);
+}
+
+#helpModal .bg-light {
+    background-color: var(--bs-tertiary-bg) !important;
+}
+
+[data-bs-theme="dark"] #helpModal .bg-light {
+    background-color: var(--bs-dark) !important;
+}
+
+#helpModal h4 {
+    color: var(--bs-primary);
+    margin-bottom: 1rem;
+}
+
+#helpModal h5 {
+    color: var(--bs-heading-color);
+    margin-top: 1.5rem;
+}
+
+#helpModal .image-placeholder {
+    border: 2px dashed var(--bs-border-color);
+    padding: 2rem;
+    text-align: center;
+    color: var(--bs-secondary-color);
 } 
