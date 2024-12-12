@@ -13,104 +13,117 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     
     {% block extra_css %}{% endblock %}
-
-    <script>
-        // Check theme on page load
-        const savedTheme = localStorage.getItem('darkMode');
-        if (savedTheme === 'true') {
-            document.documentElement.classList.add('dark-mode');
-        }
-    </script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">TC Inventory</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('inventory.dashboard') }}">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('inventory.checkout') }}">Checkout</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            Inventory
+    <div class="wrapper">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('index') }}">TC Inventory</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('inventory.dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('inventory.checkout') }}">Checkout</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                Inventory
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('inventory.add_item') }}">Add Item</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('inventory.manage_models') }}">Models</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('inventory.manage_cpus') }}">CPUs</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.manage_tags') }}">Tags</a></li>
+                            </ul>
+                        </li>
+                        {% if current_user.is_admin %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                Admin
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('admin.manage_users') }}">Users</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.view_logs') }}">Logs</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin.backup') }}">Backup</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+                        {% endif %}
+                    </ul>
+                    <ul class="navbar-nav">
+                        <!-- Theme Toggle -->
+                        <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
+                                id="themeToggle" 
+                                type="button" 
+                                title="Toggle theme">
+                            <i class="fas fa-sun" id="theme-icon"></i>
+                        </button>
+
+                        <!-- Help Button -->
+                        <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
+                                type="button" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#helpModal"
+                                title="Help">
+                            <i class="fas fa-life-ring"></i>
+                        </button>
+
+                        {% if current_user.is_authenticated %}
+                        <!-- User Greeting -->
+                        <span class="nav-link px-2" id="userGreeting">
+                            Welcome, {{ current_user.username }}
+                        </span>
+                        
+                        <!-- Logout Button -->
+                        <a href="{{ url_for('auth.logout') }}" 
+                           class="btn btn-link nav-link py-2 px-0 px-lg-2"
+                           title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('inventory.add_item') }}">Add Item</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('inventory.manage_models') }}">Models</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('inventory.manage_cpus') }}">CPUs</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.manage_tags') }}">Tags</a></li>
-                        </ul>
-                    </li>
-                    {% if current_user.is_admin %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                            Admin
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('admin.manage_users') }}">Users</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.view_logs') }}">Logs</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('admin.backup') }}">Backup</a></li>
-                        </ul>
-                    </li>
-                    {% endif %}
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    <!-- Theme Toggle -->
-                    <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
-                            id="themeToggle" 
-                            type="button" 
-                            title="Toggle theme">
-                        <i class="fas fa-moon" id="theme-icon"></i>
-                    </button>
-
-                    <!-- Help Button -->
-                    <button class="btn btn-link nav-link py-2 px-0 px-lg-2" 
-                            type="button" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#helpModal"
-                            title="Help">
-                        <i class="fas fa-life-ring"></i>
-                    </button>
-
-                    {% if current_user.is_authenticated %}
-                    <!-- User Greeting -->
-                    <span class="nav-link px-2" id="userGreeting">
-                        Welcome, {{ current_user.username }}
-                    </span>
-                    
-                    <!-- Logout Button -->
-                    <a href="{{ url_for('auth.logout') }}" 
-                       class="btn btn-link nav-link py-2 px-0 px-lg-2"
-                       title="Logout">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        {% endif %}
+                    </ul>
                 </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+            </div>
+        </nav>
 
-    {% block content %}{% endblock %}
+        <!-- Main Content -->
+        <div class="container main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer mt-auto py-3">
+            <div class="container text-center">
+                <hr>
+                <p class="mb-0">
+                    Made with <i class="fas fa-heart text-danger"></i> by 
+                    <a href="https://github.com/webdevtodayjason" target="_blank" class="text-decoration-none">Jason - jasonwebdevtoday</a>
+                    <a href="https://github.com/webdevtodayjason/tc-Inventory" target="_blank" class="text-decoration-none ms-2">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </p>
+                <p class="text-muted small mt-1">Build {{ Configuration.get_setting('build_number', '1.0.0') }}</p>
+            </div>
+        </footer>
+    </div>
 
     <!-- Help Modal -->
     <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
@@ -370,21 +383,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer mt-auto py-3">
-        <div class="container text-center">
-            <hr>
-            <p class="mb-0">
-                Made with <i class="fas fa-heart text-danger"></i> by 
-                <a href="https://github.com/webdevtodayjason" target="_blank" class="text-decoration-none">Jason - jasonwebdevtoday</a>
-                <a href="https://github.com/webdevtodayjason/tc-Inventory" target="_blank" class="text-decoration-none ms-2">
-                    <i class="fab fa-github"></i>
-                </a>
-            </p>
-            <p class="text-muted small mt-1">Build {{ Configuration.get_setting('build_number', '1.0.0') }}</p>
-        </div>
-    </footer>
-
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -402,15 +400,15 @@
             // Set initial theme
             if (isDark) {
                 body.classList.add('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
                 themeIcon.classList.remove('fa-sun');
                 themeIcon.classList.add('fa-moon');
-                navbar.classList.remove('navbar-light', 'bg-light');
                 navbar.classList.add('navbar-dark', 'bg-dark');
             } else {
                 body.classList.remove('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
                 themeIcon.classList.remove('fa-moon');
                 themeIcon.classList.add('fa-sun');
-                navbar.classList.remove('navbar-dark', 'bg-dark');
                 navbar.classList.add('navbar-light', 'bg-light');
             }
             
@@ -420,11 +418,13 @@
                 localStorage.setItem('darkMode', isDarkMode);
                 
                 if (isDarkMode) {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
                     themeIcon.classList.remove('fa-sun');
                     themeIcon.classList.add('fa-moon');
                     navbar.classList.remove('navbar-light', 'bg-light');
                     navbar.classList.add('navbar-dark', 'bg-dark');
                 } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
                     themeIcon.classList.remove('fa-moon');
                     themeIcon.classList.add('fa-sun');
                     navbar.classList.remove('navbar-dark', 'bg-dark');
