@@ -28,6 +28,10 @@ var/
 scripts/setup_database.py
 app.db
 
+# Database scripts and dumps
+db_scripts/
+*.sql
+
 # Scripts (for security)
 scripts/
 
