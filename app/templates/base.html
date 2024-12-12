@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -400,25 +400,27 @@
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggle = document.getElementById('themeToggle');
             const themeIcon = document.getElementById('theme-icon');
+            const html = document.documentElement;
             
             // Check for saved theme preference or default to light
-            const currentTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-bs-theme', currentTheme);
-            updateThemeIcon(currentTheme);
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
             
             // Toggle theme on click
             themeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                const currentTheme = html.getAttribute('data-bs-theme');
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                document.documentElement.setAttribute('data-bs-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcon(newTheme);
+                setTheme(newTheme);
             });
             
-            // Update icon based on theme
-            function updateThemeIcon(theme) {
+            // Set theme and update UI
+            function setTheme(theme) {
+                html.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('theme', theme);
                 themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+                
+                // Log theme change for debugging
+                console.log('Theme changed to:', theme);
             }
         });
     </script>
