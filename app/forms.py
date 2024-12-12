@@ -1,8 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField, DecimalField, SelectMultipleField, PasswordField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp, ValidationError, URL, EqualTo
-from app.models.inventory import ComputerModel, Category, CPU, Tag
-from app.models.wiki import WikiCategory, WikiPage
+from app.models.inventory import ComputerModel, Category, CPU, Tag, WikiCategory, WikiPage
 
 # Define choices as constants for easy maintenance
 MANUFACTURER_CHOICES = [
