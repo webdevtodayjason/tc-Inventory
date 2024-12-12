@@ -1,7 +1,13 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, make_response, current_app
+from flask import (
+    Blueprint, render_template, request, flash, redirect, 
+    url_for, jsonify, send_file, make_response, current_app
+)
 from flask_login import login_required, current_user
 from app.models.config import Configuration
-from app.models.inventory import Tag
+from app.models.inventory import (
+    Tag, InventoryItem, ComputerSystem, Category, 
+    ComputerModel, CPU, InventoryTransaction
+)
 from app.routes.inventory import admin_required
 from app import db
 from app.models.user import User
