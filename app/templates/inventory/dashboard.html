@@ -79,11 +79,11 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>TC-ID</th>
                                     <th>Name</th>
                                     <th>Category</th>
                                     <th>Location</th>
-                                    <th>MIN/MAX</th>
+                                    <th>Min/Qty</th>
                                     <th>Status</th>
                                     <th>Tags</th>
                                     <th>Actions</th>
@@ -97,20 +97,23 @@
                                     <td>{{ item.category.name if item.category else '-' }}</td>
                                     <td>{{ item.storage_location if item.storage_location else '-' }}</td>
                                     <td>
-                                        {% if item.min_quantity is not none %}
-                                            <span class="{% if item.quantity <= item.min_quantity %}text-warning{% endif %}">
-                                                {{ item.min_quantity }}/{{ item.quantity }}
+                                        {% if item.reorder_threshold is not none %}
+                                            <span class="{% if item.quantity <= item.reorder_threshold %}text-warning{% endif %}">
+                                                {{ item.reorder_threshold }}/{{ item.quantity }}
                                             </span>
                                         {% else %}
                                             -/{{ item.quantity }}
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <span class="badge {% if item.display_status == 'in_stock' %}bg-success
-                                                           {% elif item.display_status == 'restock' %}bg-restock
-                                                           {% else %}bg-danger{% endif %}">
-                                            {{ 'Needs Restock' if item.display_status == 'restock' 
-                                               else item.display_status|title }}
+                                        <span class="badge {% if item.quantity == 0 %}bg-danger{% elif item.quantity <= item.reorder_threshold %}bg-warning{% else %}bg-success{% endif %}">
+                                            {% if item.quantity == 0 %}
+                                                Order now!
+                                            {% elif item.quantity <= item.reorder_threshold %}
+                                                Restock
+                                            {% else %}
+                                                Available
+                                            {% endif %}
                                         </span>
                                     </td>
                                     <td>

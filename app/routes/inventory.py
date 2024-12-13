@@ -158,20 +158,33 @@ def add_item():
     categories = Category.get_ordered_categories()
     form.category.choices = [(c.id, c.get_display_name()) for c in categories]
     
+    # Get all available tags for the dropdown
+    tags = Tag.query.order_by(Tag.name).all()
+    form.tags.choices = [(str(t.id), t.name) for t in tags]
+    
     if form.validate_on_submit():
         try:
+            # Check if barcode already exists
+            if form.barcode.data and InventoryItem.query.filter_by(barcode=form.barcode.data).first():
+                flash(f'An item with barcode {form.barcode.data} already exists', 'error')
+                return render_template('inventory/add_item.html', form=form)
+            
             # Create new item
             item = InventoryItem(
+                tracking_id=f"TC-{str(uuid.uuid4())[:8].upper()}",
                 name=form.name.data,
                 description=form.description.data,
                 quantity=form.quantity.data,
+                min_quantity=form.min_quantity.data,
+                reorder_threshold=form.reorder_threshold.data,
                 category_id=form.category.data,
                 location=form.location.data,
                 manufacturer=form.manufacturer.data,
                 mpn=form.mpn.data,
                 barcode=form.barcode.data,
                 upc=form.upc.data,
-                image_url=form.image_url.data
+                image_url=form.image_url.data,
+                creator_id=current_user.id
             )
             
             # Store the full category path in item metadata
@@ -180,8 +193,35 @@ def add_item():
                     'category_path': item.category.get_full_path()
                 }
             
+            # Process tags (both existing and new)
+            if form.tags.data:
+                for tag_data in form.tags.data:
+                    # Try to convert to int (existing tag)
+                    try:
+                        tag_id = int(tag_data)
+                        tag = Tag.query.get(tag_id)
+                        if tag:
+                            item.tags.append(tag)
+                    except (ValueError, TypeError):
+                        # This is a new tag
+                        tag_name = tag_data.strip()
+                        if tag_name:
+                            # Check if tag already exists
+                            tag = Tag.query.filter_by(name=tag_name).first()
+                            if not tag:
+                                tag = Tag(name=tag_name)
+                                db.session.add(tag)
+                            item.tags.append(tag)
+            
             db.session.add(item)
             db.session.commit()
+            
+            # Log the activity
+            log_inventory_activity('add', item, {
+                'name': item.name,
+                'category': item.category.name if item.category else None,
+                'quantity': item.quantity
+            })
             
             flash('Item added successfully!', 'success')
             return redirect(url_for('inventory.view_item', id=item.id))
@@ -246,8 +286,8 @@ def edit_item(id):
         print("\n=== Starting edit_item route ===")
         print(f"Method: {request.method}")
         
-        # Get the item
-        item = InventoryItem.query.get_or_404(id)
+        # Get the item with tags eagerly loaded
+        item = InventoryItem.query.options(db.joinedload(InventoryItem.tags)).get_or_404(id)
         print(f"Found item: {item.name} (ID: {item.id})")
         
         # Create form
@@ -270,6 +310,7 @@ def edit_item(id):
                 # Update other fields
                 item.name = request.form.get('name')
                 item.quantity = int(request.form.get('quantity', 0))
+                item.min_quantity = int(request.form.get('min_quantity', 0))
                 item.reorder_threshold = int(request.form.get('reorder_threshold', 0))
                 item.storage_location = request.form.get('storage_location')
                 
@@ -297,16 +338,17 @@ def edit_item(id):
                 
                 # Handle tags
                 print("\n=== Processing tags ===")
-                raw_tags = request.form.getlist('tags')
+                raw_tags = request.form.get('tags', '').split(',')
                 print(f"Raw tags from form: {raw_tags}")
                 
                 # Convert to integers and validate
                 tag_ids = []
                 for tag_id in raw_tags:
-                    try:
-                        tag_ids.append(int(tag_id))
-                    except (ValueError, TypeError) as e:
-                        print(f"Invalid tag ID {tag_id}: {str(e)}")
+                    if tag_id.strip():  # Only process non-empty strings
+                        try:
+                            tag_ids.append(int(tag_id))
+                        except (ValueError, TypeError) as e:
+                            print(f"Invalid tag ID {tag_id}: {str(e)}")
                 
                 print(f"Processed tag IDs: {tag_ids}")
                 
@@ -362,19 +404,14 @@ def edit_item(id):
             form.category.data = item.category.id
             print(f"Pre-selected category: {item.category.name} (ID: {item.category.id})")
         
-        # Pre-select current tags
-        current_tag_ids = [tag.id for tag in item.tags]
-        form.tags.data = current_tag_ids
-        print(f"Pre-selected tags: {current_tag_ids}")
-        
         # Get all available tags
         all_tags = Tag.query.order_by(Tag.name).all()
+        form.tags.choices = [(str(t.id), t.name) for t in all_tags]
         print(f"Available tags: {[(t.id, t.name) for t in all_tags]}")
         
         return render_template('inventory/edit_item.html', 
                              form=form, 
-                             item=item, 
-                             all_tags=all_tags)
+                             item=item)
         
     except Exception as e:
         print("\n=== Unexpected error in edit_item route ===")
