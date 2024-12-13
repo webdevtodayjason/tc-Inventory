@@ -1,4 +1,5 @@
-from flask import Flask, render_template, current_app, request
+from flask import Flask, render_template, current_app, request, redirect, url_for
+from flask_login import current_user
 import logging
 from logging.handlers import RotatingFileHandler
 import sys
@@ -98,6 +99,8 @@ def create_app(config_class=Config):
     def index():
         app.logger.debug('Accessing index route')
         try:
+            if current_user.is_authenticated:
+                return redirect(url_for('inventory.dashboard'))
             return render_template('index.html')
         except Exception as e:
             app.logger.error(f'Error rendering index template: {str(e)}')

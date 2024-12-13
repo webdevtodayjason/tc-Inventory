@@ -8,12 +8,48 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    category_metadata = db.Column(db.JSON, nullable=True)  # Store additional data like full path
     children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
     items = db.relationship('InventoryItem', 
                           backref='category',
                           primaryjoin="Category.id==foreign(InventoryItem.category_id)",
                           lazy='dynamic')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def get_full_path(self):
+        """Get the full hierarchical path of the category"""
+        path = [self.name]
+        current = self
+        while current.parent:
+            current = current.parent
+            path.append(current.name)
+        return ' > '.join(reversed(path))
+
+    def get_display_name(self):
+        """Get indented name for dropdown display"""
+        depth = 0
+        current = self
+        while current.parent:
+            depth += 1
+            current = current.parent
+        return ('--' * depth) + self.name
+
+    @staticmethod
+    def get_ordered_categories():
+        """Get categories in hierarchical order for dropdowns"""
+        def build_hierarchy(parent_id=None, level=0):
+            categories = []
+            query = Category.query.filter_by(parent_id=parent_id).order_by(Category.name)
+            
+            for category in query.all():
+                category.level = level  # Add level info for template
+                categories.append(category)
+                # Recursively get children
+                categories.extend(build_hierarchy(category.id, level + 1))
+            
+            return categories
+            
+        return build_hierarchy()
 
 item_tags = db.Table('item_tags',
     db.Column('item_id', db.Integer, db.ForeignKey('items.id'), primary_key=True),

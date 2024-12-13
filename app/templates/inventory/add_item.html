@@ -54,10 +54,17 @@
                         </div>
                         <div class="mb-3">
                             <label for="category" class="form-label">Category</label>
-                            {{ form.category(class="form-select", required=true) }}
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select a category</option>
+                                {% for category in form.category.choices %}
+                                <option value="{{ category[0] }}" {% if category[0] == form.category.data %}selected{% endif %}>
+                                    {{ category[1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
                             {% if form.category.errors %}
                                 {% for error in form.category.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    <div class="invalid-feedback">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
                         </div>
@@ -150,73 +157,87 @@
 {% block scripts %}
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-function showMessage(message, isError = false) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Add Item Page');
     
-    // Find the container and the first card
-    const container = document.querySelector('.container.mt-4');
-    if (container) {
-        // Insert at the beginning of the container
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
+    // Check if elements exist
+    const lookupButton = document.getElementById('lookupButton');
+    const barcodeInput = document.getElementById('barcode');
+    const lookupStatus = document.getElementById('lookupStatus');
+    
+    console.log('Elements found:', {
+        lookupButton: !!lookupButton,
+        barcodeInput: !!barcodeInput,
+        lookupStatus: !!lookupStatus
+    });
+
+    if (lookupButton) {
+        lookupButton.addEventListener('click', async function() {
+            console.log('Lookup button clicked');
+            const barcode = barcodeInput.value;
+            console.log('Barcode value:', barcode);
+
+            if (!barcode) {
+                lookupStatus.innerHTML = '<div class="text-danger">Please enter a barcode</div>';
+                return;
             }
-        }, 5000);
-    }
-}
 
-// Image URL preview
-document.getElementById('image_url').addEventListener('change', function() {
-    const imageUrl = this.value;
-    const previewDiv = document.getElementById('imagePreview');
-    
-    if (imageUrl) {
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        img.style.maxWidth = '200px';
-        img.style.maxHeight = '200px';
-        img.onerror = function() {
-            previewDiv.innerHTML = '<div class="text-danger">Invalid image URL</div>';
-        };
-        previewDiv.innerHTML = '';
-        previewDiv.appendChild(img);
-    } else {
-        previewDiv.innerHTML = '';
-    }
-});
+            lookupStatus.innerHTML = '<div class="text-info">Looking up barcode...</div>';
 
-// Barcode scanner functionality
-let html5QrcodeScanner = null;
+            try {
+                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+                console.log('CSRF Token exists:', !!csrfToken);
+                
+                console.log('Making API request...');
+                const response = await fetch('/scan_barcode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ barcode: barcode })
+                });
 
-document.getElementById('scanButton').addEventListener('click', function() {
-    const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
-    modal.show();
-    
-    if (!html5QrcodeScanner) {
-        html5QrcodeScanner = new Html5QrcodeScanner(
-            "scanner-container", { fps: 10, qrbox: 250 }
-        );
-        
-        html5QrcodeScanner.render((decodedText) => {
-            document.getElementById('barcode').value = decodedText;
-            html5QrcodeScanner.clear();
-            modal.hide();
-            document.getElementById('lookupButton').click();
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.success) {
+                    // Update form fields with the retrieved data
+                    document.getElementById('name').value = data.name || '';
+                    document.getElementById('description').value = data.description || '';
+                    document.getElementById('manufacturer').value = data.manufacturer || '';
+                    document.getElementById('mpn').value = data.mpn || '';
+                    document.getElementById('image_url').value = data.image_url || '';
+                    
+                    // Update category if found
+                    if (data.category_id) {
+                        const categorySelect = document.getElementById('category');
+                        categorySelect.value = data.category_id;
+                        
+                        // If the category doesn't exist in the dropdown, add it
+                        if (!categorySelect.value) {
+                            const option = new Option(data.category_name, data.category_id);
+                            categorySelect.add(option);
+                            categorySelect.value = data.category_id;
+                        }
+                    }
+                    
+                    // Trigger the image preview update
+                    const event = new Event('change');
+                    document.getElementById('image_url').dispatchEvent(event);
+                    
+                    lookupStatus.innerHTML = '<div class="text-success">Product information found!</div>';
+                } else {
+                    lookupStatus.innerHTML = `<div class="text-danger">${data.message || 'No product information found'}</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                lookupStatus.innerHTML = '<div class="text-danger">Error looking up barcode. Please try again.</div>';
+            }
         });
-    }
-});
-
-document.getElementById('scannerModal').addEventListener('hidden.bs.modal', function() {
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear();
+    } else {
+        console.error('Lookup button not found!');
     }
 });
 </script>

@@ -34,3 +34,4 @@ class Config:
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     UPLOAD_FOLDER = 'app/static/uploads'
     TINYMCE_API_KEY = os.environ.get('TINYMCE_API_KEY')
+    UPCITEMDB_API_KEY = os.environ.get('UPCITEMDB_API_KEY')

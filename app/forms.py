@@ -122,33 +122,23 @@ class ComputerSystemForm(FlaskForm):
                               for c in CPU.query.order_by(CPU.manufacturer, CPU.model).all()]
 
 class GeneralItemForm(FlaskForm):
-    category = SelectField('Category', coerce=int, validators=[DataRequired()])
-    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=128)])
-    quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=0)], default=1)
-    reorder_threshold = IntegerField('Reorder Threshold', validators=[Optional(), NumberRange(min=0)], default=5)
-    storage_location = StringField('Storage Location', validators=[Optional(), Length(max=64)])
-    
-    # Barcode Fields
-    barcode = StringField('Barcode', validators=[Optional(), Length(max=128)])
-    description = TextAreaField('Description', validators=[Optional()])
-    manufacturer = StringField('Manufacturer', validators=[Optional(), Length(max=128)])
-    mpn = StringField('Manufacturer Part Number (MPN)', validators=[Optional(), Length(max=128)])
+    name = StringField('Name', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Description')
+    quantity = IntegerField('Quantity', default=0)
+    min_quantity = IntegerField('Minimum Quantity', default=0)
+    reorder_threshold = IntegerField('Reorder Threshold', default=0)
+    location = StringField('Location', validators=[Length(max=100)])
+    storage_location = StringField('Storage Location', validators=[Length(max=100)])
+    manufacturer = StringField('Manufacturer', validators=[Length(max=128)])
+    mpn = StringField('Manufacturer Part Number', validators=[Length(max=128)])
+    barcode = StringField('Barcode', validators=[Length(max=128)])
+    upc = StringField('UPC', validators=[Length(max=50)])
     image_url = StringField('Image URL', validators=[Optional(), URL()])
-    
-    # Cost Fields
-    cost = DecimalField('Cost', validators=[Optional(), NumberRange(min=0)], places=2)
-    sell_price = DecimalField('Sell Price', validators=[Optional(), NumberRange(min=0)], places=2)
+    cost = DecimalField('Cost', places=2, validators=[Optional()])
+    sell_price = DecimalField('Sell Price', places=2, validators=[Optional()])
     purchase_url = StringField('Purchase URL', validators=[Optional(), URL()])
-    
-    # Tags
+    category = SelectField('Category', coerce=int, validators=[Optional()])
     tags = SelectMultipleField('Tags', coerce=int, validators=[Optional()])
-    
-    def __init__(self, *args, **kwargs):
-        super(GeneralItemForm, self).__init__(*args, **kwargs)
-        # Populate category choices
-        self.category.choices = [(c.id, c.name) for c in Category.query.order_by(Category.name).all()]
-        # Add tag choices
-        self.tags.choices = [(t.id, t.name) for t in Tag.query.order_by(Tag.name).all()]
 
 class ChangePasswordForm(FlaskForm):
     current_password = PasswordField('Current Password', validators=[DataRequired()])

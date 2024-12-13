@@ -36,6 +36,8 @@ import time
 from werkzeug.security import generate_password_hash
 from functools import wraps
 from app.utils.activity_logger import log_inventory_activity, log_system_activity
+from datetime import datetime
+from sqlalchemy import or_
 
 bp = Blueprint('inventory', __name__)
 
@@ -152,52 +154,42 @@ def dashboard():
 @login_required
 def add_item():
     form = GeneralItemForm()
+    # Get ordered categories for the dropdown
+    categories = Category.get_ordered_categories()
+    form.category.choices = [(c.id, c.get_display_name()) for c in categories]
     
-    if request.method == 'POST':
-        if form.validate():
-            try:
-                # Create General Item
-                item = InventoryItem(
-                    tracking_id=generate_tracking_id(),
-                    name=form.name.data,
-                    category_id=form.category.data,
-                    quantity=form.quantity.data,
-                    reorder_threshold=form.reorder_threshold.data,
-                    created_by=current_user.id,
-                    cost=form.cost.data if form.cost.data else None,
-                    purchase_url=form.purchase_url.data,
-                    sell_price=form.sell_price.data if form.sell_price.data else None,
-                    barcode=form.barcode.data,
-                    description=form.description.data,
-                    manufacturer=form.manufacturer.data,
-                    mpn=form.mpn.data,
-                    image_url=form.image_url.data,
-                    storage_location=form.storage_location.data,
-                    tags=[Tag.query.get(tag_id) for tag_id in form.tags.data] if form.tags.data else []
-                )
-                
-                db.session.add(item)
-                db.session.commit()
-                
-                # Log the activity
-                log_inventory_activity('add', item, {
-                    'name': item.name,
-                    'category': item.category.name if item.category else None,
-                    'quantity': item.quantity
-                })
-                
-                flash('Item added successfully!', 'success')
-                return redirect(url_for('inventory.dashboard'))
-                
-            except Exception as e:
-                db.session.rollback()
-                current_app.logger.error(f'Error adding item: {str(e)}')
-                flash(f'Error adding item: {str(e)}', 'danger')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f'{field}: {error}', 'danger')
-    
+    if form.validate_on_submit():
+        try:
+            # Create new item
+            item = InventoryItem(
+                name=form.name.data,
+                description=form.description.data,
+                quantity=form.quantity.data,
+                category_id=form.category.data,
+                location=form.location.data,
+                manufacturer=form.manufacturer.data,
+                mpn=form.mpn.data,
+                barcode=form.barcode.data,
+                upc=form.upc.data,
+                image_url=form.image_url.data
+            )
+            
+            # Store the full category path in item metadata
+            if item.category:
+                item.category.category_metadata = {
+                    'category_path': item.category.get_full_path()
+                }
+            
+            db.session.add(item)
+            db.session.commit()
+            
+            flash('Item added successfully!', 'success')
+            return redirect(url_for('inventory.view_item', id=item.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding item: {str(e)}', 'error')
+            
     return render_template('inventory/add_item.html', form=form)
 
 @bp.route('/item/<int:id>/view')
@@ -719,128 +711,130 @@ CHROME_USER_AGENTS = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 ]
 
-@bp.route('/api/scan_barcode', methods=['POST'])
+def create_or_get_category_hierarchy(category_path):
+    """
+    Create or get categories from a hierarchical path string.
+    Example: "Electronics > Networking > Bridges & Routers > Wireless Access Points"
+    Returns the most specific (leaf) category.
+    """
+    if not category_path:
+        return None
+        
+    categories = [cat.strip() for cat in category_path.split('>')]
+    parent_id = None
+    last_category = None
+    
+    for category_name in categories:
+        # Look for existing category at this level
+        category = Category.query.filter_by(
+            name=category_name,
+            parent_id=parent_id
+        ).first()
+        
+        # Create if it doesn't exist
+        if not category:
+            category = Category(
+                name=category_name,
+                parent_id=parent_id,
+                category_metadata={'full_path': category_path}
+            )
+            db.session.add(category)
+            db.session.commit()  # Commit to get the ID for next iteration
+            
+        parent_id = category.id
+        last_category = category
+    
+    return last_category
+
+@bp.route('/scan_barcode', methods=['POST'])
 @login_required
 def scan_barcode():
     try:
         current_app.logger.debug('Barcode scan request received')
-        current_app.logger.debug(f'Request data: {request.get_json()}')
+        data = request.get_json()
+        current_app.logger.debug(f'Request data: {data}')
         
-        # Validate CSRF token from X-CSRFToken header
-        csrf_token = request.headers.get('X-CSRFToken')
-        current_app.logger.debug(f'CSRF Token from header: {csrf_token}')
-        
-        if not csrf_token:
-            current_app.logger.error('Missing CSRF token')
+        if not data or 'barcode' not in data:
             return jsonify({
-                'error': 'Missing CSRF token',
-                'message': 'Security token missing. Please refresh the page and try again.'
+                'success': False,
+                'message': 'No barcode provided'
             }), 400
             
-        try:
-            validate_csrf(csrf_token)
-        except Exception as e:
-            current_app.logger.error(f'CSRF validation failed: {str(e)}')
-            return jsonify({
-                'error': 'Invalid CSRF token',
-                'message': 'Security token invalid. Please refresh the page and try again.'
-            }), 400
-        
-        data = request.get_json()
-        if not data:
-            current_app.logger.error('No JSON data in request')
-            return jsonify({
-                'error': 'Invalid request',
-                'message': 'No data provided'
-            }), 400
-
-        barcode = data.get('barcode')
+        barcode = data['barcode']
         current_app.logger.debug(f'Barcode to lookup: {barcode}')
         
-        if not barcode:
-            current_app.logger.error('No barcode provided')
+        # Get API key from environment
+        api_key = current_app.config.get('UPCITEMDB_API_KEY')
+        if not api_key:
             return jsonify({
-                'error': 'No barcode provided',
-                'message': 'Please enter a barcode'
-            }), 400
-        
-        try:
-            # Get API key from environment
-            api_key = current_app.config.get('UPCITEMDB_API_KEY')
-            if not api_key or api_key == 'your_api_key_here':
-                current_app.logger.error('UPCItemDB API key not configured')
-                return jsonify({
-                    'error': 'API key not configured',
-                    'message': 'Please configure the UPCItemDB API key in your environment variables'
-                }), 500
-
-            # UPCItemDB API endpoint with user_key parameter
-            url = f'https://api.upcitemdb.com/prod/trial/lookup?upc={barcode}&user_key={api_key}'
-            headers = {
-                'User-Agent': random.choice(CHROME_USER_AGENTS),
-                'Accept': 'application/json'
-            }
-            
-            current_app.logger.debug(f'Making request to UPCItemDB')
-            response = requests.get(url, headers=headers, timeout=10)
-            current_app.logger.debug(f'UPCItemDB response status: {response.status_code}')
-            
-            try:
-                response_data = response.json()
-                current_app.logger.debug(f'UPCItemDB response data: {response_data}')
-            except ValueError:
-                current_app.logger.error(f'Invalid JSON in UPCItemDB response: {response.text}')
-                return jsonify({
-                    'error': 'Invalid response from UPC database',
-                    'message': 'The UPC database returned an invalid response'
-                }), 500
-
-            # Initialize product info
-            product_info = {
                 'success': False,
-                'message': 'No product information found',
-                'name': None,
-                'description': None,
-                'manufacturer': None,
-                'mpn': None,
-                'image_url': None
-            }
-            
-            # Extract information from the response
-            if response_data.get('items') and len(response_data['items']) > 0:
-                item = response_data['items'][0]  # Get the first item
-                current_app.logger.debug(f'Found product: {item.get("title")}')
-                
-                # Extract basic information
-                product_info.update({
-                    'success': True,
-                    'message': 'Product information found successfully',
-                    'name': item.get('title'),
-                    'description': item.get('description'),
-                    'manufacturer': item.get('brand'),
-                    'mpn': item.get('model'),
-                    'image_url': item.get('images', [None])[0] if item.get('images') else None
-                })
-            
-            return jsonify(product_info)
-            
-        except requests.exceptions.RequestException as e:
-            current_app.logger.error(f'UPCItemDB API error: {str(e)}')
-            return jsonify({
-                'error': 'Failed to fetch product information',
-                'message': f'API Error: {str(e)}'
-            }), 500
-        except Exception as e:
-            current_app.logger.error(f'Error processing barcode lookup: {str(e)}')
-            return jsonify({
-                'error': 'Error processing barcode',
-                'message': str(e)
+                'message': 'API key not configured'
             }), 500
             
+        # UPCItemDB API endpoint
+        url = f'https://api.upcitemdb.com/prod/v1/lookup?upc={barcode}'
+        headers = {
+            'user_key': api_key,
+            'key_type': '3scale'
+        }
+        
+        current_app.logger.debug(f'Making request to UPCItemDB with headers: {headers}')
+        
+        # Make the API request
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        
+        # Parse the response
+        result = response.json()
+        
+        if not result.get('items'):
+            return jsonify({
+                'success': False,
+                'message': 'No product found for this barcode'
+            }), 404
+            
+        # Get the first item from the results
+        item_data = result['items'][0]
+        
+        # Create category hierarchy if category exists
+        category = None
+        if item_data.get('category'):
+            category = create_or_get_category_hierarchy(item_data['category'])
+            current_app.logger.debug(f'Created/found category: {category.name if category else None}')
+        
+        # Prepare the response data
+        # Use model as name, fallback to title if model is not available
+        name = item_data.get('model')
+        if not name:
+            name = item_data.get('title')
+        if item_data.get('brand'):
+            name = f"{item_data['brand']} {name}"
+            
+        response_data = {
+            'success': True,
+            'name': name,
+            'description': item_data.get('description', ''),
+            'manufacturer': item_data.get('brand', ''),
+            'mpn': item_data.get('model', ''),
+            'category_id': category.id if category else None,
+            'category_name': category.get_full_path() if category else None,
+            'image_url': item_data.get('images', [''])[0] if item_data.get('images') else '',
+            'upc': item_data.get('upc', '')
+        }
+        
+        return jsonify(response_data)
+        
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f'UPCItemDB API error: {str(e)}')
+        return jsonify({
+            'success': False,
+            'message': 'Error connecting to UPC database'
+        }), 500
+        
     except Exception as e:
         current_app.logger.error(f'Unexpected error in scan_barcode: {str(e)}')
         return jsonify({
-            'error': 'Server error',
+            'success': False,
             'message': 'An unexpected error occurred'
         }), 500
 
@@ -1147,3 +1141,30 @@ def delete_tag(id):
     db.session.commit()
     flash('Tag deleted successfully', 'success')
     return redirect(url_for('inventory.manage_tags'))
+
+@bp.route('/test_upc', methods=['GET'])
+@login_required
+def test_upc():
+    """Test endpoint for UPC lookups"""
+    api_key = current_app.config.get('UPCITEMDB_API_KEY')
+    if not api_key:
+        return jsonify({'error': 'API key not configured'}), 500
+        
+    # Test UPC code
+    test_upc = "190199267039"  # Example UPC for testing
+    
+    # UPCItemDB API endpoint
+    url = "https://api.upcitemdb.com/prod/trial/lookup"
+    headers = {
+        'user_key': api_key,
+        'Content-Type': 'application/json'
+    }
+    params = {'upc': test_upc}
+    
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        return jsonify(response.json())
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"UPC lookup error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
