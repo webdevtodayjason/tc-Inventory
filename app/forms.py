@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField, DecimalField, SelectMultipleField, PasswordField
+from wtforms import StringField, SelectField, IntegerField, FloatField, TextAreaField, DecimalField, SelectMultipleField, PasswordField, BooleanField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp, ValidationError, URL, EqualTo
 from app.models.inventory import ComputerModel, Category, CPU, Tag, WikiCategory, WikiPage
 
@@ -174,3 +174,14 @@ class WikiPageForm(FlaskForm):
         self.category_id.choices = [
             (c.id, c.name) for c in WikiCategory.query.order_by(WikiCategory.name).all()
         ]
+
+class CategoryForm(FlaskForm):
+    name = StringField('Category Name', validators=[DataRequired()])
+    category_type = StringField('Category Type', validators=[DataRequired()])
+    parent_id = SelectField('Parent Category', 
+                          coerce=lambda x: int(x) if x else None,
+                          choices=[])
+
+    def validate_parent_id(form, field):
+        if form.category_type.data == 'child' and not field.data:
+            raise ValidationError('Please select a valid parent category.')

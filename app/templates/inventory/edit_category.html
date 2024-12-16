@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Category{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Category</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.is_child.label(class="form-check-label") }}
+            {{ form.is_child(class="form-check-input") }}
+        </div>
+        <div class="mb-3">
+            {{ form.parent_id.label(class="form-label") }}
+            {{ form.parent_id(class="form-select") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Update Category</button>
+    </form>
+</div>
+{% endblock %} 

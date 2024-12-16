@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Add Category{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Add Category</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Category Type</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="category_type" id="isParent" value="parent" checked>
+                <label class="form-check-label" for="isParent">
+                    Is Parent
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="category_type" id="isChild" value="child">
+                <label class="form-check-label" for="isChild">
+                    Is Child
+                </label>
+            </div>
+        </div>
+        <div class="mb-3" id="parent-category" style="display: none;">
+            {{ form.parent_id.label(class="form-label") }}
+            {{ form.parent_id(class="form-select") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Add Category</button>
+    </form>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const isChildRadio = document.getElementById('isChild');
+        const isParentRadio = document.getElementById('isParent');
+        const parentCategoryDiv = document.getElementById('parent-category');
+
+        function toggleParentCategory() {
+            if (isChildRadio.checked) {
+                parentCategoryDiv.style.display = 'block';
+            } else {
+                parentCategoryDiv.style.display = 'none';
+            }
+        }
+
+        isChildRadio.addEventListener('change', toggleParentCategory);
+        isParentRadio.addEventListener('change', toggleParentCategory);
+        toggleParentCategory(); // Initial check
+    });
+</script>
+{% endblock %} 

@@ -11,7 +11,7 @@ from app.utils.email import send_stock_alert
 from app.forms import (
     ComputerModelForm, CPUForm, GeneralItemForm, 
     ComputerSystemForm, MANUFACTURER_CHOICES, 
-    COMPUTER_TYPES
+    COMPUTER_TYPES, CategoryForm
 )
 from app import db
 import uuid
@@ -119,7 +119,7 @@ def dashboard():
     systems = systems_query.paginate(page=systems_page, per_page=per_page)
     
     # Get categories and models for filter dropdowns
-    categories = Category.query.order_by(Category.name).all()
+    categories = Category.get_ordered_categories()
     computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
     
     # Get Wiki pages
@@ -1214,3 +1214,115 @@ def test_upc():
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"UPC lookup error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@bp.route('/categories/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_category():
+    form = CategoryForm()
+    # Always populate parent choices with top-level categories
+    parent_categories = Category.query.filter_by(parent_id=None).order_by(Category.name).all()
+    form.parent_id.choices = [(c.id, c.name) for c in parent_categories]
+    form.parent_id.choices.insert(0, ('', 'None'))  # Add None option for parent categories
+    
+    if request.method == 'POST':
+        category_type = request.form.get('category_type')
+        
+        # If it's a parent category, set parent_id to None and skip validation
+        if category_type == 'parent':
+            form.parent_id.data = None
+            # Remove parent_id from form validation
+            delattr(form.parent_id, 'validators')
+        
+        if form.validate_on_submit():
+            try:
+                category = Category(
+                    name=form.name.data,
+                    parent_id=form.parent_id.data if category_type == 'child' else None
+                )
+                db.session.add(category)
+                db.session.commit()
+                flash('Category added successfully!', 'success')
+                return redirect(url_for('inventory.manage_categories'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error adding category: {str(e)}', 'danger')
+        else:
+            if form.errors:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f'{field}: {error}', 'danger')
+    
+    return render_template('inventory/add_category.html', form=form)
+
+@bp.route('/categories')
+@login_required
+@admin_required
+def manage_categories():
+    page = request.args.get('page', 1, type=int)
+    per_page = current_app.config.get('CATEGORIES_PER_PAGE', 10)
+    parent_filter = request.args.get('parent_filter', type=int)
+    
+    # Get all parent categories for the dropdown
+    parent_categories = Category.query.filter_by(parent_id=None).order_by(Category.name).all()
+    
+    # Base query for categories
+    query = Category.query
+    
+    # Apply parent filter if selected
+    if parent_filter:
+        # Get the parent category and its children
+        parent = Category.query.get(parent_filter)
+        if parent:
+            categories = [parent]  # Start with the parent
+            children = Category.query.filter_by(parent_id=parent_filter).order_by(Category.name).all()
+            categories.extend(children)  # Add all children
+    else:
+        categories = Category.get_ordered_categories()
+    
+    # Pagination
+    paginated_categories = categories[(page-1)*per_page:page*per_page]
+    total_pages = (len(categories) + per_page - 1) // per_page
+    
+    return render_template('inventory/manage_categories.html', 
+                         categories=paginated_categories,
+                         parent_categories=parent_categories,
+                         selected_parent=parent_filter,
+                         page=page,
+                         total_pages=total_pages)
+
+@bp.route('/category/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_category(id):
+    category = Category.query.get_or_404(id)
+    form = CategoryForm(obj=category)
+    if form.validate_on_submit():
+        category.name = form.name.data
+        category.parent_id = form.parent_id.data if form.category_type.data == 'child' else None
+        db.session.commit()
+        flash('Category updated successfully!', 'success')
+        return redirect(url_for('inventory.manage_categories'))
+    categories = Category.get_ordered_categories()
+    form.parent_id.choices = [(c.id, c.get_display_name()) for c in categories if c.id != category.id]
+    return render_template('inventory/edit_category.html', form=form, category=category)
+
+@bp.route('/category/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_category(id):
+    category = Category.query.get_or_404(id)
+    
+    # Check if category has children
+    if Category.query.filter_by(parent_id=category.id).first():
+        flash('Cannot delete category that has child categories. Please delete or reassign child categories first.', 'danger')
+        return redirect(url_for('inventory.manage_categories'))
+    
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        flash('Category deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting category: {str(e)}', 'danger')
+    return redirect(url_for('inventory.manage_categories'))
