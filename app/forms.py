@@ -138,6 +138,7 @@ class GeneralItemForm(FlaskForm):
     purchase_url = StringField('Purchase URL', validators=[Optional(), URL()])
     category = SelectField('Category', coerce=int, validators=[Optional()])
     tags = SelectMultipleField('Tags', coerce=int, validators=[Optional()])
+    min_quantity = IntegerField('Minimum Quantity', default=0)
 
 class ChangePasswordForm(FlaskForm):
     current_password = PasswordField('Current Password', validators=[DataRequired()])

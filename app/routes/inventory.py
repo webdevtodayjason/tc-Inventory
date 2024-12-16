@@ -66,7 +66,8 @@ def dashboard():
         items_query = items_query.filter(
             db.or_(
                 InventoryItem.name.ilike(f'%{search}%'),
-                InventoryItem.tracking_id.ilike(f'%{search}%')
+                InventoryItem.tracking_id.ilike(f'%{search}%'),
+                InventoryItem.barcode.ilike(f'%{search}%')
             )
         )
     
@@ -184,7 +185,11 @@ def add_item():
                 barcode=form.barcode.data,
                 upc=form.upc.data,
                 image_url=form.image_url.data,
-                creator_id=current_user.id
+                creator_id=current_user.id,
+                storage_location=form.storage_location.data,
+                cost=form.cost.data,
+                sell_price=form.sell_price.data,
+                purchase_url=form.purchase_url.data
             )
             
             # Store the full category path in item metadata
@@ -292,6 +297,10 @@ def edit_item(id):
         
         # Create form
         form = GeneralItemForm(obj=item)
+        
+        # Populate category choices for the dropdown
+        categories = Category.get_ordered_categories()
+        form.category.choices = [(c.id, c.get_display_name()) for c in categories]
         
         if request.method == 'POST':
             print("\n=== Processing POST request ===")

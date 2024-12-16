@@ -65,8 +65,15 @@
                                 <option value="out_of_stock" {% if request.args.get('status') == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        <div class="col-md-4 d-flex justify-content-start align-items-center">
+                            {% if request.args.get('search') or request.args.get('category') or request.args.get('status') %}
+                                <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary btn-sm me-1">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -197,8 +204,15 @@
                                 <option value="maintenance" {% if request.args.get('system_status') == 'maintenance' %}selected{% endif %}>Maintenance</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        <div class="col-md-4 d-flex justify-content-between">
+                            {% if request.args.get('search_systems') or request.args.get('model') or request.args.get('system_status') %}
+                                <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary btn-sm me-2">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -300,8 +314,15 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        <div class="col-md-4 d-flex justify-content-between">
+                            {% if request.args.get('wiki_search') or request.args.get('wiki_category') %}
+                                <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary btn-sm me-2">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </div>
                         <div class="col-md-3 text-end">
                             <a href="{{ url_for('wiki.new_page') }}" class="btn btn-success w-100">
