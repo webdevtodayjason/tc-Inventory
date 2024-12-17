@@ -77,4 +77,10 @@ retry_command "flask create-admin"
 echo "Initializing configuration..."
 retry_command "flask init-config"
 
+# Increment version number if this is a new deployment
+if [ "$RAILWAY_ENVIRONMENT" = "production" ]; then
+    echo "Incrementing version number..."
+    retry_command "flask increment-version"
+fi
+
 echo "Deployment complete!"
