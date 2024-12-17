@@ -1034,11 +1034,16 @@ def add_system():
                 db.session.add(system)
                 db.session.commit()
                 
+                # Create a descriptive name for logging
+                system_name = f"{model.manufacturer} {model.model_name}"
+                if cpu:
+                    system_name += f" - {cpu.manufacturer} {cpu.model}"
+                
                 # Log the activity
                 log_system_activity('add', system, {
-                    'name': system.name,
-                    'category': system.category.name if system.category else None,
-                    'quantity': system.quantity
+                    'name': system_name,
+                    'model': f"{model.manufacturer} {model.model_name}",
+                    'cpu': f"{cpu.manufacturer} {cpu.model}" if cpu else None
                 })
                 
                 flash('Computer system added successfully!', 'success')
