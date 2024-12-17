@@ -4,26 +4,29 @@ from app import db
 def increment_build_number():
     """Increment the build number in the configuration table"""
     try:
-        # Get current build number
-        current_build = Configuration.get_setting('build_number', '1.0.0')
-        
-        # Increment the last number
-        major, minor, patch = current_build.split('.')
-        new_build = f"{major}.{minor}.{int(patch) + 1}"
-        
-        # Update the configuration
+        # Get or create the build number configuration
         config = Configuration.query.filter_by(key='build_number').first()
-        if config:
-            config.value = new_build
-        else:
+        if not config:
             config = Configuration(
                 key='build_number',
-                value=new_build,
+                value='1.0.0',
                 description='Current build number of the application'
             )
             db.session.add(config)
-            
+            db.session.commit()
+        
+        # Parse current version
+        try:
+            major, minor, patch = config.value.split('.')
+            new_build = f"{major}.{minor}.{int(patch) + 1}"
+        except (ValueError, AttributeError):
+            # If version is invalid, reset to 1.0.0
+            new_build = '1.0.0'
+        
+        # Update the configuration
+        config.value = new_build
         db.session.commit()
+        print(f"Successfully incremented version to {new_build}")
         return new_build
         
     except Exception as e:
