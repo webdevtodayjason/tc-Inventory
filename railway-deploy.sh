@@ -20,20 +20,38 @@ retry_command() {
     return 0
 }
 
-# Function to check database connection
-check_db_connection() {
+# Function to increment version directly in database
+increment_version() {
     python3 << EOF
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import os
 
 try:
+    # Connect to database
     engine = create_engine(os.environ['DATABASE_URL'])
-    connection = engine.connect()
-    connection.close()
-    print("Database connection successful!")
-    exit(0)
+    with engine.connect() as conn:
+        # Get current version
+        result = conn.execute(text("SELECT value FROM configuration WHERE key = 'build_number'"))
+        current = result.scalar()
+        
+        if current:
+            # Parse and increment version
+            major, minor, patch = current.split('.')
+            new_version = f"{major}.{minor}.{int(patch) + 1}"
+            
+            # Update version
+            conn.execute(text("UPDATE configuration SET value = :new_version WHERE key = 'build_number'"), 
+                        {'new_version': new_version})
+            conn.commit()
+            print(f"Version incremented from {current} to {new_version}")
+        else:
+            # Insert initial version if not exists
+            conn.execute(text("INSERT INTO configuration (key, value, description) VALUES ('build_number', '1.0.0', 'Current build number')"))
+            conn.commit()
+            print("Initial version 1.0.0 created")
+        
 except Exception as e:
-    print(f"Database connection failed: {e}")
+    print(f"Error incrementing version: {str(e)}")
     exit(1)
 EOF
 }
@@ -43,14 +61,6 @@ echo "Current time: $(date)"
 
 echo "Waiting for database to be ready..."
 sleep 30
-
-echo "Verifying database connection..."
-retry_command "check_db_connection"
-
-if [ $? -ne 0 ]; then
-    echo "Could not establish database connection. Exiting."
-    exit 1
-fi
 
 # Apply database migrations
 echo "Running database migrations..."
@@ -66,9 +76,9 @@ retry_command "flask create-admin"
 echo "Initializing configuration..."
 retry_command "flask init-config"
 
-# Increment version
+# Increment version directly in database
 echo "=== Incrementing build version ==="
-retry_command "flask increment-version"
+increment_version
 
 echo "=== Deployment complete ==="
 echo "Final time: $(date)"
