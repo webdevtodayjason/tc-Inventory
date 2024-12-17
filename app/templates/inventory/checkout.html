@@ -225,11 +225,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle numeric keypad input for PIN
     document.querySelectorAll('.keypad-btn').forEach(button => {
         button.addEventListener('click', function() {
-            const targetInput = document.activeElement;
-            if (targetInput && targetInput.type === 'password' && targetInput.value.length < 6) {
-                targetInput.value += this.dataset.value;
-            } else if (targetInput && targetInput.id === 'barcodeInput') {
-                targetInput.value += this.dataset.value;
+            const pinInput = document.getElementById('pinDisplay');
+            const barcodeInput = document.getElementById('barcodeInput');
+            
+            if (pinInput && !barcodeInput) {
+                // We're in PIN entry mode
+                if (pinInput.value.length < 6) {
+                    pinInput.value += this.dataset.value;
+                }
+            } else if (barcodeInput && barcodeInput.style.display !== 'none') {
+                // We're in barcode entry mode
+                barcodeInput.value += this.dataset.value;
             }
         });
     });
