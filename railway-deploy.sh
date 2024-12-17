@@ -52,6 +52,18 @@ except Exception as e:
 EOF
 }
 
+# Function to check version
+check_version() {
+    python3 << EOF
+from app.models.config import Configuration
+from app import create_app
+app = create_app()
+with app.app_context():
+    current_version = Configuration.get_setting('build_number', '1.0.0')
+    print(f"Current version: {current_version}")
+EOF
+}
+
 echo "=== Starting deployment process ==="
 echo "Environment: $RAILWAY_ENVIRONMENT"
 echo "Current time: $(date)"
@@ -81,31 +93,19 @@ retry_command "flask create-admin"
 echo "Initializing configuration..."
 retry_command "flask init-config"
 
-# Always try to increment version and log the outcome
+# Version increment process with retries
 echo "=== Version increment process ==="
 echo "Checking current version..."
-python3 << EOF
-from app.models.config import Configuration
-from app import create_app
-app = create_app()
-with app.app_context():
-    current_version = Configuration.get_setting('build_number', '1.0.0')
-    print(f"Current version: {current_version}")
-EOF
+check_version
 
 echo "Attempting version increment..."
-if flask increment-version; then
+retry_command "flask increment-version"
+if [ $? -eq 0 ]; then
     echo "Version increment successful"
-    python3 << EOF
-from app.models.config import Configuration
-from app import create_app
-app = create_app()
-with app.app_context():
-    new_version = Configuration.get_setting('build_number', '1.0.0')
-    print(f"New version: {new_version}")
-EOF
+    echo "New version:"
+    check_version
 else
-    echo "Version increment failed"
+    echo "Version increment failed after all retries"
 fi
 
 echo "=== Deployment process complete ==="
