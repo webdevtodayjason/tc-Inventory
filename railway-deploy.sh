@@ -52,6 +52,10 @@ except Exception as e:
 EOF
 }
 
+echo "=== Starting deployment process ==="
+echo "Environment: $RAILWAY_ENVIRONMENT"
+echo "Current time: $(date)"
+
 echo "Waiting for database to be ready..."
 sleep 30  # Increased initial wait time
 
@@ -77,10 +81,32 @@ retry_command "flask create-admin"
 echo "Initializing configuration..."
 retry_command "flask init-config"
 
-# Increment version number if this is a new deployment
-if [ "$RAILWAY_ENVIRONMENT" = "production" ]; then
-    echo "Incrementing version number..."
-    retry_command "flask increment-version"
+# Always try to increment version and log the outcome
+echo "=== Version increment process ==="
+echo "Checking current version..."
+python3 << EOF
+from app.models.config import Configuration
+from app import create_app
+app = create_app()
+with app.app_context():
+    current_version = Configuration.get_setting('build_number', '1.0.0')
+    print(f"Current version: {current_version}")
+EOF
+
+echo "Attempting version increment..."
+if flask increment-version; then
+    echo "Version increment successful"
+    python3 << EOF
+from app.models.config import Configuration
+from app import create_app
+app = create_app()
+with app.app_context():
+    new_version = Configuration.get_setting('build_number', '1.0.0')
+    print(f"New version: {new_version}")
+EOF
+else
+    echo "Version increment failed"
 fi
 
-echo "Deployment complete!"
+echo "=== Deployment process complete ==="
+echo "Final time: $(date)"
