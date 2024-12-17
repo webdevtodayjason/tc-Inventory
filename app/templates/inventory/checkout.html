@@ -2,12 +2,63 @@
 
 {% block title %}Item Checkout{% endblock %}
 
+{% block styles %}
+{{ super() }}
+<style>
+.keypad-btn {
+    font-size: 24px;
+    height: 70px;
+    margin: 5px;
+    border-radius: 10px;
+}
+
+.action-btn {
+    font-size: 20px;
+    height: 60px;
+    margin: 5px;
+}
+
+.pin-display {
+    font-size: 24px;
+    height: 60px;
+    text-align: center;
+    letter-spacing: 5px;
+}
+
+.mode-btn {
+    font-size: 20px;
+    height: 80px;
+    margin: 10px;
+}
+
+.checkout-header {
+    background-color: var(--bs-primary);
+    color: white;
+    padding: 20px;
+    border-radius: 5px 5px 0 0;
+}
+
+.checkout-user {
+    margin-top: 10px;
+    font-size: 18px;
+}
+
+#pinDisplay, #barcodeInput {
+    font-size: 24px;
+    height: 60px;
+    text-align: center;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8">
             {% if not current_tech %}
-            <!-- Only show PIN Entry Form when not logged in -->
+            <!-- PIN Entry Form -->
             <div class="card" id="pinForm">
                 <div class="checkout-header">
                     <h2 class="text-center mb-0">Tech Login</h2>
@@ -15,40 +66,101 @@
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('inventory.verify_pin') }}" id="techLoginForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="mb-3">
-                            <label for="pin" class="form-label">Enter your PIN</label>
-                            <input type="password" class="form-control" id="pin" name="pin" required>
+                        <input type="password" class="form-control pin-display" id="pinDisplay" name="pin" readonly required>
+                        
+                        <!-- Numeric Keypad -->
+                        <div class="text-center">
+                            <div class="row g-2 justify-content-center">
+                                {% for num in range(1, 10) %}
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-primary keypad-btn w-100" data-value="{{ num }}">{{ num }}</button>
+                                </div>
+                                {% endfor %}
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-primary keypad-btn w-100" data-value="0">0</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="row g-2 mt-3">
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-warning action-btn w-100" id="clearBtn">Clear</button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-info action-btn w-100" id="backspaceBtn">⌫</button>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success action-btn w-100 mt-3">Login</button>
                         </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
                     </form>
                 </div>
             </div>
             {% else %}
-            <!-- Show Checkout Form only when logged in -->
+            <!-- Checkout Form -->
             <div class="card" id="checkoutForm">
                 <div class="checkout-header">
                     <h2 class="text-center mb-0">Item Checkout</h2>
                     <p class="text-center checkout-user">Logged in as: {{ current_tech.username }}</p>
                 </div>
                 <div class="card-body">
+                    <!-- Mode Selection Buttons -->
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <button class="btn btn-primary mode-btn w-100" id="scanMode">
+                                <i class="fas fa-barcode fa-2x mb-2"></i><br>
+                                Scan Barcode
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-secondary mode-btn w-100" id="manualMode">
+                                <i class="fas fa-keyboard fa-2x mb-2"></i><br>
+                                Enter TC-Code
+                            </button>
+                        </div>
+                    </div>
+
                     <form method="POST" action="{{ url_for('inventory.process_checkout') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="form_type" value="checkout">
                         
-                        <!-- Barcode Scanner Input -->
+                        <!-- Item Input -->
                         <div class="mb-4">
-                            <label class="form-label fs-4">Scan Item</label>
                             <input type="text" 
-                                   class="form-control form-control-lg" 
-                                   name="tracking_id" 
+                                   class="form-control" 
                                    id="barcodeInput"
-                                   placeholder="TC-XXXXXXXX"
-                                   required
-                                   autofocus>
+                                   name="tracking_id" 
+                                   placeholder="Scan or Enter Code"
+                                   required>
                         </div>
 
-                        <!-- Add quantity field -->
-                        <div class="mb-4" id="quantityField">
+                        <!-- Numeric Keypad (hidden by default) -->
+                        <div id="numericKeypad" class="mb-4" style="display: none;">
+                            <div class="text-center">
+                                <div class="row g-2 justify-content-center">
+                                    {% for num in range(1, 10) %}
+                                    <div class="col-4">
+                                        <button type="button" class="btn btn-outline-primary keypad-btn w-100" data-value="{{ num }}">{{ num }}</button>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="col-4">
+                                        <button type="button" class="btn btn-outline-primary keypad-btn w-100" data-value="0">0</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="row g-2 mt-3">
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-warning action-btn w-100" id="clearItemBtn">Clear</button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="button" class="btn btn-info action-btn w-100" id="backspaceItemBtn">⌫</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quantity and Reason -->
+                        <div class="mb-4">
                             <label class="form-label fs-4">Quantity</label>
                             <input type="number" 
                                    class="form-control form-control-lg" 
@@ -56,10 +168,8 @@
                                    value="1"
                                    min="1"
                                    required>
-                            <small class="text-muted">Number of items to check out</small>
                         </div>
 
-                        <!-- Reason for Checkout -->
                         <div class="mb-4">
                             <label class="form-label fs-4">Reason for Checkout</label>
                             <textarea class="form-control" 
@@ -69,8 +179,8 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">Check Out Item</button>
-                            <a href="{{ url_for('inventory.checkout_logout') }}" class="btn btn-secondary btn-lg">Cancel / Logout</a>
+                            <button type="submit" class="btn btn-success btn-lg action-btn">Check Out Item</button>
+                            <a href="{{ url_for('inventory.checkout_logout') }}" class="btn btn-danger btn-lg action-btn">Cancel / Logout</a>
                         </div>
                     </form>
                 </div>
@@ -105,41 +215,70 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const pinInput = document.getElementById('pinInput');
+    // PIN Entry
+    const pinDisplay = document.getElementById('pinDisplay');
     const barcodeInput = document.getElementById('barcodeInput');
-    const clearBtn = document.getElementById('clearBtn');
-    const backspaceBtn = document.getElementById('backspaceBtn');
+    const numericKeypad = document.getElementById('numericKeypad');
+    const scanMode = document.getElementById('scanMode');
+    const manualMode = document.getElementById('manualMode');
     
-    // Handle numeric keypad input
+    // Handle numeric keypad input for PIN
     document.querySelectorAll('.keypad-btn').forEach(button => {
         button.addEventListener('click', function() {
-            if (pinInput.value.length < 6) {
-                pinInput.value += this.dataset.value;
+            const targetInput = document.activeElement;
+            if (targetInput && targetInput.type === 'password' && targetInput.value.length < 6) {
+                targetInput.value += this.dataset.value;
+            } else if (targetInput && targetInput.id === 'barcodeInput') {
+                targetInput.value += this.dataset.value;
             }
         });
     });
     
-    // Clear button
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            pinInput.value = '';
+    // Clear buttons
+    document.querySelectorAll('#clearBtn, #clearItemBtn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetInput = this.id === 'clearBtn' ? pinDisplay : barcodeInput;
+            targetInput.value = '';
+            targetInput.focus();
+        });
+    });
+    
+    // Backspace buttons
+    document.querySelectorAll('#backspaceBtn, #backspaceItemBtn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetInput = this.id === 'backspaceBtn' ? pinDisplay : barcodeInput;
+            targetInput.value = targetInput.value.slice(0, -1);
+            targetInput.focus();
+        });
+    });
+    
+    // Mode switching
+    if (scanMode && manualMode) {
+        scanMode.addEventListener('click', function() {
+            numericKeypad.style.display = 'none';
+            barcodeInput.value = '';
+            barcodeInput.focus();
+            scanMode.classList.remove('btn-secondary');
+            scanMode.classList.add('btn-primary');
+            manualMode.classList.remove('btn-primary');
+            manualMode.classList.add('btn-secondary');
+        });
+        
+        manualMode.addEventListener('click', function() {
+            numericKeypad.style.display = 'block';
+            barcodeInput.value = 'TC-';
+            barcodeInput.focus();
+            manualMode.classList.remove('btn-secondary');
+            manualMode.classList.add('btn-primary');
+            scanMode.classList.remove('btn-primary');
+            scanMode.classList.add('btn-secondary');
         });
     }
     
-    // Backspace button
-    if (backspaceBtn) {
-        backspaceBtn.addEventListener('click', function() {
-            pinInput.value = pinInput.value.slice(0, -1);
-        });
-    }
-    
-    // Auto-focus PIN input if no tech is logged in
-    if (pinInput) {
-        pinInput.focus();
-    }
-    
-    // Auto-focus barcode input if tech is logged in
-    if (barcodeInput) {
+    // Auto-focus appropriate input
+    if (pinDisplay) {
+        pinDisplay.focus();
+    } else if (barcodeInput) {
         barcodeInput.focus();
     }
 });
