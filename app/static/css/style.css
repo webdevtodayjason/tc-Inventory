@@ -479,4 +479,116 @@ body.dark-mode .badge.bg-info {
 .inventory-item .badge {
     font-weight: 500;
     text-transform: capitalize;
+}
+
+/* Roadmap Styles */
+.roadmap-column {
+    min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.roadmap-item {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.roadmap-item:hover {
+    transform: translateY(-2px);
+}
+
+.badge.feature-request {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.badge.bug-report {
+    background-color: #dc3545;
+    color: white;
+}
+
+.badge.integration {
+    background-color: #198754;
+    color: white;
+}
+
+.vote-btn {
+    transition: all 0.2s;
+}
+
+.vote-btn:hover {
+    transform: translateY(-2px);
+}
+
+.vote-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Dark mode adjustments for roadmap */
+[data-bs-theme="dark"] .roadmap-item {
+    background-color: #2b3035;
+    border-color: #373b3e;
+}
+
+[data-bs-theme="dark"] .roadmap-item .card-body {
+    color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .roadmap-item .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Roadmap Status Colors */
+.roadmap-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.roadmap-status.open {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.roadmap-status.in_progress {
+    background-color: var(--bs-warning);
+    color: black;
+}
+
+.roadmap-status.done {
+    background-color: var(--bs-success);
+    color: white;
+}
+
+[data-bs-theme="dark"] .roadmap-status.open {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+[data-bs-theme="dark"] .roadmap-status.in_progress {
+    background-color: var(--bs-warning);
+    color: black;
+}
+
+[data-bs-theme="dark"] .roadmap-status.done {
+    background-color: var(--bs-success);
+    color: white;
+}
+
+/* Category badge icons */
+.badge i {
+    margin-right: 0.3rem;
+}
+
+.badge.feature-request i {
+    color: #FFD700;  /* Gold color for feature stars */
+}
+
+.badge.bug-report i {
+    color: #FFFFFF;  /* White color for bug icon */
+}
+
+.badge.integration i {
+    color: #FFFFFF;  /* White color for integration icon */
 } 

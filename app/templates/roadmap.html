@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Roadmap{% endblock %}
+
+{% block head %}
+<!-- Add jQuery UI CSS -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+<!-- Add custom styles for draggable items and voting -->
+<style>
+.roadmap-item.ui-draggable-dragging {
+    cursor: move;
+    opacity: 0.8;
+    z-index: 1000;
+}
+.roadmap-column.ui-droppable-active {
+    background-color: rgba(0,0,0,0.05);
+}
+.roadmap-column.ui-droppable-hover {
+    background-color: rgba(0,0,0,0.1);
+}
+.vote-btn.voted {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+    color: #198754;
+    cursor: default;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Roadmap</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newRequestModal">
+                <i class="fas fa-plus"></i> Submit Request
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Open Column -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary">
+                    <h5 class="mb-0 text-white">Open</h5>
+                </div>
+                <div class="card-body roadmap-column" data-status="open">
+                    {% for item in items if item.status == 'open' %}
+                    <div class="card mb-3 roadmap-item" data-id="{{ item.id }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="card-title mb-1">{{ item.title }}</h6>
+                                <span class="badge {{ item.category|lower|replace(' ', '-') }}">
+                                    <i class="fas {% if item.category == 'Feature Request' %}fa-star{% elif item.category == 'Bug Report' %}fa-bug{% else %}fa-plug{% endif %}"></i>
+                                    {{ item.category }}
+                                </span>
+                            </div>
+                            <p class="card-text small">{{ item.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">By {{ item.submitter.username }}</small>
+                                <button class="btn btn-sm btn-outline-primary vote-btn {% if item in current_user.voted_items %}voted{% endif %}" 
+                                        data-id="{{ item.id }}"
+                                        {% if item in current_user.voted_items %}disabled{% endif %}>
+                                    <i class="fas {% if item in current_user.voted_items %}fa-check{% else %}fa-arrow-up{% endif %}"></i> 
+                                    {{ item.votes }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- In Progress Column -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0 text-dark">In Progress</h5>
+                </div>
+                <div class="card-body roadmap-column" data-status="in_progress">
+                    {% for item in items if item.status == 'in_progress' %}
+                    <div class="card mb-3 roadmap-item" data-id="{{ item.id }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="card-title mb-1">{{ item.title }}</h6>
+                                <span class="badge {{ item.category|lower|replace(' ', '-') }}">
+                                    <i class="fas {% if item.category == 'Feature Request' %}fa-star{% elif item.category == 'Bug Report' %}fa-bug{% else %}fa-plug{% endif %}"></i>
+                                    {{ item.category }}
+                                </span>
+                            </div>
+                            <p class="card-text small">{{ item.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">By {{ item.submitter.username }}</small>
+                                <button class="btn btn-sm btn-outline-primary vote-btn {% if item in current_user.voted_items %}voted{% endif %}" 
+                                        data-id="{{ item.id }}"
+                                        {% if item in current_user.voted_items %}disabled{% endif %}>
+                                    <i class="fas {% if item in current_user.voted_items %}fa-check{% else %}fa-arrow-up{% endif %}"></i> 
+                                    {{ item.votes }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Done Column -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success">
+                    <h5 class="mb-0 text-white">Done</h5>
+                </div>
+                <div class="card-body roadmap-column" data-status="done">
+                    {% for item in items if item.status == 'done' %}
+                    <div class="card mb-3 roadmap-item" data-id="{{ item.id }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="card-title mb-1">{{ item.title }}</h6>
+                                <span class="badge {{ item.category|lower|replace(' ', '-') }}">
+                                    <i class="fas {% if item.category == 'Feature Request' %}fa-star{% elif item.category == 'Bug Report' %}fa-bug{% else %}fa-plug{% endif %}"></i>
+                                    {{ item.category }}
+                                </span>
+                            </div>
+                            <p class="card-text small">{{ item.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">By {{ item.submitter.username }}</small>
+                                <button class="btn btn-sm btn-outline-primary vote-btn {% if item in current_user.voted_items %}voted{% endif %}" 
+                                        data-id="{{ item.id }}"
+                                        {% if item in current_user.voted_items %}disabled{% endif %}>
+                                    <i class="fas {% if item in current_user.voted_items %}fa-check{% else %}fa-arrow-up{% endif %}"></i> 
+                                    {{ item.votes }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Request Modal -->
+<div class="modal fade" id="newRequestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Submit New Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="roadmapForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="Feature Request">Feature Request</option>
+                            <option value="Bug Report">Bug Report</option>
+                            <option value="Integration">Integration</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitRequest">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Add jQuery UI -->
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Set up CSRF token for all AJAX requests
+    const csrfToken = $('input[name="csrf_token"]').val();
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrfToken);
+            }
+        }
+    });
+
+    // Handle voting
+    $('.vote-btn:not(.voted)').click(function() {
+        const itemId = $(this).data('id');
+        const btn = $(this);
+        
+        $.post('/roadmap/vote/' + itemId)
+            .done(function(response) {
+                btn.html(`<i class="fas fa-check"></i> ${response.votes}`);
+                btn.addClass('voted').prop('disabled', true);
+            })
+            .fail(function(xhr) {
+                alert('Error voting: ' + xhr.responseJSON.error);
+            });
+    });
+
+    // Handle form submission
+    $('#submitRequest').click(function() {
+        const formData = {
+            title: $('#title').val(),
+            description: $('#description').val(),
+            category: $('#category').val(),
+            csrf_token: csrfToken
+        };
+
+        console.log('Submitting request:', formData);
+
+        $.ajax({
+            url: '/roadmap/submit',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                console.log('Success:', response);
+                $('#newRequestModal').modal('hide');
+                location.reload();
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+                alert('Error submitting request: ' + (xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error'));
+            }
+        });
+    });
+
+    // Clear form when modal is hidden
+    $('#newRequestModal').on('hidden.bs.modal', function() {
+        $('#roadmapForm')[0].reset();
+    });
+
+    {% if current_user.is_admin %}
+    // Enable drag and drop for admin users
+    $('.roadmap-item').draggable({
+        cursor: 'move',
+        handle: '.card-body',
+        revert: 'invalid',
+        helper: 'clone',
+        zIndex: 1000,
+        opacity: 0.8,
+        containment: 'window'
+    });
+
+    $('.roadmap-column').droppable({
+        accept: '.roadmap-item',
+        hoverClass: 'ui-droppable-hover',
+        drop: function(event, ui) {
+            const itemId = ui.draggable.data('id');
+            const newStatus = $(this).data('status');
+            const originalPosition = ui.draggable.data('originalPosition');
+            
+            // Store the original position
+            if (!originalPosition) {
+                ui.draggable.data('originalPosition', ui.draggable.position());
+            }
+            
+            $.ajax({
+                url: '/admin/roadmap/update-status',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    item_id: itemId,
+                    status: newStatus
+                }),
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr) {
+                    console.error('Error updating status:', xhr);
+                    // Revert the item to its original position
+                    ui.draggable.animate(originalPosition || {top: 0, left: 0}, 'fast');
+                    alert('Error updating status: ' + (xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error'));
+                }
+            });
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %} 

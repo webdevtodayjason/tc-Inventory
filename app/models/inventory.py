@@ -170,7 +170,7 @@ class InventoryTransaction(db.Model):
 
 class BenchmarkResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    system_id = db.Column(db.Integer, db.ForeignKey('computer_system.id'))
+    system_id = db.Column(db.Integer, db.ForeignKey('computer_systems.id'))
     test_type = db.Column(db.String(64))
     score = db.Column(db.Float)
     details = db.Column(db.JSON)
@@ -210,4 +210,61 @@ class WikiPage(db.Model):
     def can_delete(self, user):
         """Check if user can delete this page"""
         return user.is_admin
+
+# Add this after other association tables
+roadmap_votes = db.Table('roadmap_votes',
+    db.Column('item_id', db.Integer, db.ForeignKey('roadmap_items.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('created_at', db.DateTime, default=datetime.utcnow)
+)
+
+class RoadmapItem(db.Model):
+    __tablename__ = 'roadmap_items'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), nullable=False)  # Feature Request, Bug Report, Integration
+    status = db.Column(db.String(20), default='open')  # open, in_progress, done
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    submitter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Relationships
+    submitter = db.relationship('User', backref='roadmap_items', foreign_keys=[submitter_id])
+    voters = db.relationship('User', 
+                           secondary=roadmap_votes,
+                           lazy='joined',
+                           backref=db.backref('voted_items', lazy=True))
+    
+    def __repr__(self):
+        return f'<RoadmapItem {self.title}>'
+
+    @property
+    def votes(self):
+        return len(self.voters)
+
+    def has_user_voted(self, user):
+        return user in self.voters
+
+    @property
+    def status_class(self):
+        return {
+            'open': 'bg-primary',
+            'in_progress': 'bg-warning',
+            'done': 'bg-success'
+        }.get(self.status, 'bg-secondary')
+
+    def to_dict(self, current_user=None):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'category': self.category,
+            'status': self.status,
+            'votes': self.votes,
+            'created_at': self.created_at.isoformat(),
+            'submitter': self.submitter.username,
+            'has_voted': current_user in self.voters if current_user and current_user.is_authenticated else False
+        }
  

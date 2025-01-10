@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.50] - 2025-01-10
+
+### Added
+- Implemented Roadmap feature with drag-and-drop functionality
+- Added voting system for roadmap items
+- Created new database tables for roadmap items and votes
+- Added category badges with icons (Feature Request, Bug Report, Integration)
+- Implemented admin controls for roadmap item status management
+
+### Changed
+- Enhanced dark mode styling for status indicators
+- Improved badge styling with category-specific icons
+
 ## [1.0.49] - 2025-01-10
 
 ### Added
