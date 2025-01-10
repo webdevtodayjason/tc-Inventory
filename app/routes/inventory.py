@@ -1013,6 +1013,7 @@ def add_system():
                 # Create Computer System
                 system = ComputerSystem(
                     tracking_id=generate_tracking_id(),
+                    serial_tag=form.serial_tag.data,
                     model_id=form.model_id.data,
                     cpu_id=form.cpu_id.data,
                     ram=form.ram.data,
