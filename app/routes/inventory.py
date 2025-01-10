@@ -115,8 +115,8 @@ def dashboard():
     if system_status:
         systems_query = systems_query.filter(ComputerSystem.status == system_status)
     
-    # Systems pagination
-    systems = systems_query.paginate(page=systems_page, per_page=per_page)
+    # Get all systems for DataTables
+    systems = systems_query.all()
     
     # Get categories and models for filter dropdowns
     categories = Category.get_ordered_categories()

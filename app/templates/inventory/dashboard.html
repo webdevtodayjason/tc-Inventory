@@ -2,6 +2,12 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block head %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css"/>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -83,7 +89,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-striped">
+                        <table class="table table-striped" id="itemsTable">
                             <thead>
                                 <tr>
                                     <th>TC-ID</th>
@@ -221,8 +227,8 @@
             <!-- Systems Table -->
             <div class="card">
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
+                    <div class="table-responsive w-100">
+                        <table class="table table-striped w-100" id="systemsTable">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -237,7 +243,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for system in systems.items %}
+                                {% for system in systems %}
                                 <tr>
                                     <td>{{ system.tracking_id }}</td>
                                     <td>{{ system.model.manufacturer }} {{ system.model.model_name }}</td>
@@ -275,20 +281,6 @@
                             </tbody>
                         </table>
                     </div>
-
-                    {% if systems.pages > 1 %}
-                    <nav aria-label="Page navigation" class="mt-4">
-                        <ul class="pagination justify-content-center">
-                            {% for page in range(1, systems.pages + 1) %}
-                            <li class="page-item {% if page == systems.page %}active{% endif %}">
-                                <a class="page-link" href="{{ url_for('inventory.dashboard', systems_page=page, **request.args) }}">
-                                    {{ page }}
-                                </a>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </nav>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -366,4 +358,74 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- DataTables JS -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    const itemsPerPage = {{ config['ITEMS_PER_PAGE'] }};
+
+    // Initialize DataTables for Items
+    $('#itemsTable').DataTable({
+        responsive: true,
+        pageLength: itemsPerPage,
+        order: [[1, 'asc']], // Sort by Name column by default
+        columnDefs: [
+            { orderable: false, targets: [6, 7] }, // Disable sorting for Tags and Actions columns
+            { searchable: false, targets: [7] }    // Disable searching for Actions column
+        ],
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+             '<"row"<"col-sm-12"tr>>' +
+             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        language: {
+            search: "Search items:",
+            lengthMenu: "Show _MENU_ items per page",
+            info: "Showing _START_ to _END_ of _TOTAL_ items",
+            infoEmpty: "No items available",
+            infoFiltered: "(filtered from _MAX_ total items)",
+            zeroRecords: "No matching items found",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        }
+    });
+
+    // Initialize DataTables for Systems
+    $('#systemsTable').DataTable({
+        responsive: true,
+        pageLength: itemsPerPage,
+        order: [[1, 'asc']], // Sort by Model column by default
+        columnDefs: [
+            { orderable: false, targets: [8] }, // Disable sorting for Actions column
+            { searchable: false, targets: [8] }  // Disable searching for Actions column
+        ],
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+             '<"row"<"col-sm-12"tr>>' +
+             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        language: {
+            search: "Search systems:",
+            lengthMenu: "Show _MENU_ systems per page",
+            info: "Showing _START_ to _END_ of _TOTAL_ systems",
+            infoEmpty: "No systems available",
+            infoFiltered: "(filtered from _MAX_ total systems)",
+            zeroRecords: "No matching systems found",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        }
+    });
+});
+</script>
 {% endblock %} 
