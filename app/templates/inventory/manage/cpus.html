@@ -2,6 +2,40 @@
 
 {% block title %}Manage CPUs{% endblock %}
 
+{% block styles %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+<style>
+    /* Ensure sorting icons are visible */
+    table.dataTable > thead .sorting:before,
+    table.dataTable > thead .sorting:after,
+    table.dataTable > thead .sorting_asc:before,
+    table.dataTable > thead .sorting_asc:after,
+    table.dataTable > thead .sorting_desc:before,
+    table.dataTable > thead .sorting_desc:after,
+    table.dataTable > thead .sorting_asc_disabled:before,
+    table.dataTable > thead .sorting_asc_disabled:after,
+    table.dataTable > thead .sorting_desc_disabled:before,
+    table.dataTable > thead .sorting_desc_disabled:after {
+        position: absolute;
+        display: block;
+        opacity: 0.5;
+    }
+    
+    table.dataTable > thead .sorting:hover:before,
+    table.dataTable > thead .sorting:hover:after {
+        opacity: 1;
+    }
+    
+    /* Adjust the table header padding to accommodate icons */
+    table.dataTable > thead > tr > th {
+        position: relative;
+        padding-right: 25px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -13,42 +47,10 @@
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="GET" class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" class="form-control" name="search" 
-                           value="{{ request.args.get('search', '') }}" 
-                           placeholder="Search CPUs...">
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="manufacturer">
-                        <option value="">All Manufacturers</option>
-                        <option value="Intel" {% if request.args.get('manufacturer') == 'Intel' %}selected{% endif %}>Intel</option>
-                        <option value="AMD" {% if request.args.get('manufacturer') == 'AMD' %}selected{% endif %}>AMD</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="cores">
-                        <option value="">All Core Counts</option>
-                        {% for core in [2, 4, 6, 8, 12, 16, 24, 32] %}
-                        <option value="{{ core }}" {% if request.args.get('cores')|int == core %}selected{% endif %}>
-                            {{ core }} Cores
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Search</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table id="cpusTable" class="table table-striped">
                     <thead>
                         <tr>
                             <th>Manufacturer</th>
@@ -59,7 +61,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for cpu in cpus.items %}
+                        {% for cpu in cpus %}
                         <tr>
                             <td>{{ cpu.manufacturer }}</td>
                             <td>{{ cpu.model }}</td>
@@ -76,22 +78,37 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- Pagination -->
-            {% if cpus.pages > 1 %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% for page in range(1, cpus.pages + 1) %}
-                    <li class="page-item {% if page == cpus.page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('inventory.manage_cpus', page=page, **request.args) }}">
-                            {{ page }}
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </nav>
-            {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- DataTables JS -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#cpusTable').DataTable({
+        pageLength: 10,
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+             '<"row"<"col-sm-12"tr>>' +
+             '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        language: {
+            search: "Search:",
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous"
+            }
+        }
+    });
+});
+</script>
 {% endblock %} 

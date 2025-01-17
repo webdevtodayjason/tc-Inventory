@@ -503,23 +503,8 @@ def manage_models():
 @bp.route('/manage/cpus')
 @login_required
 def manage_cpus():
-    page = request.args.get('page', 1, type=int)
-    per_page = current_app.config['ITEMS_PER_PAGE']
-    query = CPU.query
-    
-    # Search and filter
-    search = request.args.get('search', '')
-    manufacturer = request.args.get('manufacturer')
-    cores = request.args.get('cores', type=int)
-    
-    if search:
-        query = query.filter(CPU.model.ilike(f'%{search}%'))
-    if manufacturer:
-        query = query.filter(CPU.manufacturer == manufacturer)
-    if cores:
-        query = query.filter(CPU.cores == cores)
-    
-    cpus = query.paginate(page=page, per_page=per_page)
+    # Get all CPUs ordered by manufacturer and model
+    cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
     return render_template('inventory/manage/cpus.html', cpus=cpus)
 
 @bp.route('/manage/cpus/add', methods=['GET', 'POST'])
