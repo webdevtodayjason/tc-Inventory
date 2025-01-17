@@ -502,9 +502,11 @@ def manage_models():
 @bp.route('/manage/cpus')
 @login_required
 def manage_cpus():
+    # Create a form instance for CSRF token
+    form = CPUForm()
     # Get all CPUs ordered by manufacturer and model
     cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
-    return render_template('inventory/manage/cpus.html', cpus=cpus)
+    return render_template('inventory/manage/cpus.html', cpus=cpus, form=form)
 
 @bp.route('/manage/cpus/add', methods=['GET', 'POST'])
 @login_required

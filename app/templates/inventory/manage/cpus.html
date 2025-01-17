@@ -70,6 +70,7 @@
                             <td>
                                 <a href="{{ url_for('inventory.edit_cpu', id=cpu.id) }}" class="btn btn-sm btn-warning">Edit</a>
                                 <form action="{{ url_for('inventory.delete_cpu', id=cpu.id) }}" method="POST" class="d-inline">
+                                    {{ form.csrf_token }}
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
                                 </form>
                             </td>
