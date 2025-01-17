@@ -28,7 +28,8 @@ COMPUTER_TYPES = [
     ('laptop', 'Laptop'),
     ('workstation', 'Workstation'),
     ('server', 'Server'),
-    ('tablet', 'Tablet')
+    ('tablet', 'Tablet'),
+    ('surface', 'Surface')
 ]
 
 class ComputerModelForm(FlaskForm):
@@ -91,6 +92,7 @@ class ComputerSystemForm(FlaskForm):
         ('Linux', 'Linux')
     ], validators=[DataRequired()])
     storage_location = StringField('Storage Location', validators=[Optional(), Length(max=64)])
+    tags = SelectMultipleField('Tags', coerce=str)
     
     # Testing fields
     cpu_benchmark = FloatField('CPU Benchmark Score', validators=[Optional()])
@@ -120,6 +122,10 @@ class ComputerSystemForm(FlaskForm):
         # Populate CPU choices
         self.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model} ({c.speed})") 
                               for c in CPU.query.order_by(CPU.manufacturer, CPU.model).all()]
+        
+        # Populate tag choices
+        self.tags.choices = [(str(t.id), t.name) 
+                            for t in Tag.query.order_by(Tag.name).all()]
 
 class GeneralItemForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(max=100)])

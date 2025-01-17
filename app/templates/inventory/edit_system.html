@@ -87,6 +87,23 @@
                             <label for="storage_location" class="form-label">Storage Location</label>
                             {{ form.storage_location(class="form-control", placeholder="e.g., Rack 3, Shelf 2") }}
                         </div>
+
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            <div class="tag-section">
+                                <h5>Available Tags</h5>
+                                <input type="hidden" name="tags" id="selectedTags" value="{% for tag in system.tags %}{{ tag.id }}{% if not loop.last %},{% endif %}{% endfor %}">
+                                <div class="tag-selector">
+                                    {% for tag_id, tag_name in form.tags.choices %}
+                                    <div class="tag-item" data-tag-id="{{ tag_id }}" data-tag-name="{{ tag_name }}">
+                                        {{ tag_name }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <h5>Selected Tags</h5>
+                                <div class="selected-tags" id="selectedTagsDisplay"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="col-md-6">
@@ -130,4 +147,81 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tag selection functionality
+    const selectedTags = new Set(
+        document.getElementById('selectedTags').value.split(',').filter(Boolean)
+    );
+    console.log('Initial selected tags:', Array.from(selectedTags)); // Debug log
+    
+    const selectedTagsInput = document.getElementById('selectedTags');
+    const selectedTagsDisplay = document.getElementById('selectedTagsDisplay');
+    
+    function updateSelectedTags() {
+        selectedTagsInput.value = Array.from(selectedTags).join(',');
+        console.log('Updated tags value:', selectedTagsInput.value); // Debug log
+        
+        const isDarkTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const badgeThemeClass = isDarkTheme ? 'badge-light' : 'badge-dark';
+        
+        selectedTagsDisplay.innerHTML = Array.from(selectedTags).map(tagId => {
+            const tagElement = document.querySelector(`[data-tag-id="${tagId}"]`);
+            const tagName = tagElement.dataset.tagName;
+            return `
+                <span class="badge ${badgeThemeClass}">
+                    ${tagName}
+                    <span class="remove-tag" data-tag-id="${tagId}">×</span>
+                </span>
+            `;
+        }).join('');
+        
+        // Add click handlers for remove buttons
+        document.querySelectorAll('.remove-tag').forEach(button => {
+            button.onclick = function(e) {
+                e.stopPropagation();
+                const tagId = this.dataset.tagId;
+                console.log('Removing tag:', tagId); // Debug log
+                selectedTags.delete(tagId);
+                updateSelectedTags();
+                document.querySelector(`.tag-item[data-tag-id="${tagId}"]`)
+                    .classList.remove('selected');
+            };
+        });
+
+        // Update selected state of tag items
+        document.querySelectorAll('.tag-item').forEach(tag => {
+            const tagId = tag.dataset.tagId;
+            if (selectedTags.has(tagId)) {
+                tag.classList.add('selected');
+            } else {
+                tag.classList.remove('selected');
+            }
+        });
+    }
+    
+    // Add click handlers for tag items
+    document.querySelectorAll('.tag-item').forEach(tag => {
+        tag.onclick = function() {
+            const tagId = this.dataset.tagId;
+            console.log('Clicked tag:', tagId); // Debug log
+            if (selectedTags.has(tagId)) {
+                selectedTags.delete(tagId);
+                this.classList.remove('selected');
+            } else {
+                selectedTags.add(tagId);
+                this.classList.add('selected');
+            }
+            updateSelectedTags();
+        };
+    });
+
+    // Initialize selected tags display
+    updateSelectedTags();
+});
+</script>
 {% endblock %} 

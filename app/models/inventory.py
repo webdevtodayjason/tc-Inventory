@@ -117,6 +117,12 @@ class CPU(db.Model):
     cores = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+# Association table for system tags
+system_tags = db.Table('system_tags',
+    db.Column('system_id', db.Integer, db.ForeignKey('computer_systems.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id', ondelete='CASCADE'), primary_key=True)
+)
+
 class ComputerSystem(db.Model):
     __tablename__ = 'computer_systems'
     id = db.Column(db.Integer, primary_key=True)
@@ -148,6 +154,7 @@ class ComputerSystem(db.Model):
     cpu = db.relationship('CPU', backref='computers')
     creator = db.relationship('User', foreign_keys=[creator_id], backref='computers_created')
     tester = db.relationship('User', backref='tested_computers', foreign_keys=[tested_by])
+    tags = db.relationship('Tag', secondary=system_tags, backref=db.backref('computer_systems', lazy='dynamic'))
 
     def __repr__(self):
         return f'<ComputerSystem {self.tracking_id}>'

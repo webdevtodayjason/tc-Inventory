@@ -239,6 +239,7 @@
                                     <th>Storage</th>
                                     <th>Location</th>
                                     <th>Status</th>
+                                    <th>Tags</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -258,6 +259,11 @@
                                                            {% else %}bg-warning{% endif %}">
                                             {{ system.status|title }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        {% for tag in system.tags %}
+                                            <span class="badge bg-info">{{ tag.name }}</span>
+                                        {% endfor %}
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
@@ -405,8 +411,8 @@ $(document).ready(function() {
         pageLength: itemsPerPage,
         order: [[1, 'asc']], // Sort by Model column by default
         columnDefs: [
-            { orderable: false, targets: [8] }, // Disable sorting for Actions column
-            { searchable: false, targets: [8] }  // Disable searching for Actions column
+            { orderable: false, targets: [8, 9] }, // Disable sorting for Tags and Actions columns
+            { searchable: false, targets: [9] }  // Disable searching for Actions column
         ],
         dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
              '<"row"<"col-sm-12"tr>>' +

@@ -87,6 +87,15 @@
                             <label for="storage_location" class="form-label">Storage Location</label>
                             {{ form.storage_location(class="form-control", placeholder="e.g., Rack 3, Shelf 2") }}
                         </div>
+
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags</label>
+                            <select class="form-select" name="tags" id="tags" multiple data-placeholder="Select tags...">
+                                {% for tag_id, tag_name in form.tags.choices %}
+                                <option value="{{ tag_id }}">{{ tag_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
 
                     <div class="col-md-6">

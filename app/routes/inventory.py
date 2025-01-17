@@ -1004,6 +1004,10 @@ def add_system():
     form.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model}") for c in cpus]
     
     if request.method == 'POST':
+        print("\n=== Debug: Add System POST Request ===")
+        print(f"Form Data: {request.form.to_dict()}")
+        print(f"Serial Tag from form: {form.serial_tag.data}")
+        
         if form.validate():
             try:
                 # Get the model and CPU for naming
@@ -1032,8 +1036,17 @@ def add_system():
                     tested_by=current_user.id
                 )
                 
+                print(f"Debug: Created system with serial_tag: {system.serial_tag}")
+                
+                # Handle tags
+                if form.tags.data:
+                    tag_ids = [int(tag_id) for tag_id in form.tags.data]
+                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                    system.tags = tags
+                
                 db.session.add(system)
                 db.session.commit()
+                print(f"Debug: After commit, system serial_tag: {system.serial_tag}")
                 
                 # Create a descriptive name for logging
                 system_name = f"{model.manufacturer} {model.model_name}"
@@ -1052,9 +1065,12 @@ def add_system():
                 
             except Exception as e:
                 db.session.rollback()
+                print(f"Debug: Error occurred: {str(e)}")
                 current_app.logger.error(f'Error adding computer system: {str(e)}')
                 flash(f'Error adding computer system: {str(e)}', 'danger')
         else:
+            print("Debug: Form validation failed")
+            print(f"Form errors: {form.errors}")
             for field, errors in form.errors.items():
                 for error in errors:
                     flash(f'{field}: {error}', 'danger')
@@ -1081,21 +1097,91 @@ def view_system(id):
 @bp.route('/system/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_system(id):
-    system = ComputerSystem.query.get_or_404(id)
-    form = ComputerSystemForm(obj=system)
-    
-    if form.validate_on_submit():
-        try:
-            form.populate_obj(system)
-            db.session.commit()
-            flash('Computer system updated successfully!', 'success')
-            return redirect(url_for('inventory.dashboard'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Error updating computer system: {str(e)}', 'danger')
-            current_app.logger.error(f'Error updating computer system: {str(e)}')
-    
-    return render_template('inventory/edit_system.html', form=form, system=system)
+    try:
+        print("\n=== Starting edit_system route ===")
+        print(f"Method: {request.method}")
+        
+        # Get system with tags eagerly loaded
+        system = ComputerSystem.query.options(db.joinedload(ComputerSystem.tags)).get_or_404(id)
+        print(f"Found system: {system.tracking_id}")
+        print(f"Current tags: {[tag.name for tag in system.tags]}")
+        
+        # Create form
+        form = ComputerSystemForm(obj=system)
+        
+        # Set up computer model and CPU choices
+        computer_models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
+        form.model_id.choices = [(m.id, f"{m.manufacturer} {m.model_name}") for m in computer_models]
+        
+        cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
+        form.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model}") for c in cpus]
+        
+        # Get all available tags for the dropdown
+        tags = Tag.query.order_by(Tag.name).all()
+        form.tags.choices = [(str(t.id), t.name) for t in tags]
+        
+        if request.method == 'POST':
+            print("\n=== Processing POST request ===")
+            print(f"Form data: {request.form.to_dict()}")
+            
+            try:
+                # Update basic fields first
+                form.populate_obj(system)
+                
+                # Handle tags
+                print("\n=== Processing tags ===")
+                raw_tags = request.form.get('tags', '').split(',')
+                print(f"Raw tags from form: {raw_tags}")
+                
+                # Clear existing tags
+                system.tags = []
+                db.session.flush()
+                print("Cleared existing tags")
+                
+                # Process tags
+                if raw_tags:
+                    for tag_id in raw_tags:
+                        if tag_id.strip():  # Only process non-empty strings
+                            try:
+                                tag_id = int(tag_id)
+                                tag = Tag.query.get(tag_id)
+                                if tag:
+                                    system.tags.append(tag)
+                                    print(f"Added tag: {tag.id} - {tag.name}")
+                            except (ValueError, TypeError) as e:
+                                print(f"Invalid tag ID {tag_id}: {str(e)}")
+                
+                db.session.commit()
+                print("Changes committed successfully")
+                
+                flash('Computer system updated successfully!', 'success')
+                return redirect(url_for('inventory.dashboard'))
+                
+            except Exception as e:
+                db.session.rollback()
+                print(f"\n=== Error in POST processing ===")
+                print(f"Error type: {type(e)}")
+                print(f"Error message: {str(e)}")
+                flash(f'Error updating computer system: {str(e)}', 'danger')
+                current_app.logger.error(f'Error updating computer system: {str(e)}')
+        
+        # GET request - populate form
+        print("\n=== Preparing form for display ===")
+        
+        # Pre-populate tags
+        form.tags.data = [str(tag.id) for tag in system.tags]
+        print(f"Pre-populated tags: {form.tags.data}")
+        
+        return render_template('inventory/edit_system.html', form=form, system=system)
+        
+    except Exception as e:
+        print("\n=== Unexpected error in edit_system route ===")
+        print(f"Error type: {type(e)}")
+        print(f"Error message: {str(e)}")
+        import traceback
+        print(f"Stack trace: {traceback.format_exc()}")
+        flash(f'An unexpected error occurred: {str(e)}', 'danger')
+        return redirect(url_for('inventory.dashboard'))
 
 @bp.route('/system/<int:id>/delete', methods=['POST'])
 @login_required

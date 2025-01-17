@@ -15,29 +15,17 @@
                         {{ form.csrf_token }}
                         <div class="mb-3">
                             <label class="form-label">Manufacturer</label>
-                            <select class="form-select" name="manufacturer" required>
-                                <option value="Dell">Dell</option>
-                                <option value="HP">HP</option>
-                                <option value="Lenovo">Lenovo</option>
-                                <option value="Apple">Apple</option>
-                                <option value="Custom">Custom Build</option>
-                            </select>
+                            {{ form.manufacturer(class="form-select") }}
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Model Name</label>
-                            <input type="text" class="form-control" name="model_name" required>
+                            {{ form.model_name(class="form-control", placeholder="e.g., Surface Pro 8 or Surface Laptop 4") }}
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Type</label>
-                            <select class="form-select" name="model_type" required>
-                                <option value="desktop">Desktop</option>
-                                <option value="laptop">Laptop</option>
-                                <option value="workstation">Workstation</option>
-                                <option value="server">Server</option>
-                                <option value="tablet">Tablet</option>
-                            </select>
+                            {{ form.model_type(class="form-select") }}
                         </div>
 
                         <div class="d-grid">
