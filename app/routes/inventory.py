@@ -1024,10 +1024,14 @@ def add_system():
                 print(f"Debug: Created system with serial_tag: {system.serial_tag}")
                 
                 # Handle tags
-                if form.tags.data:
-                    tag_ids = [int(tag_id) for tag_id in form.tags.data]
-                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                print("\n=== Processing tags ===")
+                raw_tags = request.form.getlist('tags')
+                print(f"Raw tags from form: {raw_tags}")
+                
+                if raw_tags:
+                    tags = Tag.query.filter(Tag.id.in_([int(tag_id) for tag_id in raw_tags if tag_id.strip()])).all()
                     system.tags = tags
+                    print(f"Added tags: {[f'{tag.id} - {tag.name}' for tag in tags]}")
                 
                 db.session.add(system)
                 db.session.commit()
