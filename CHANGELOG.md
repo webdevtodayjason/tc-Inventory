@@ -2,7 +2,54 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.50] - 2025-01-10
+## [1.0.71] - 2024-02-15
+
+### Added
+- Added Microsoft Surface to computer types
+- Enhanced CPU management with improved form validation
+- Added CSRF token protection to CPU deletion
+- Improved error handling and debug logging for CPU operations
+
+### Changed
+- Updated CPU form to use proper form field rendering
+- Enhanced error feedback for CPU operations
+- Improved DataTables integration for CPU list
+
+### Fixed
+- Fixed CSRF token missing error in CPU deletion
+- Fixed CPU form validation issues
+- Fixed tag handling in computer systems
+
+## [1.0.70] - 2024-02-14
+
+### Added
+- Implemented eager loading for system tags to improve performance
+- Added debug logging for system tag operations
+- Enhanced error handling for database operations
+
+### Fixed
+- Fixed system tags not being saved properly
+- Fixed lazy loading issues with system tags
+- Resolved database transaction issues
+
+## [1.0.60] - 2024-02-13
+
+### Added
+- Enhanced DataTables implementation for Computer Systems
+- Added sorting and filtering capabilities to Systems table
+- Improved table responsiveness and styling
+
+### Changed
+- Updated table pagination to use DataTables
+- Enhanced search functionality for Systems
+- Improved mobile view for tables
+
+### Fixed
+- Fixed table width and alignment issues
+- Resolved sorting issues in DataTables
+- Fixed responsive design bugs
+
+## [1.0.50] - 2024-02-12
 
 ### Added
 - Implemented Roadmap feature with drag-and-drop functionality
