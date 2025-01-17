@@ -92,7 +92,7 @@ class ComputerSystemForm(FlaskForm):
         ('Linux', 'Linux')
     ], validators=[DataRequired()])
     storage_location = StringField('Storage Location', validators=[Optional(), Length(max=64)])
-    tags = SelectMultipleField('Tags', coerce=str)
+    tags = SelectMultipleField('Tags', coerce=int, validators=[Optional()])
     
     # Testing fields
     cpu_benchmark = FloatField('CPU Benchmark Score', validators=[Optional()])
@@ -124,7 +124,7 @@ class ComputerSystemForm(FlaskForm):
                               for c in CPU.query.order_by(CPU.manufacturer, CPU.model).all()]
         
         # Populate tag choices
-        self.tags.choices = [(str(t.id), t.name) 
+        self.tags.choices = [(t.id, t.name) 
                             for t in Tag.query.order_by(Tag.name).all()]
 
 class GeneralItemForm(FlaskForm):

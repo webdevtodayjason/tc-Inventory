@@ -357,7 +357,6 @@ def edit_item(id):
                             tag_ids.append(int(tag_id))
                         except (ValueError, TypeError) as e:
                             print(f"Invalid tag ID {tag_id}: {str(e)}")
-                
                 print(f"Processed tag IDs: {tag_ids}")
                 
                 # Clear existing tags
@@ -1018,7 +1017,7 @@ def add_system():
                 model = ComputerModel.query.get(form.model_id.data)
                 cpu = CPU.query.get(form.cpu_id.data)
                 
-                # Create Computer System
+                # Create Computer System without tags first
                 system = ComputerSystem(
                     tracking_id=generate_tracking_id(),
                     serial_tag=form.serial_tag.data,
@@ -1042,17 +1041,41 @@ def add_system():
                 
                 print(f"Debug: Created system with serial_tag: {system.serial_tag}")
                 
+                # Add system to session first
+                db.session.add(system)
+                db.session.flush()  # Flush to get the system ID
+                
                 # Handle tags
                 print("\n=== Processing tags ===")
-                raw_tags = request.form.getlist('tags')
+                raw_tags = request.form.get('tags', '').split(',')
                 print(f"Raw tags from form: {raw_tags}")
                 
-                if raw_tags:
-                    tags = Tag.query.filter(Tag.id.in_([int(tag_id) for tag_id in raw_tags if tag_id.strip()])).all()
-                    system.tags = tags
-                    print(f"Added tags: {[f'{tag.id} - {tag.name}' for tag in tags]}")
+                # Convert to integers and validate
+                tag_ids = []
+                for tag_id in raw_tags:
+                    if tag_id.strip():  # Only process non-empty strings
+                        try:
+                            tag_ids.append(int(tag_id))
+                        except (ValueError, TypeError) as e:
+                            print(f"Invalid tag ID {tag_id}: {str(e)}")
+                print(f"Processed tag IDs: {tag_ids}")
                 
-                db.session.add(system)
+                if tag_ids:
+                    # Fetch and validate tags
+                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                    found_ids = [t.id for t in tags]
+                    print(f"Found tags: {found_ids}")
+                    
+                    # Check if all requested tags were found
+                    missing = set(tag_ids) - set(found_ids)
+                    if missing:
+                        raise ValueError(f"Some tags were not found: {missing}")
+                    
+                    # Add tags one by one
+                    for tag in tags:
+                        system.tags.append(tag)
+                        print(f"Added tag: {tag.id} - {tag.name}")
+                
                 db.session.commit()
                 print(f"Debug: After commit, system serial_tag: {system.serial_tag}")
                 
@@ -1134,30 +1157,46 @@ def edit_system(id):
             
             try:
                 # Update basic fields first
-                form.populate_obj(system)
+                form_data = form.data.copy()
+                form_data.pop('tags', None)  # Remove tags from form data
+                for field, value in form_data.items():
+                    setattr(system, field, value)
                 
                 # Handle tags
                 print("\n=== Processing tags ===")
                 raw_tags = request.form.get('tags', '').split(',')
                 print(f"Raw tags from form: {raw_tags}")
                 
+                # Convert to integers and validate
+                tag_ids = []
+                for tag_id in raw_tags:
+                    if tag_id.strip():  # Only process non-empty strings
+                        try:
+                            tag_ids.append(int(tag_id))
+                        except (ValueError, TypeError) as e:
+                            print(f"Invalid tag ID {tag_id}: {str(e)}")
+                print(f"Processed tag IDs: {tag_ids}")
+                
                 # Clear existing tags
                 system.tags = []
                 db.session.flush()
                 print("Cleared existing tags")
                 
-                # Process tags
-                if raw_tags:
-                    for tag_id in raw_tags:
-                        if tag_id.strip():  # Only process non-empty strings
-                            try:
-                                tag_id = int(tag_id)
-                                tag = Tag.query.get(tag_id)
-                                if tag:
-                                    system.tags.append(tag)
-                                    print(f"Added tag: {tag.id} - {tag.name}")
-                            except (ValueError, TypeError) as e:
-                                print(f"Invalid tag ID {tag_id}: {str(e)}")
+                if tag_ids:
+                    # Fetch and validate tags
+                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                    found_ids = [t.id for t in tags]
+                    print(f"Found tags: {found_ids}")
+                    
+                    # Check if all requested tags were found
+                    missing = set(tag_ids) - set(found_ids)
+                    if missing:
+                        raise ValueError(f"Some tags were not found: {missing}")
+                    
+                    # Add tags one by one
+                    for tag in tags:
+                        system.tags.append(tag)
+                        print(f"Added tag: {tag.id} - {tag.name}")
                 
                 db.session.commit()
                 print("Changes committed successfully")

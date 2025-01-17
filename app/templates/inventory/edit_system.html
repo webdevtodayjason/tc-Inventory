@@ -155,17 +155,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Tag selection functionality
     const selectedTags = new Set(
-        document.getElementById('selectedTags').value.split(',').filter(Boolean)
+        document.getElementById('selectedTags').value.split(',')
+            .filter(Boolean)
+            .map(id => parseInt(id, 10))  // Convert to integers
     );
-    console.log('Initial selected tags:', Array.from(selectedTags)); // Debug log
-    
     const selectedTagsInput = document.getElementById('selectedTags');
     const selectedTagsDisplay = document.getElementById('selectedTagsDisplay');
     
     function updateSelectedTags() {
         selectedTagsInput.value = Array.from(selectedTags).join(',');
-        console.log('Updated tags value:', selectedTagsInput.value); // Debug log
-        
         const isDarkTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         const badgeThemeClass = isDarkTheme ? 'badge-light' : 'badge-dark';
         
@@ -184,8 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.remove-tag').forEach(button => {
             button.onclick = function(e) {
                 e.stopPropagation();
-                const tagId = this.dataset.tagId;
-                console.log('Removing tag:', tagId); // Debug log
+                const tagId = parseInt(this.dataset.tagId, 10);  // Convert to integer
                 selectedTags.delete(tagId);
                 updateSelectedTags();
                 document.querySelector(`.tag-item[data-tag-id="${tagId}"]`)
@@ -195,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update selected state of tag items
         document.querySelectorAll('.tag-item').forEach(tag => {
-            const tagId = tag.dataset.tagId;
+            const tagId = parseInt(tag.dataset.tagId, 10);  // Convert to integer
             if (selectedTags.has(tagId)) {
                 tag.classList.add('selected');
             } else {
@@ -207,8 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click handlers for tag items
     document.querySelectorAll('.tag-item').forEach(tag => {
         tag.onclick = function() {
-            const tagId = this.dataset.tagId;
-            console.log('Clicked tag:', tagId); // Debug log
+            const tagId = parseInt(this.dataset.tagId, 10);  // Convert to integer
             if (selectedTags.has(tagId)) {
                 selectedTags.delete(tagId);
                 this.classList.remove('selected');
