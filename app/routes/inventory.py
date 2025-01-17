@@ -91,9 +91,8 @@ def dashboard():
     # Items pagination
     items = items_query.paginate(page=page, per_page=per_page)
     
-    # Computer Systems pagination
-    systems_page = request.args.get('systems_page', 1, type=int)
-    systems_query = ComputerSystem.query
+    # Computer Systems query with eager loading of tags
+    systems_query = ComputerSystem.query.options(db.joinedload(ComputerSystem.tags))
     
     # Systems search
     systems_search = request.args.get('search_systems', '')
@@ -115,7 +114,7 @@ def dashboard():
     if system_status:
         systems_query = systems_query.filter(ComputerSystem.status == system_status)
     
-    # Get all systems for DataTables
+    # Get all systems for DataTables with eager loading
     systems = systems_query.all()
     
     # Get categories and models for filter dropdowns
