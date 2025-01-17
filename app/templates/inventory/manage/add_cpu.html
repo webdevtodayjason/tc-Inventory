@@ -14,32 +14,43 @@
                     <form method="POST">
                         {{ form.csrf_token }}
                         <div class="mb-3">
-                            <label class="form-label">Manufacturer</label>
-                            <select class="form-select" name="manufacturer" required>
-                                <option value="Intel">Intel</option>
-                                <option value="AMD">AMD</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Model</label>
-                            <input type="text" class="form-control" name="model" required
-                                   placeholder="e.g., Core i7-12700K or Ryzen 7 5800X">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Speed (GHz)</label>
-                            <input type="text" class="form-control" name="speed" required
-                                   placeholder="e.g., 3.6 GHz">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Cores</label>
-                            <select class="form-select" name="cores" required>
-                                {% for core in [2, 4, 6, 8, 10, 12, 14, 16, 24, 32, 64] %}
-                                <option value="{{ core }}">{{ core }} Cores</option>
+                            <label class="form-label">{{ form.manufacturer.label }}</label>
+                            {{ form.manufacturer(class="form-select") }}
+                            {% if form.manufacturer.errors %}
+                                {% for error in form.manufacturer.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
                                 {% endfor %}
-                            </select>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.model.label }}</label>
+                            {{ form.model(class="form-control", placeholder="e.g., Core i7-12700K or Ryzen 7 5800X") }}
+                            {% if form.model.errors %}
+                                {% for error in form.model.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.speed.label }}</label>
+                            {{ form.speed(class="form-control", placeholder="e.g., 3.6 GHz") }}
+                            {% if form.speed.errors %}
+                                {% for error in form.speed.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.cores.label }}</label>
+                            {{ form.cores(class="form-control") }}
+                            {% if form.cores.errors %}
+                                {% for error in form.cores.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
                         </div>
 
                         <div class="d-grid">

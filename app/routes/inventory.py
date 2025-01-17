@@ -510,17 +510,35 @@ def manage_cpus():
 @login_required
 def add_cpu():
     form = CPUForm()
-    if form.validate_on_submit():
-        cpu = CPU(
-            manufacturer=form.manufacturer.data,
-            model=form.model.data,
-            speed=form.speed.data,
-            cores=form.cores.data
-        )
-        db.session.add(cpu)
-        db.session.commit()
-        flash('CPU added successfully!', 'success')
-        return redirect(url_for('inventory.manage_cpus'))
+    if request.method == 'POST':
+        print("\n=== Debug: Add CPU POST Request ===")
+        print(f"Form Data: {request.form.to_dict()}")
+        
+        if form.validate_on_submit():
+            print("Form validation successful")
+            try:
+                cpu = CPU(
+                    manufacturer=form.manufacturer.data,
+                    model=form.model.data,
+                    speed=form.speed.data,
+                    cores=form.cores.data
+                )
+                db.session.add(cpu)
+                db.session.commit()
+                print(f"CPU added successfully: {cpu.manufacturer} {cpu.model}")
+                flash('CPU added successfully!', 'success')
+                return redirect(url_for('inventory.manage_cpus'))
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error adding CPU: {str(e)}")
+                flash(f'Error adding CPU: {str(e)}', 'danger')
+        else:
+            print("Form validation failed")
+            print(f"Form errors: {form.errors}")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{field}: {error}', 'danger')
+    
     return render_template('inventory/manage/add_cpu.html', form=form)
 
 @bp.route('/manage/cpus/<int:id>/edit', methods=['GET', 'POST'])
