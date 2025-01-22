@@ -2,6 +2,12 @@
 
 {% block title %}Manage Computer Models{% endblock %}
 
+{% block head %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="row mb-4">
@@ -51,47 +57,17 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table id="modelsTable" class="table table-striped">
                     <thead>
                         <tr>
-                            <th>
-                                <a href="{{ url_for('inventory.manage_models', 
-                                         sort='manufacturer',
-                                         order='desc' if sort_by == 'manufacturer' and order == 'asc' else 'asc',
-                                         **request.args) }}" class="text-decoration-none text-dark">
-                                    Manufacturer
-                                    {% if sort_by == 'manufacturer' %}
-                                        <i class="bi bi-arrow-{{ 'up' if order == 'asc' else 'down' }}"></i>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            <th>
-                                <a href="{{ url_for('inventory.manage_models',
-                                         sort='model_name',
-                                         order='desc' if sort_by == 'model_name' and order == 'asc' else 'asc',
-                                         **request.args) }}" class="text-decoration-none text-dark">
-                                    Model Name
-                                    {% if sort_by == 'model_name' %}
-                                        <i class="bi bi-arrow-{{ 'up' if order == 'asc' else 'down' }}"></i>
-                                    {% endif %}
-                                </a>
-                            </th>
-                            <th>
-                                <a href="{{ url_for('inventory.manage_models',
-                                         sort='type',
-                                         order='desc' if sort_by == 'type' and order == 'asc' else 'asc',
-                                         **request.args) }}" class="text-decoration-none text-dark">
-                                    Type
-                                    {% if sort_by == 'type' %}
-                                        <i class="bi bi-arrow-{{ 'up' if order == 'asc' else 'down' }}"></i>
-                                    {% endif %}
-                                </a>
-                            </th>
+                            <th>Manufacturer</th>
+                            <th>Model Name</th>
+                            <th>Type</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for model in models.items %}
+                        {% for model in models %}
                         <tr>
                             <td>{{ model.manufacturer }}</td>
                             <td>{{ model.model_name }}</td>
@@ -99,6 +75,7 @@
                             <td>
                                 <a href="{{ url_for('inventory.edit_model', id=model.id) }}" class="btn btn-sm btn-warning">Edit</a>
                                 <form action="{{ url_for('inventory.delete_model', id=model.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
                                 </form>
                             </td>
@@ -107,21 +84,35 @@
                     </tbody>
                 </table>
             </div>
-
-            {% if models.pages > 1 %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% for page in range(1, models.pages + 1) %}
-                    <li class="page-item {% if page == models.page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('inventory.manage_models', page=page, **request.args) }}">
-                            {{ page }}
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </nav>
-            {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- DataTables JS -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#modelsTable').DataTable({
+        responsive: true,
+        pageLength: 25,
+        order: [[0, 'asc']],
+        columnDefs: [
+            { orderable: false, targets: 3 }  // Disable sorting on Actions column
+        ],
+        language: {
+            search: "Search models:",
+            lengthMenu: "Show _MENU_ models per page",
+            info: "Showing _START_ to _END_ of _TOTAL_ models",
+            infoEmpty: "Showing 0 to 0 of 0 models",
+            emptyTable: "No computer models available"
+        }
+    });
+});
+</script>
 {% endblock %} 

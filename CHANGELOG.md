@@ -90,3 +90,16 @@ All notable changes to this project will be documented in this file.
 - Tag system for items
 - Search and filter functionality
 - Responsive dashboard design 
+
+## [1.0.72] - 2024-02-15
+
+### Added
+- Implemented DataTables for Computer Models list
+  - Added client-side sorting and pagination
+  - Enhanced search functionality
+  - Improved responsive design
+  - Added custom labels for better user experience
+
+### Changed
+- Removed server-side pagination from Computer Models list in favor of DataTables
+- Updated Computer Models route to return all models for DataTables processing 

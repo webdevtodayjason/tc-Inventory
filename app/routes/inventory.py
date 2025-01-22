@@ -454,49 +454,17 @@ def delete_item(id):
 @bp.route('/manage/models')
 @login_required
 def manage_models():
-    page = request.args.get('page', 1, type=int)
-    per_page = current_app.config['ITEMS_PER_PAGE']
-    query = ComputerModel.query
+    """
+    Route for managing computer models.
+    Returns all models ordered by manufacturer and model name.
+    """
+    # Create a form instance for CSRF token
+    form = ComputerModelForm()
     
-    # Search by name or manufacturer
-    search = request.args.get('search', '')
-    if search:
-        query = query.filter(
-            db.or_(
-                ComputerModel.model_name.ilike(f'%{search}%'),
-                ComputerModel.manufacturer.ilike(f'%{search}%')
-            )
-        )
+    # Get all models ordered by manufacturer and model name
+    models = ComputerModel.query.order_by(ComputerModel.manufacturer, ComputerModel.model_name).all()
     
-    # Filter by type
-    model_type = request.args.get('type')
-    if model_type:
-        query = query.filter(ComputerModel.model_type == model_type)
-    
-    # Filter by manufacturer
-    manufacturer = request.args.get('manufacturer')
-    if manufacturer:
-        query = query.filter(ComputerModel.manufacturer == manufacturer)
-    
-    # Order results
-    sort_by = request.args.get('sort', 'manufacturer')
-    order = request.args.get('order', 'asc')
-    
-    if sort_by == 'manufacturer':
-        query = query.order_by(ComputerModel.manufacturer.asc() if order == 'asc' else ComputerModel.manufacturer.desc())
-    elif sort_by == 'model_name':
-        query = query.order_by(ComputerModel.model_name.asc() if order == 'asc' else ComputerModel.model_name.desc())
-    elif sort_by == 'type':
-        query = query.order_by(ComputerModel.model_type.asc() if order == 'asc' else ComputerModel.model_type.desc())
-    
-    models = query.paginate(page=page, per_page=per_page)
-    
-    return render_template('inventory/manage/models.html', 
-                         models=models,
-                         manufacturers=MANUFACTURER_CHOICES,
-                         computer_types=COMPUTER_TYPES,
-                         sort_by=sort_by,
-                         order=order)
+    return render_template('inventory/manage/models.html', models=models, form=form)
 
 @bp.route('/manage/cpus')
 @login_required
