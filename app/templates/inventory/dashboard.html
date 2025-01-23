@@ -16,8 +16,10 @@
     padding: 10px;
     border-radius: 6px;
     max-width: 300px;
+    max-height: 80vh;  /* Limit maximum height to 80% of viewport height */
+    overflow-y: auto;  /* Add scrolling if content is too tall */
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    margin-top: 5px;
+    margin-top: 0;     /* Remove margin-top as we handle positioning in JS */
 }
 
 [data-bs-theme="light"] .purchase-links-tooltip {
@@ -548,13 +550,27 @@ $(document).ready(function() {
         // Hide all tooltips first
         $('.purchase-links-tooltip').hide();
         
-        // Get button position
+        // Get button position and viewport dimensions
         const rect = button.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
         
-        // Position and show tooltip
+        // Show tooltip to calculate its height
         tooltip.css({
             display: 'block',
-            top: (rect.bottom + window.scrollY) + 'px',
+            visibility: 'hidden'
+        });
+        
+        const tooltipHeight = tooltip.outerHeight();
+        
+        // Check if tooltip would go below viewport
+        const wouldGoBelow = (rect.bottom + tooltipHeight + 5) > viewportHeight;
+        
+        // Position tooltip above or below button based on available space
+        tooltip.css({
+            visibility: 'visible',
+            top: wouldGoBelow ? 
+                (rect.top + window.scrollY - tooltipHeight - 5) + 'px' : 
+                (rect.bottom + window.scrollY + 5) + 'px',
             left: (rect.left + window.scrollX) + 'px'
         });
     }
