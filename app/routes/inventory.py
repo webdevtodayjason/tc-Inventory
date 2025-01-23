@@ -276,6 +276,14 @@ def edit_item(id):
     
     if request.method == 'POST':
         try:
+            # Store original values for logging
+            original_values = {
+                'name': item.name,
+                'category': item.category.name if item.category else None,
+                'quantity': item.quantity,
+                'location': item.storage_location
+            }
+            
             # Update basic fields individually
             item.name = form.name.data
             item.description = form.description.data
@@ -310,25 +318,39 @@ def edit_item(id):
                     )
                     item.purchase_links.append(link)
             
-            # Handle tags
-            tag_ids = request.form.get('tags', '').split(',')
-            item.tags = []  # Clear existing tags
-            for tag_id in tag_ids:
-                if tag_id.strip():
-                    try:
-                        tag = Tag.query.get(int(tag_id))
-                        if tag:
-                            item.tags.append(tag)
-                    except (ValueError, TypeError) as e:
-                        print(f"Invalid tag ID {tag_id}: {str(e)}")
-            
             db.session.commit()
-            flash('Item updated successfully', 'success')
-            return redirect(url_for('inventory.view_item', id=item.id))
+            
+            # Log the activity with changes
+            new_values = {
+                'name': item.name,
+                'category': item.category.name if item.category else None,
+                'quantity': item.quantity,
+                'location': item.storage_location
+            }
+            
+            # Create details string for logging
+            details = {
+                'name': item.name,
+                'category': item.category.name if item.category else None,
+                'quantity': item.quantity,
+                'location': item.storage_location,
+                'changes': []
+            }
+            
+            # Add specific changes to the log
+            for key in original_values:
+                if original_values[key] != new_values[key]:
+                    details['changes'].append(f"{key}: {original_values[key]} → {new_values[key]}")
+            
+            log_inventory_activity('update', item, details)
+            
+            flash('Item updated successfully!', 'success')
+            return redirect(url_for('inventory.dashboard'))
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error updating item: {str(e)}', 'error')
+            flash(f'Error updating item: {str(e)}', 'danger')
+            current_app.logger.error(f'Error updating item: {str(e)}')
     
     return render_template('inventory/edit_item.html', form=form, item=item)
 
@@ -1009,15 +1031,7 @@ def view_system(id):
 @login_required
 def edit_system(id):
     try:
-        print("\n=== Starting edit_system route ===")
-        print(f"Method: {request.method}")
-        
-        # Get system with tags eagerly loaded
-        system = ComputerSystem.query.options(db.joinedload(ComputerSystem.tags)).get_or_404(id)
-        print(f"Found system: {system.tracking_id}")
-        print(f"Current tags: {[tag.name for tag in system.tags]}")
-        
-        # Create form
+        system = ComputerSystem.query.get_or_404(id)
         form = ComputerSystemForm(obj=system)
         
         # Set up computer model and CPU choices
@@ -1027,85 +1041,110 @@ def edit_system(id):
         cpus = CPU.query.order_by(CPU.manufacturer, CPU.model).all()
         form.cpu_id.choices = [(c.id, f"{c.manufacturer} {c.model}") for c in cpus]
         
-        # Get all available tags for the dropdown
-        tags = Tag.query.order_by(Tag.name).all()
-        form.tags.choices = [(str(t.id), t.name) for t in tags]
-        
         if request.method == 'POST':
-            print("\n=== Processing POST request ===")
-            print(f"Form data: {request.form.to_dict()}")
-            
-            try:
-                # Update basic fields first
-                form_data = form.data.copy()
-                form_data.pop('tags', None)  # Remove tags from form data
-                for field, value in form_data.items():
-                    setattr(system, field, value)
-                
-                # Handle tags
-                print("\n=== Processing tags ===")
-                raw_tags = request.form.get('tags', '').split(',')
-                print(f"Raw tags from form: {raw_tags}")
-                
-                # Convert to integers and validate
-                tag_ids = []
-                for tag_id in raw_tags:
-                    if tag_id.strip():  # Only process non-empty strings
-                        try:
-                            tag_ids.append(int(tag_id))
-                        except (ValueError, TypeError) as e:
-                            print(f"Invalid tag ID {tag_id}: {str(e)}")
-                print(f"Processed tag IDs: {tag_ids}")
-                
-                # Clear existing tags
-                system.tags = []
-                
-                if tag_ids:
-                    # Fetch and validate tags
-                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                    found_ids = [t.id for t in tags]
-                    print(f"Found tags: {found_ids}")
+            if form.validate():
+                try:
+                    # Store original values for logging
+                    original_model = ComputerModel.query.get(system.model_id)
+                    original_cpu = CPU.query.get(system.cpu_id)
+                    original_values = {
+                        'model': f"{original_model.manufacturer} {original_model.model_name}",
+                        'cpu': f"{original_cpu.manufacturer} {original_cpu.model}",
+                        'ram': system.ram,
+                        'storage': system.storage,
+                        'location': system.storage_location
+                    }
                     
-                    # Check if all requested tags were found
-                    missing = set(tag_ids) - set(found_ids)
-                    if missing:
-                        raise ValueError(f"Some tags were not found: {missing}")
+                    # Update system fields
+                    system.serial_tag = form.serial_tag.data
+                    system.model_id = form.model_id.data
+                    system.cpu_id = form.cpu_id.data
+                    system.ram = form.ram.data
+                    system.storage = form.storage.data
+                    system.os = form.os.data
+                    system.storage_location = form.storage_location.data
+                    system.cpu_benchmark = form.cpu_benchmark.data
+                    system.usb_ports_status = form.usb_ports_status.data
+                    system.usb_ports_notes = form.usb_ports_notes.data
+                    system.video_status = form.video_status.data
+                    system.video_notes = form.video_notes.data
+                    system.network_status = form.network_status.data
+                    system.network_notes = form.network_notes.data
+                    system.general_notes = form.general_notes.data
                     
-                    # Add tags one by one
-                    for tag in tags:
-                        system.tags.append(tag)
-                        print(f"Added tag: {tag.id} - {tag.name}")
-                
-                db.session.commit()
-                print("Changes committed successfully")
-                
-                flash('Computer system updated successfully!', 'success')
-                return redirect(url_for('inventory.dashboard', active_tab='systems'))
-                
-            except Exception as e:
-                db.session.rollback()
-                print(f"\n=== Error in POST processing ===")
-                print(f"Error type: {type(e)}")
-                print(f"Error message: {str(e)}")
-                flash(f'Error updating computer system: {str(e)}', 'danger')
-                current_app.logger.error(f'Error updating computer system: {str(e)}')
+                    # Handle tags
+                    raw_tags = request.form.get('tags', '').split(',')
+                    tag_ids = []
+                    for tag_id in raw_tags:
+                        if tag_id.strip():
+                            try:
+                                tag_ids.append(int(tag_id))
+                            except (ValueError, TypeError) as e:
+                                print(f"Invalid tag ID {tag_id}: {str(e)}")
+                    
+                    # Clear existing tags
+                    system.tags = []
+                    
+                    if tag_ids:
+                        # Fetch and validate tags
+                        tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                        found_ids = [t.id for t in tags]
+                        
+                        # Check if all requested tags were found
+                        missing = set(tag_ids) - set(found_ids)
+                        if missing:
+                            raise ValueError(f"Some tags were not found: {missing}")
+                        
+                        # Add tags one by one
+                        for tag in tags:
+                            system.tags.append(tag)
+                    
+                    db.session.commit()
+                    
+                    # Get new values for logging
+                    new_model = ComputerModel.query.get(system.model_id)
+                    new_cpu = CPU.query.get(system.cpu_id)
+                    new_values = {
+                        'model': f"{new_model.manufacturer} {new_model.model_name}",
+                        'cpu': f"{new_cpu.manufacturer} {new_cpu.model}",
+                        'ram': system.ram,
+                        'storage': system.storage,
+                        'location': system.storage_location
+                    }
+                    
+                    # Create details for logging
+                    details = {
+                        'name': f"{new_model.manufacturer} {new_model.model_name}",
+                        'changes': []
+                    }
+                    
+                    # Add specific changes to the log
+                    for key in original_values:
+                        if original_values[key] != new_values[key]:
+                            details['changes'].append(f"{key}: {original_values[key]} → {new_values[key]}")
+                    
+                    log_system_activity('update', system, details)
+                    
+                    flash('Computer system updated successfully!', 'success')
+                    return redirect(url_for('inventory.dashboard', active_tab='systems'))
+                    
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f'Error updating computer system: {str(e)}', 'danger')
+                    current_app.logger.error(f'Error updating computer system: {str(e)}')
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f'{field}: {error}', 'danger')
         
         # GET request - populate form
-        print("\n=== Preparing form for display ===")
-        
-        # Pre-populate tags
         form.tags.data = [str(tag.id) for tag in system.tags]
-        print(f"Pre-populated tags: {form.tags.data}")
         
         return render_template('inventory/edit_system.html', form=form, system=system)
         
     except Exception as e:
-        print("\n=== Unexpected error in edit_system route ===")
-        print(f"Error type: {type(e)}")
-        print(f"Error message: {str(e)}")
-        import traceback
-        print(f"Stack trace: {traceback.format_exc()}")
         flash(f'An unexpected error occurred: {str(e)}', 'danger')
+        current_app.logger.error(f'Unexpected error in edit_system: {str(e)}')
         return redirect(url_for('inventory.dashboard', active_tab='systems'))
 
 @bp.route('/system/<int:id>/delete', methods=['POST'])
