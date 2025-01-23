@@ -288,7 +288,8 @@ def edit_item(id):
                 'reorder_threshold': item.reorder_threshold,
                 'mpn': item.mpn,
                 'cost': item.cost,
-                'sell_price': item.sell_price
+                'sell_price': item.sell_price,
+                'tags': [tag.name for tag in item.tags]
             }
             
             # Update basic fields individually
@@ -325,6 +326,23 @@ def edit_item(id):
                     )
                     item.purchase_links.append(link)
             
+            # Handle tags
+            raw_tags = request.form.get('tags', '').split(',')
+            tag_ids = []
+            for tag_id in raw_tags:
+                if tag_id.strip():
+                    try:
+                        tag_ids.append(int(tag_id))
+                    except (ValueError, TypeError) as e:
+                        print(f"Invalid tag ID {tag_id}: {str(e)}")
+            
+            # Clear existing tags and add new ones
+            item.tags = []
+            if tag_ids:
+                tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
+                for tag in tags:
+                    item.tags.append(tag)
+            
             db.session.commit()
             
             # Get new values for logging
@@ -339,13 +357,17 @@ def edit_item(id):
                 'reorder_threshold': item.reorder_threshold,
                 'mpn': item.mpn,
                 'cost': item.cost,
-                'sell_price': item.sell_price
+                'sell_price': item.sell_price,
+                'tags': [tag.name for tag in item.tags]
             }
             
             # Create details string for logging
             changes = []
             for key in original_values:
-                if original_values[key] != new_values[key]:
+                if key == 'tags':
+                    if set(original_values[key]) != set(new_values[key]):
+                        changes.append(f"{key}:\nOld Value: {', '.join(original_values[key])}\nNew Value: {', '.join(new_values[key])}")
+                elif original_values[key] != new_values[key]:
                     changes.append(f"{key}:\nOld Value: {original_values[key]}\nNew Value: {new_values[key]}")
             
             if changes:
@@ -362,8 +384,9 @@ def edit_item(id):
             flash(f'Error updating item: {str(e)}', 'danger')
             current_app.logger.error(f'Error updating item: {str(e)}')
     else:
-        # For GET request, explicitly set the category
+        # For GET request, explicitly set the category and tags
         form.category.data = item.category_id
+        form.tags.data = [str(tag.id) for tag in item.tags]
     
     return render_template('inventory/edit_item.html', form=form, item=item)
 
