@@ -54,6 +54,43 @@
 .purchase-links-btn {
     cursor: pointer;
 }
+
+.copy-url-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 0.2rem;
+}
+
+.copy-url-btn:hover {
+    opacity: 0.8;
+}
+
+.purchase-links-tooltip .tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.purchase-links-tooltip .tooltip-title {
+    font-weight: bold;
+    margin: 0;
+}
+
+.purchase-links-tooltip .close-tooltip {
+    cursor: pointer;
+    padding: 4px;
+    border: none;
+    background: none;
+    color: var(--bs-body-color);
+    opacity: 0.7;
+}
+
+.purchase-links-tooltip .close-tooltip:hover {
+    opacity: 1;
+}
 </style>
 {% endblock %}
 
@@ -199,10 +236,22 @@
                                                 <i class="fas fa-shopping-cart"></i>
                                             </button>
                                             <div class="purchase-links-tooltip" id="purchaseLinks{{ item.id }}">
+                                                <div class="tooltip-header">
+                                                    <h6 class="tooltip-title">{{ item.name }}</h6>
+                                                    <button type="button" class="close-tooltip" title="Close">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
                                                 {% for link in item.purchase_links %}
                                                 <div class="link-item">
                                                     <div class="link-title">{{ link.title or 'Purchase Link' }}</div>
-                                                    <a href="{{ link.url }}" target="_blank" class="link-url">{{ link.url }}</a>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <a href="{{ link.url }}" target="_blank" class="link-url flex-grow-1">{{ link.url }}</a>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary copy-url-btn" 
+                                                                data-url="{{ link.url }}" title="Copy URL">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 {% endfor %}
                                             </div>
@@ -533,6 +582,30 @@ $(document).ready(function() {
     // Prevent tooltip from closing when clicking inside it
     $('.purchase-links-tooltip').on('click', function(e) {
         e.stopPropagation();
+    });
+
+    // Copy URL functionality
+    $('.copy-url-btn').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = $(this).data('url');
+        navigator.clipboard.writeText(url).then(() => {
+            // Change icon temporarily to show success
+            const icon = $(this).find('i');
+            icon.removeClass('fa-copy').addClass('fa-check text-success');
+            setTimeout(() => {
+                icon.removeClass('fa-check text-success').addClass('fa-copy');
+            }, 1500);
+        }).catch(err => {
+            console.error('Failed to copy URL:', err);
+        });
+    });
+
+    // Close tooltip when clicking the close button
+    $('.close-tooltip').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).closest('.purchase-links-tooltip').hide();
     });
 });
 </script>

@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
   - New `purchase_links` table to store multiple URLs per item
   - Updated add/edit item forms to support multiple purchase links
   - Added tooltip display in dashboard for viewing purchase links
+  - Added copy button for each URL with visual feedback
+  - Added item name header and close button to tooltips
   - Improved UI with dark/light theme support for purchase link tooltips
 
 ## [1.0.81] - 2025-01-23
