@@ -131,7 +131,7 @@
                                     </td>
                                     <td>
                                         {% for tag in item.tags %}
-                                            <span class="badge tag-{{ tag.name.lower().replace(' ', '-') }}">
+                                            <span class="badge" style="background-color: {{ tag.color }}">
                                                 {{ tag.name }}
                                             </span>
                                         {% endfor %}
@@ -262,7 +262,9 @@
                                     </td>
                                     <td>
                                         {% for tag in system.tags %}
-                                            <span class="badge bg-info">{{ tag.name }}</span>
+                                            <span class="badge" style="background-color: {{ tag.color }}">
+                                                {{ tag.name }}
+                                            </span>
                                         {% endfor %}
                                     </td>
                                     <td>

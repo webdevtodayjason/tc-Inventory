@@ -2,25 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.74] - 2024-02-15
+## [1.0.75] - 2025-01-23
 
 ### Added
 - Added Microsoft Surface to computer types
 - Enhanced CPU management with improved form validation
 - Added CSRF token protection to CPU deletion
 - Improved error handling and debug logging for CPU operations
+- Added timezone configuration with CST as default
+- Added proper timestamp handling in system logs
 
 ### Changed
 - Updated CPU form to use proper form field rendering
 - Enhanced error feedback for CPU operations
 - Improved DataTables integration for CPU list
+- Updated logging system to use configured timezone
+- Standardized timestamp format across all logs
 
 ### Fixed
 - Fixed CSRF token missing error in CPU deletion
 - Fixed CPU form validation issues
 - Fixed tag handling in computer systems
+- Fixed timezone inconsistency in log timestamps
 
-## [1.0.70] - 2024-02-14
+## [1.0.72] - 2025-01-15
+
+### Added
+- Implemented DataTables for Computer Models list
+  - Added client-side sorting and pagination
+  - Enhanced search functionality
+  - Improved responsive design
+  - Added custom labels for better user experience
+
+### Changed
+- Removed server-side pagination from Computer Models list in favor of DataTables
+- Updated Computer Models route to return all models for DataTables processing
+
+## [1.0.70] - 2025-01-10
 
 ### Added
 - Implemented eager loading for system tags to improve performance
@@ -32,7 +50,7 @@ All notable changes to this project will be documented in this file.
 - Fixed lazy loading issues with system tags
 - Resolved database transaction issues
 
-## [1.0.60] - 2024-02-13
+## [1.0.60] - 2025-01-05
 
 ### Added
 - Enhanced DataTables implementation for Computer Systems
@@ -49,7 +67,7 @@ All notable changes to this project will be documented in this file.
 - Resolved sorting issues in DataTables
 - Fixed responsive design bugs
 
-## [1.0.50] - 2024-02-12
+## [1.0.50] - 2024-12-28
 
 ### Added
 - Implemented Roadmap feature with drag-and-drop functionality
@@ -62,7 +80,7 @@ All notable changes to this project will be documented in this file.
 - Enhanced dark mode styling for status indicators
 - Improved badge styling with category-specific icons
 
-## [1.0.49] - 2025-01-10
+## [1.0.49] - 2024-12-20
 
 ### Added
 - Implemented DataTables for Items and Systems lists
@@ -79,7 +97,7 @@ All notable changes to this project will be documented in this file.
 - Fixed Systems table width issue
 - Fixed table responsiveness on mobile devices
 
-## [1.0.48] - 2024-02-07
+## [1.0.48] - 2024-12-15
 
 - Initial version tracking in changelog
 - Base inventory management system functionality
@@ -90,16 +108,3 @@ All notable changes to this project will be documented in this file.
 - Tag system for items
 - Search and filter functionality
 - Responsive dashboard design 
-
-## [1.0.72] - 2024-02-15
-
-### Added
-- Implemented DataTables for Computer Models list
-  - Added client-side sorting and pagination
-  - Enhanced search functionality
-  - Improved responsive design
-  - Added custom labels for better user experience
-
-### Changed
-- Removed server-side pagination from Computer Models list in favor of DataTables
-- Updated Computer Models route to return all models for DataTables processing 

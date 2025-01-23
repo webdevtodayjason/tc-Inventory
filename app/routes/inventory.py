@@ -1250,6 +1250,8 @@ def manage_tags():
 @admin_required
 def add_tag():
     name = request.form.get('name')
+    color = request.form.get('color', '#6c757d')  # Get color from form, default to secondary
+    
     if not name:
         flash('Tag name is required', 'error')
         return redirect(url_for('inventory.manage_tags'))
@@ -1258,7 +1260,7 @@ def add_tag():
         flash('Tag already exists', 'error')
         return redirect(url_for('inventory.manage_tags'))
     
-    tag = Tag(name=name)
+    tag = Tag(name=name, color=color)
     db.session.add(tag)
     db.session.commit()
     flash('Tag added successfully', 'success')
@@ -1270,6 +1272,7 @@ def add_tag():
 def edit_tag(id):
     tag = Tag.query.get_or_404(id)
     name = request.form.get('name')
+    color = request.form.get('color', tag.color)  # Get new color or keep existing
     
     if not name:
         flash('Tag name is required', 'error')
@@ -1281,6 +1284,7 @@ def edit_tag(id):
         return redirect(url_for('inventory.manage_tags'))
     
     tag.name = name
+    tag.color = color
     db.session.commit()
     flash('Tag updated successfully', 'success')
     return redirect(url_for('inventory.manage_tags'))

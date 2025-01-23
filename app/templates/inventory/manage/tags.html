@@ -32,7 +32,7 @@
                         {% for tag in tags %}
                         <tr>
                             <td>
-                                <span class="badge bg-secondary">{{ tag.name }}</span>
+                                <span class="badge" style="background-color: {{ tag.color }}">{{ tag.name }}</span>
                             </td>
                             <td>{{ tag_counts[tag.id] }}</td>
                             <td>{{ tag.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
@@ -42,7 +42,8 @@
                                         data-bs-toggle="modal" 
                                         data-bs-target="#editTagModal"
                                         data-tag-id="{{ tag.id }}"
-                                        data-tag-name="{{ tag.name }}">
+                                        data-tag-name="{{ tag.name }}"
+                                        data-tag-color="{{ tag.color }}">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
                                 <button type="button" 
@@ -83,6 +84,14 @@
                         <label for="tagName" class="form-label">Tag Name</label>
                         <input type="text" class="form-control" id="tagName" name="name" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="tagColor" class="form-label">Tag Color</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color" id="tagColor" name="color" value="#6c757d" title="Choose tag color">
+                            <input type="text" class="form-control" id="tagColorHex" name="color_hex" value="#6c757d" pattern="^#[0-9A-Fa-f]{6}$" required>
+                        </div>
+                        <div class="form-text">Click the color picker or enter a hex color code (e.g., #6c757d)</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -107,6 +116,14 @@
                     <div class="mb-3">
                         <label for="editTagName" class="form-label">Tag Name</label>
                         <input type="text" class="form-control" id="editTagName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTagColor" class="form-label">Tag Color</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color" id="editTagColor" name="color" value="#6c757d" title="Choose tag color">
+                            <input type="text" class="form-control" id="editTagColorHex" name="color_hex" value="#6c757d" pattern="^#[0-9A-Fa-f]{6}$" required>
+                        </div>
+                        <div class="form-text">Click the color picker or enter a hex color code (e.g., #6c757d)</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -148,16 +165,47 @@
     const deleteUrlTemplate = "{{ url_for('inventory.delete_tag', id=0) }}";
     
     document.addEventListener('DOMContentLoaded', function() {
+        // Handle color picker synchronization for Add Tag modal
+        const tagColor = document.getElementById('tagColor');
+        const tagColorHex = document.getElementById('tagColorHex');
+        
+        tagColor.addEventListener('input', function(e) {
+            tagColorHex.value = e.target.value;
+        });
+        
+        tagColorHex.addEventListener('input', function(e) {
+            if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                tagColor.value = e.target.value;
+            }
+        });
+        
+        // Handle color picker synchronization for Edit Tag modal
+        const editTagColor = document.getElementById('editTagColor');
+        const editTagColorHex = document.getElementById('editTagColorHex');
+        
+        editTagColor.addEventListener('input', function(e) {
+            editTagColorHex.value = e.target.value;
+        });
+        
+        editTagColorHex.addEventListener('input', function(e) {
+            if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                editTagColor.value = e.target.value;
+            }
+        });
+        
         // Handle Edit Modal
         const editModal = document.getElementById('editTagModal');
         editModal.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
             const tagId = button.getAttribute('data-tag-id');
             const tagName = button.getAttribute('data-tag-name');
+            const tagColor = button.getAttribute('data-tag-color');
             
             const form = this.querySelector('form');
             form.action = editUrlTemplate.replace('/0/', `/${tagId}/`);
             editModal.querySelector('#editTagName').value = tagName;
+            editModal.querySelector('#editTagColor').value = tagColor;
+            editModal.querySelector('#editTagColorHex').value = tagColor;
         });
         
         // Handle Delete Modal

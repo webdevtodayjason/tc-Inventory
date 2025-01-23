@@ -60,6 +60,7 @@ class Tag(db.Model):
     __tablename__ = 'tag'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
+    color = db.Column(db.String(7), nullable=False, default='#6c757d')  # Hex color code
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):

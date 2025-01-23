@@ -67,7 +67,7 @@
                         <div class="col-md-4"><strong>Tags:</strong></div>
                         <div class="col-md-8">
                             {% for tag in system.tags %}
-                                <span class="badge bg-info">{{ tag.name }}</span>
+                                <span class="badge" style="background-color: {{ tag.color }}">{{ tag.name }}</span>
                             {% endfor %}
                             {% if not system.tags %}
                                 <em class="text-muted">No tags</em>
