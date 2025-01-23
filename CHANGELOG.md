@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.83] - 2025-01-23
+### Added
+- Enhanced activity logging for item and system modifications
+  - Added detailed change tracking in logs
+  - Track before/after values for important fields
+  - Improved error logging and flash messages
+  - Added comprehensive logging for all modifications
+
 ## [1.0.82] - 2025-01-23
 ### Added
 - Multiple purchase links support for inventory items
@@ -159,4 +167,13 @@ All notable changes to this project will be documented in this file.
 - Category management
 - Tag system for items
 - Search and filter functionality
-- Responsive dashboard design 
+- Responsive dashboard design
+
+## [1.0.86] - 2024-01-23
+### Changed
+- Enhanced log window styling to resemble a terminal:
+  - Set fixed height of 30 lines
+  - Added terminal-like border
+  - Changed text color to light blue
+  - Enabled horizontal scrolling for long lines
+  - Improved monospace font display 

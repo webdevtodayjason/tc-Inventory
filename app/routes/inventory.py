@@ -281,7 +281,14 @@ def edit_item(id):
                 'name': item.name,
                 'category': item.category.name if item.category else None,
                 'quantity': item.quantity,
-                'location': item.storage_location
+                'location': item.storage_location,
+                'manufacturer': item.manufacturer,
+                'description': item.description,
+                'min_quantity': item.min_quantity,
+                'reorder_threshold': item.reorder_threshold,
+                'mpn': item.mpn,
+                'cost': item.cost,
+                'sell_price': item.sell_price
             }
             
             # Update basic fields individually
@@ -292,11 +299,11 @@ def edit_item(id):
             item.reorder_threshold = form.reorder_threshold.data
             item.location = form.location.data
             item.storage_location = form.storage_location.data
-            item.manufacturer = form.manufacturer.data
-            item.mpn = form.mpn.data
-            item.barcode = form.barcode.data
-            item.upc = form.upc.data
-            item.image_url = form.image_url.data
+            item.manufacturer = form.manufacturer.data.strip() if form.manufacturer.data else None
+            item.mpn = form.mpn.data.strip() if form.mpn.data else None
+            item.barcode = form.barcode.data.strip() if form.barcode.data else None
+            item.upc = form.upc.data.strip() if form.upc.data else None
+            item.image_url = form.image_url.data.strip() if form.image_url.data else None
             item.cost = form.cost.data
             item.sell_price = form.sell_price.data
             item.category_id = form.category.data
@@ -320,29 +327,32 @@ def edit_item(id):
             
             db.session.commit()
             
-            # Log the activity with changes
+            # Get new values for logging
             new_values = {
                 'name': item.name,
                 'category': item.category.name if item.category else None,
                 'quantity': item.quantity,
-                'location': item.storage_location
+                'location': item.storage_location,
+                'manufacturer': item.manufacturer,
+                'description': item.description,
+                'min_quantity': item.min_quantity,
+                'reorder_threshold': item.reorder_threshold,
+                'mpn': item.mpn,
+                'cost': item.cost,
+                'sell_price': item.sell_price
             }
             
             # Create details string for logging
-            details = {
-                'name': item.name,
-                'category': item.category.name if item.category else None,
-                'quantity': item.quantity,
-                'location': item.storage_location,
-                'changes': []
-            }
-            
-            # Add specific changes to the log
+            changes = []
             for key in original_values:
                 if original_values[key] != new_values[key]:
-                    details['changes'].append(f"{key}: {original_values[key]} → {new_values[key]}")
+                    changes.append(f"{key}:\nOld Value: {original_values[key]}\nNew Value: {new_values[key]}")
             
-            log_inventory_activity('update', item, details)
+            if changes:
+                log_inventory_activity('update', item, {
+                    'name': item.name,
+                    'changes': changes
+                })
             
             flash('Item updated successfully!', 'success')
             return redirect(url_for('inventory.dashboard'))
@@ -351,6 +361,9 @@ def edit_item(id):
             db.session.rollback()
             flash(f'Error updating item: {str(e)}', 'danger')
             current_app.logger.error(f'Error updating item: {str(e)}')
+    else:
+        # For GET request, explicitly set the category
+        form.category.data = item.category_id
     
     return render_template('inventory/edit_item.html', form=form, item=item)
 
@@ -1052,7 +1065,12 @@ def edit_system(id):
                         'cpu': f"{original_cpu.manufacturer} {original_cpu.model}",
                         'ram': system.ram,
                         'storage': system.storage,
-                        'location': system.storage_location
+                        'location': system.storage_location,
+                        'os': system.os,
+                        'cpu_benchmark': system.cpu_benchmark,
+                        'usb_ports_status': system.usb_ports_status,
+                        'video_status': system.video_status,
+                        'network_status': system.network_status
                     }
                     
                     # Update system fields
@@ -1109,21 +1127,25 @@ def edit_system(id):
                         'cpu': f"{new_cpu.manufacturer} {new_cpu.model}",
                         'ram': system.ram,
                         'storage': system.storage,
-                        'location': system.storage_location
+                        'location': system.storage_location,
+                        'os': system.os,
+                        'cpu_benchmark': system.cpu_benchmark,
+                        'usb_ports_status': system.usb_ports_status,
+                        'video_status': system.video_status,
+                        'network_status': system.network_status
                     }
                     
                     # Create details for logging
-                    details = {
-                        'name': f"{new_model.manufacturer} {new_model.model_name}",
-                        'changes': []
-                    }
-                    
-                    # Add specific changes to the log
+                    changes = []
                     for key in original_values:
                         if original_values[key] != new_values[key]:
-                            details['changes'].append(f"{key}: {original_values[key]} → {new_values[key]}")
+                            changes.append(f"{key}:\nOld Value: {original_values[key]}\nNew Value: {new_values[key]}")
                     
-                    log_system_activity('update', system, details)
+                    if changes:
+                        log_system_activity('update', system, {
+                            'name': f"{new_model.manufacturer} {new_model.model_name}",
+                            'changes': changes
+                        })
                     
                     flash('Computer system updated successfully!', 'success')
                     return redirect(url_for('inventory.dashboard', active_tab='systems'))

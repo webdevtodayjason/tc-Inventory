@@ -17,22 +17,12 @@
     </div>
 
     <div class="card">
-        <div class="card-body">
-            {% if logs %}
-            <div class="table-responsive">
-                <div class="log-container bg-light p-3" style="max-height: 600px; overflow-y: auto; font-family: monospace;">
-                    {% for log in logs %}
-                    <div class="log-entry {% if 'ERROR' in log %}text-danger{% elif 'WARNING' in log %}text-warning{% elif 'INFO' in log %}text-info{% endif %}">
-                        {{ log }}
-                    </div>
-                    {% endfor %}
-                </div>
+        <div class="card-body p-0">
+            <div class="log-container" style="background-color: #000000; color: #00b4d8; font-family: 'Courier New', monospace; height: 30em; overflow-y: auto; padding: 0; border: 2px solid #333;">
+                {% for log in logs %}
+                <div class="log-entry" style="margin-left: -117px; line-height: 0.2; padding: 1px 0;">{{ log }}</div>
+                {% endfor %}
             </div>
-            {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No logs available at this time.
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
@@ -71,19 +61,27 @@
 
 <style>
     .log-entry {
-        padding: 2px 0;
-        border-bottom: 1px solid rgba(0,0,0,.05);
-        white-space: pre-wrap;
-        word-wrap: break-word;
+        padding: 1px 0;
+        margin-left: -160px;
+        margin-top: 6px;
+        white-space: pre;
+        word-wrap: normal;
+        font-size: 13px;
+        line-height: 0.2;
+        color: #00b4d8;
+    }
+    
+    .log-container {
+        padding: 0;
+        background-color: #000000 !important;
+        border: 2px solid #333 !important;
+        overflow-x: auto;
     }
     
     [data-bs-theme="dark"] .log-container {
-        background-color: #1a1d20 !important;
-        color: #e9ecef;
-    }
-    
-    [data-bs-theme="dark"] .log-entry {
-        border-bottom-color: rgba(255,255,255,.05);
+        background-color: #000000 !important;
+        color: #00b4d8;
+        border: 2px solid #333 !important;
     }
 
     /* Set max date input width */
