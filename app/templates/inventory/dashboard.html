@@ -25,17 +25,17 @@
     <!-- Tabs -->
     <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
+            <button class="nav-link {% if active_tab == 'items' %}active{% endif %}" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
                 <i class="fas fa-box"></i> Items
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="systems-tab" data-bs-toggle="tab" data-bs-target="#systems" type="button" role="tab">
+            <button class="nav-link {% if active_tab == 'systems' %}active{% endif %}" id="systems-tab" data-bs-toggle="tab" data-bs-target="#systems" type="button" role="tab">
                 <i class="fas fa-desktop"></i> Computer Systems
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="wiki-tab" data-bs-toggle="tab" data-bs-target="#wiki" type="button" role="tab">
+            <button class="nav-link {% if active_tab == 'wiki' %}active{% endif %}" id="wiki-tab" data-bs-toggle="tab" data-bs-target="#wiki" type="button" role="tab">
                 <i class="fas fa-book"></i> Wiki
             </button>
         </li>
@@ -43,7 +43,7 @@
 
     <div class="tab-content mt-3" id="inventoryTabContent">
         <!-- Items Tab -->
-        <div class="tab-pane fade show active" id="items" role="tabpanel">
+        <div class="tab-pane fade {% if active_tab == 'items' %}show active{% endif %}" id="items" role="tabpanel">
             <!-- Search Form -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -182,7 +182,7 @@
         </div>
 
         <!-- Systems Tab -->
-        <div class="tab-pane fade" id="systems" role="tabpanel">
+        <div class="tab-pane fade {% if active_tab == 'systems' %}show active{% endif %}" id="systems" role="tabpanel">
             <!-- Systems Search Form -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -294,7 +294,7 @@
         </div>
 
         <!-- Wiki Tab -->
-        <div class="tab-pane fade" id="wiki" role="tabpanel">
+        <div class="tab-pane fade {% if active_tab == 'wiki' %}show active{% endif %}" id="wiki" role="tabpanel">
             <!-- Search Form -->
             <div class="card mb-4">
                 <div class="card-body">

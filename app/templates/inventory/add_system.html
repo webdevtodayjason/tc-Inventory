@@ -3,140 +3,133 @@
 {% block title %}Add Computer System{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2>Add Computer System</h2>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-body">
-            <form method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <!-- System Information -->
-                        <h4 class="mb-3">System Information</h4>
-                        
-                        <div class="mb-3">
-                            <label for="model_id" class="form-label">Computer Model</label>
-                            {{ form.model_id(class="form-select") }}
-                            {% if form.model_id.errors %}
-                                {% for error in form.model_id.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="serial_tag" class="form-label">Serial/Service Tag</label>
-                            {{ form.serial_tag(class="form-control", placeholder="Enter serial or service tag") }}
-                            {% if form.serial_tag.errors %}
-                                {% for error in form.serial_tag.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="cpu_id" class="form-label">CPU</label>
-                            {{ form.cpu_id(class="form-select") }}
-                            {% if form.cpu_id.errors %}
-                                {% for error in form.cpu_id.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="ram" class="form-label">RAM</label>
-                            {{ form.ram(class="form-control", placeholder="e.g., 16GB DDR4") }}
-                            {% if form.ram.errors %}
-                                {% for error in form.ram.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="storage" class="form-label">Storage</label>
-                            {{ form.storage(class="form-control", placeholder="e.g., 500GB SSD") }}
-                            {% if form.storage.errors %}
-                                {% for error in form.storage.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="os" class="form-label">Operating System</label>
-                            {{ form.os(class="form-select") }}
-                            {% if form.os.errors %}
-                                {% for error in form.os.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="storage_location" class="form-label">Storage Location</label>
-                            {{ form.storage_location(class="form-control", placeholder="e.g., Rack 3, Shelf 2") }}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="tags" class="form-label">Tags</label>
-                            <select class="form-select" name="tags" id="tags" multiple data-placeholder="Select tags...">
-                                {% for tag_id, tag_name in form.tags.choices %}
-                                <option value="{{ tag_id }}">{{ tag_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <!-- Testing Information -->
-                        <h4 class="mb-3">Testing Information</h4>
-                        
-                        <div class="mb-3">
-                            <label for="cpu_benchmark" class="form-label">CPU Benchmark Score</label>
-                            {{ form.cpu_benchmark(class="form-control") }}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="usb_ports_status" class="form-label">USB Ports Test</label>
-                            {{ form.usb_ports_status(class="form-select") }}
-                            {{ form.usb_ports_notes(class="form-control mt-2", placeholder="USB Ports Test Notes") }}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="video_status" class="form-label">Video Test</label>
-                            {{ form.video_status(class="form-select") }}
-                            {{ form.video_notes(class="form-control mt-2", placeholder="Video Test Notes") }}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="network_status" class="form-label">Network Test</label>
-                            {{ form.network_status(class="form-select") }}
-                            {{ form.network_notes(class="form-control mt-2", placeholder="Network Test Notes") }}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="general_notes" class="form-label">General Notes</label>
-                            {{ form.general_notes(class="form-control", rows="3") }}
-                        </div>
-                    </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Add New Computer System</h4>
                 </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- System Information -->
+                                <h4 class="mb-3">System Information</h4>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.serial_tag.label }}</label>
+                                    {{ form.serial_tag(class="form-control") }}
+                                </div>
 
-                <div class="text-end mt-4">
-                    <button type="submit" class="btn btn-primary">Add Computer System</button>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.model_id.label }}</label>
+                                    {{ form.model_id(class="form-select") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.cpu_id.label }}</label>
+                                    {{ form.cpu_id(class="form-select", onchange="updateCPUBenchmark(this.value)") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.ram.label }}</label>
+                                    {{ form.ram(class="form-control", placeholder="e.g., 16GB DDR4") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.storage.label }}</label>
+                                    {{ form.storage(class="form-control", placeholder="e.g., 500GB SSD") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.os.label }}</label>
+                                    {{ form.os(class="form-select") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.storage_location.label }}</label>
+                                    {{ form.storage_location(class="form-control") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="tags" class="form-label">Tags</label>
+                                    <select class="form-select" name="tags" id="tags" multiple data-placeholder="Select tags...">
+                                        {% for tag_id, tag_name in form.tags.choices %}
+                                        <option value="{{ tag_id }}">{{ tag_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <!-- Testing Information -->
+                                <h4 class="mb-3">Testing Information</h4>
+                                
+                                <div class="mb-3">
+                                    <label for="cpu_benchmark" class="form-label">CPU Benchmark Score</label>
+                                    {{ form.cpu_benchmark(class="form-control", readonly=true) }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="usb_ports_status" class="form-label">USB Ports Test</label>
+                                    {{ form.usb_ports_status(class="form-select") }}
+                                    {{ form.usb_ports_notes(class="form-control mt-2", placeholder="USB Ports Test Notes") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="video_status" class="form-label">Video Test</label>
+                                    {{ form.video_status(class="form-select") }}
+                                    {{ form.video_notes(class="form-control mt-2", placeholder="Video Test Notes") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="network_status" class="form-label">Network Test</label>
+                                    {{ form.network_status(class="form-select") }}
+                                    {{ form.network_notes(class="form-control mt-2", placeholder="Network Test Notes") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="general_notes" class="form-label">General Notes</label>
+                                    {{ form.general_notes(class="form-control", rows="3") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Add System</button>
+                            <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateCPUBenchmark(cpuId) {
+    if (cpuId) {
+        fetch(`/api/cpu/${cpuId}/benchmark`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('cpu_benchmark').value = data.benchmark || '';
+            })
+            .catch(error => console.error('Error:', error));
+    } else {
+        document.getElementById('cpu_benchmark').value = '';
+    }
+}
+
+// Initialize Select2 for tags
+$(document).ready(function() {
+    $('#tags').select2({
+        placeholder: "Select tags...",
+        allowClear: true
+    });
+});
+</script>
 {% endblock %} 

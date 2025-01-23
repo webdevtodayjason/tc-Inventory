@@ -53,6 +53,9 @@ def admin_required(f):
 @bp.route('/dashboard')
 @login_required
 def dashboard():
+    # Get active tab from query parameters
+    active_tab = request.args.get('active_tab', 'items')
+    
     # General Items pagination
     page = request.args.get('page', 1, type=int)
     per_page = current_app.config['ITEMS_PER_PAGE']
@@ -148,7 +151,8 @@ def dashboard():
                          computer_models=computer_models,
                          wiki_pages=wiki_pages,
                          wiki_categories=wiki_categories,
-                         form=form)
+                         form=form,
+                         active_tab=active_tab)
 
 @bp.route('/item/add', methods=['GET', 'POST'])
 @login_required
@@ -1069,7 +1073,7 @@ def add_system():
                 })
                 
                 flash('Computer system added successfully!', 'success')
-                return redirect(url_for('inventory.dashboard'))
+                return redirect(url_for('inventory.dashboard', active_tab='systems'))
                 
             except Exception as e:
                 db.session.rollback()
@@ -1156,8 +1160,6 @@ def edit_system(id):
                 
                 # Clear existing tags
                 system.tags = []
-                db.session.flush()
-                print("Cleared existing tags")
                 
                 if tag_ids:
                     # Fetch and validate tags
@@ -1179,7 +1181,7 @@ def edit_system(id):
                 print("Changes committed successfully")
                 
                 flash('Computer system updated successfully!', 'success')
-                return redirect(url_for('inventory.dashboard'))
+                return redirect(url_for('inventory.dashboard', active_tab='systems'))
                 
             except Exception as e:
                 db.session.rollback()
@@ -1205,7 +1207,7 @@ def edit_system(id):
         import traceback
         print(f"Stack trace: {traceback.format_exc()}")
         flash(f'An unexpected error occurred: {str(e)}', 'danger')
-        return redirect(url_for('inventory.dashboard'))
+        return redirect(url_for('inventory.dashboard', active_tab='systems'))
 
 @bp.route('/system/<int:id>/delete', methods=['POST'])
 @login_required
@@ -1446,3 +1448,9 @@ def delete_category(id):
         db.session.rollback()
         flash(f'Error deleting category: {str(e)}', 'danger')
     return redirect(url_for('inventory.manage_categories'))
+
+@bp.route('/api/cpu/<int:id>/benchmark')
+@login_required
+def get_cpu_benchmark(id):
+    cpu = CPU.query.get_or_404(id)
+    return jsonify({'benchmark': cpu.benchmark})

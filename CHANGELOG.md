@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.81] - 2025-01-23
+
+### Added
+- Added auto-population of CPU benchmark scores in system add/edit forms
+- Added API endpoint for retrieving CPU benchmark scores
+- Added JavaScript functionality to update benchmark field when CPU is selected
+
+### Changed
+- Modified system add/edit forms to handle benchmark scores dynamically
+- Updated system form templates to improve user experience
+- Changed CPU benchmark field to use integer type instead of float
+- Updated dashboard to maintain active tab selection after form submissions
+
+### Fixed
+- Fixed tab selection persistence when redirecting back to dashboard
+- Fixed form handling for CPU benchmark scores
+
 ## [1.0.80] - 2025-01-23
 
 ### Added

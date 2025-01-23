@@ -70,7 +70,7 @@ class CPUForm(FlaskForm):
         DataRequired(),
         NumberRange(min=1, max=128, message="Core count must be between 1 and 128")
     ])
-    benchmark = FloatField('Benchmark Score', validators=[
+    benchmark = IntegerField('Benchmark Score', validators=[
         Optional(),
         NumberRange(min=0, message="Benchmark score must be a positive number")
     ])
