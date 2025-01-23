@@ -149,4 +149,12 @@ All notable changes to this project will be documented in this file.
 - Category management
 - Tag system for items
 - Search and filter functionality
-- Responsive dashboard design 
+- Responsive dashboard design
+
+## [1.0.82] - 2024-03-20
+### Added
+- Multiple purchase links support for inventory items
+  - New `purchase_links` table to store multiple URLs per item
+  - Updated add/edit item forms to support multiple purchase links
+  - Added tooltip display in dashboard for viewing purchase links
+  - Improved UI with dark/light theme support for purchase link tooltips 

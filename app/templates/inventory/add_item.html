@@ -211,8 +211,21 @@
                             {{ form.sell_price(class="form-control", type="number", step="0.01", min="0") }}
                         </div>
                         <div class="mb-3">
-                            <label for="purchase_url" class="form-label">Purchase URL</label>
-                            {{ form.purchase_url(class="form-control", type="url", placeholder="https://...") }}
+                            <label class="form-label">Purchase Links</label>
+                            <div id="purchaseLinksContainer">
+                                <div class="purchase-link-row mb-2">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="purchase_link_titles[]" placeholder="Link Title (optional)">
+                                        <input type="url" class="form-control" name="purchase_link_urls[]" placeholder="https://..." required>
+                                        <button type="button" class="btn btn-outline-danger remove-link" style="display: none;">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary mt-2" id="addPurchaseLink">
+                                <i class="fas fa-plus"></i> Add Another Link
+                            </button>
                         </div>
                         <div class="mb-3">
                             <label for="image_url" class="form-label">Image URL</label>
@@ -395,6 +408,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateSelectedTags();
         };
+    });
+
+    // Add purchase links functionality
+    document.getElementById('addPurchaseLink').addEventListener('click', function() {
+        const container = document.getElementById('purchaseLinksContainer');
+        const newRow = document.createElement('div');
+        newRow.className = 'purchase-link-row mb-2';
+        newRow.innerHTML = `
+            <div class="input-group">
+                <input type="text" class="form-control" name="purchase_link_titles[]" placeholder="Link Title (optional)">
+                <input type="url" class="form-control" name="purchase_link_urls[]" placeholder="https://..." required>
+                <button type="button" class="btn btn-outline-danger remove-link">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(newRow);
+        
+        // Show all remove buttons when there's more than one row
+        const removeButtons = container.querySelectorAll('.remove-link');
+        removeButtons.forEach(button => button.style.display = removeButtons.length > 1 ? 'block' : 'none');
+    });
+
+    document.getElementById('purchaseLinksContainer').addEventListener('click', function(e) {
+        if (e.target.closest('.remove-link')) {
+            const row = e.target.closest('.purchase-link-row');
+            row.remove();
+            
+            // Update visibility of remove buttons
+            const container = document.getElementById('purchaseLinksContainer');
+            const removeButtons = container.querySelectorAll('.remove-link');
+            removeButtons.forEach(button => button.style.display = removeButtons.length > 1 ? 'block' : 'none');
+        }
     });
 });
 </script>

@@ -195,3 +195,7 @@ class CategoryForm(FlaskForm):
     def validate_parent_id(form, field):
         if form.category_type.data == 'child' and not field.data:
             raise ValidationError('Please select a valid parent category.')
+
+class InventoryItemForm(GeneralItemForm):
+    """Form for creating and editing inventory items with purchase links support."""
+    pass

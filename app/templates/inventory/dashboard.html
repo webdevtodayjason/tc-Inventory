@@ -3,9 +3,58 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block head %}
+{{ super() }}
 <!-- DataTables CSS -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css"/>
+<style>
+/* Custom tooltip styles */
+.purchase-links-tooltip {
+    position: fixed;
+    display: none;
+    z-index: 1000;
+    padding: 10px;
+    border-radius: 6px;
+    max-width: 300px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    margin-top: 5px;
+}
+
+[data-bs-theme="light"] .purchase-links-tooltip {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    color: #212529;
+}
+
+[data-bs-theme="dark"] .purchase-links-tooltip {
+    background-color: #2b3035;
+    border: 1px solid #495057;
+    color: #e9ecef;
+}
+
+.purchase-links-tooltip .link-item {
+    padding: 8px;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.purchase-links-tooltip .link-item:last-child {
+    border-bottom: none;
+}
+
+.purchase-links-tooltip .link-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.purchase-links-tooltip .link-url {
+    font-size: 0.875rem;
+    word-break: break-all;
+}
+
+.purchase-links-btn {
+    cursor: pointer;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -144,10 +193,19 @@
                                             <a href="{{ url_for('inventory.edit_item', id=item.id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            {% if item.purchase_url %}
-                                            <a href="{{ item.purchase_url }}" target="_blank" class="btn btn-sm btn-outline-success" title="Purchase">
+                                            {% if item.purchase_links %}
+                                            <button type="button" class="btn btn-sm btn-outline-success purchase-links-btn" 
+                                                    title="Purchase Links" data-item-id="{{ item.id }}">
                                                 <i class="fas fa-shopping-cart"></i>
-                                            </a>
+                                            </button>
+                                            <div class="purchase-links-tooltip" id="purchaseLinks{{ item.id }}">
+                                                {% for link in item.purchase_links %}
+                                                <div class="link-item">
+                                                    <div class="link-title">{{ link.title or 'Purchase Link' }}</div>
+                                                    <a href="{{ link.url }}" target="_blank" class="link-url">{{ link.url }}</a>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
                                             {% endif %}
                                             <form action="{{ url_for('inventory.delete_item', id=item.id) }}" method="POST" class="d-inline">
                                                 {{ form.csrf_token }}
@@ -369,6 +427,7 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <!-- DataTables JS -->
 <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
@@ -433,6 +492,47 @@ $(document).ready(function() {
                 previous: "Previous"
             }
         }
+    });
+
+    // Purchase links tooltip functionality
+    function showTooltip(button, tooltip) {
+        // Hide all tooltips first
+        $('.purchase-links-tooltip').hide();
+        
+        // Get button position
+        const rect = button.getBoundingClientRect();
+        
+        // Position and show tooltip
+        tooltip.css({
+            display: 'block',
+            top: (rect.bottom + window.scrollY) + 'px',
+            left: (rect.left + window.scrollX) + 'px'
+        });
+    }
+
+    // Handle button clicks
+    $('.purchase-links-btn').on('click', function(e) {
+        e.stopPropagation();
+        const itemId = $(this).data('item-id');
+        const tooltip = $(`#purchaseLinks${itemId}`);
+        
+        if (tooltip.is(':visible')) {
+            tooltip.hide();
+        } else {
+            showTooltip(this, tooltip);
+        }
+    });
+
+    // Close tooltips when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.purchase-links-btn, .purchase-links-tooltip').length) {
+            $('.purchase-links-tooltip').hide();
+        }
+    });
+
+    // Prevent tooltip from closing when clicking inside it
+    $('.purchase-links-tooltip').on('click', function(e) {
+        e.stopPropagation();
     });
 });
 </script>

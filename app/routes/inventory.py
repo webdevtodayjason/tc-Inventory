@@ -4,12 +4,12 @@ from flask_wtf import FlaskForm
 from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
     InventoryTransaction, ComputerModel, CPU, Tag, item_tags,
-    WikiPage, WikiCategory
+    WikiPage, WikiCategory, PurchaseLink
 )
 from app.models.config import Configuration
 from app.utils.email import send_stock_alert
 from app.forms import (
-    ComputerModelForm, CPUForm, GeneralItemForm, 
+    ComputerModelForm, CPUForm, GeneralItemForm, InventoryItemForm,
     ComputerSystemForm, MANUFACTURER_CHOICES, 
     COMPUTER_TYPES, CategoryForm
 )
@@ -157,87 +157,66 @@ def dashboard():
 @bp.route('/item/add', methods=['GET', 'POST'])
 @login_required
 def add_item():
-    form = GeneralItemForm()
-    # Get ordered categories for the dropdown
-    categories = Category.get_ordered_categories()
-    form.category.choices = [(c.id, c.get_display_name()) for c in categories]
+    form = InventoryItemForm()
+    form.category.choices = [(c.id, c.get_display_name()) for c in Category.get_ordered_categories()]
+    form.tags.choices = [(t.id, t.name) for t in Tag.query.order_by(Tag.name).all()]
     
-    # Get all available tags for the dropdown
-    tags = Tag.query.order_by(Tag.name).all()
-    form.tags.choices = [(str(t.id), t.name) for t in tags]
-    
-    if form.validate_on_submit():
+    if request.method == 'POST':
         try:
-            # Check if barcode already exists
-            if form.barcode.data and InventoryItem.query.filter_by(barcode=form.barcode.data).first():
-                flash(f'An item with barcode {form.barcode.data} already exists', 'error')
-                return render_template('inventory/add_item.html', form=form)
-            
-            # Create new item
+            # Create the item
             item = InventoryItem(
-                tracking_id=f"TC-{str(uuid.uuid4())[:8].upper()}",
+                tracking_id=generate_tracking_id(),
                 name=form.name.data,
                 description=form.description.data,
                 quantity=form.quantity.data,
                 min_quantity=form.min_quantity.data,
                 reorder_threshold=form.reorder_threshold.data,
-                category_id=form.category.data,
                 location=form.location.data,
+                storage_location=form.storage_location.data,
                 manufacturer=form.manufacturer.data,
                 mpn=form.mpn.data,
-                barcode=form.barcode.data,
-                upc=form.upc.data,
                 image_url=form.image_url.data,
-                creator_id=current_user.id,
-                storage_location=form.storage_location.data,
                 cost=form.cost.data,
                 sell_price=form.sell_price.data,
-                purchase_url=form.purchase_url.data
+                category_id=form.category.data,
+                creator_id=current_user.id
             )
             
-            # Store the full category path in item metadata
-            if item.category:
-                item.category.category_metadata = {
-                    'category_path': item.category.get_full_path()
-                }
+            # Add purchase links
+            purchase_link_urls = request.form.getlist('purchase_link_urls[]')
+            purchase_link_titles = request.form.getlist('purchase_link_titles[]')
             
-            # Process tags (both existing and new)
-            if form.tags.data:
-                for tag_data in form.tags.data:
-                    # Try to convert to int (existing tag)
+            for url, title in zip(purchase_link_urls, purchase_link_titles):
+                if url.strip():  # Only add non-empty URLs
+                    link = PurchaseLink(
+                        url=url.strip(),
+                        title=title.strip() if title else None,
+                        created_by=current_user.id
+                    )
+                    item.purchase_links.append(link)
+            
+            # Handle tags
+            tag_ids = request.form.get('tags', '').split(',')
+            for tag_id in tag_ids:
+                if tag_id.strip():
                     try:
-                        tag_id = int(tag_data)
-                        tag = Tag.query.get(tag_id)
+                        tag = Tag.query.get(int(tag_id))
                         if tag:
                             item.tags.append(tag)
-                    except (ValueError, TypeError):
-                        # This is a new tag
-                        tag_name = tag_data.strip()
-                        if tag_name:
-                            # Check if tag already exists
-                            tag = Tag.query.filter_by(name=tag_name).first()
-                            if not tag:
-                                tag = Tag(name=tag_name)
-                                db.session.add(tag)
-                            item.tags.append(tag)
+                    except (ValueError, TypeError) as e:
+                        print(f"Invalid tag ID {tag_id}: {str(e)}")
             
             db.session.add(item)
             db.session.commit()
             
-            # Log the activity
-            log_inventory_activity('add', item, {
-                'name': item.name,
-                'category': item.category.name if item.category else None,
-                'quantity': item.quantity
-            })
-            
-            flash('Item added successfully!', 'success')
+            flash('Item added successfully', 'success')
             return redirect(url_for('inventory.view_item', id=item.id))
             
         except Exception as e:
             db.session.rollback()
             flash(f'Error adding item: {str(e)}', 'error')
-            
+            return render_template('inventory/add_item.html', form=form)
+    
     return render_template('inventory/add_item.html', form=form)
 
 @bp.route('/item/<int:id>/view')
@@ -290,148 +269,68 @@ def print_label(id):
 @bp.route('/item/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_item(id):
-    try:
-        print("\n=== Starting edit_item route ===")
-        print(f"Method: {request.method}")
-        
-        # Get the item with tags eagerly loaded
-        item = InventoryItem.query.options(db.joinedload(InventoryItem.tags)).get_or_404(id)
-        print(f"Found item: {item.name} (ID: {item.id})")
-        
-        # Create form
-        form = GeneralItemForm(obj=item)
-        
-        # Populate category choices for the dropdown
-        categories = Category.get_ordered_categories()
-        form.category.choices = [(c.id, c.get_display_name()) for c in categories]
-        
-        if request.method == 'POST':
-            print("\n=== Processing POST request ===")
-            print(f"Form data: {request.form.to_dict()}")
+    item = InventoryItem.query.get_or_404(id)
+    form = InventoryItemForm(obj=item)
+    form.category.choices = [(c.id, c.get_display_name()) for c in Category.get_ordered_categories()]
+    form.tags.choices = [(t.id, t.name) for t in Tag.query.order_by(Tag.name).all()]
+    
+    if request.method == 'POST':
+        try:
+            # Update basic fields individually
+            item.name = form.name.data
+            item.description = form.description.data
+            item.quantity = form.quantity.data
+            item.min_quantity = form.min_quantity.data
+            item.reorder_threshold = form.reorder_threshold.data
+            item.location = form.location.data
+            item.storage_location = form.storage_location.data
+            item.manufacturer = form.manufacturer.data
+            item.mpn = form.mpn.data
+            item.barcode = form.barcode.data
+            item.upc = form.upc.data
+            item.image_url = form.image_url.data
+            item.cost = form.cost.data
+            item.sell_price = form.sell_price.data
+            item.category_id = form.category.data
             
-            try:
-                # Handle category first
-                category_id = request.form.get('category')
-                if category_id:
-                    category = Category.query.get(int(category_id))
-                    if not category:
-                        raise ValueError(f"Category not found: {category_id}")
-                    item.category = category
-                print(f"Category updated: {item.category.name if item.category else 'None'}")
-                
-                # Update other fields
-                item.name = request.form.get('name')
-                item.quantity = int(request.form.get('quantity', 0))
-                item.min_quantity = int(request.form.get('min_quantity', 0))
-                item.reorder_threshold = int(request.form.get('reorder_threshold', 0))
-                item.storage_location = request.form.get('storage_location')
-                
-                # Handle empty fields - convert empty strings to None
-                for field in ['barcode', 'manufacturer', 'mpn', 'image_url', 'purchase_url']:
-                    value = request.form.get(field, '').strip()
-                    setattr(item, field, value or None)
-                
-                item.description = request.form.get('description')
-                
-                # Handle optional decimal fields
-                cost = request.form.get('cost')
-                if cost and cost.strip():
-                    item.cost = float(cost)
-                else:
-                    item.cost = None
-                    
-                sell_price = request.form.get('sell_price')
-                if sell_price and sell_price.strip():
-                    item.sell_price = float(sell_price)
-                else:
-                    item.sell_price = None
-                    
-                print("Basic fields updated")
-                
-                # Handle tags
-                print("\n=== Processing tags ===")
-                raw_tags = request.form.get('tags', '').split(',')
-                print(f"Raw tags from form: {raw_tags}")
-                
-                # Convert to integers and validate
-                tag_ids = []
-                for tag_id in raw_tags:
-                    if tag_id.strip():  # Only process non-empty strings
-                        try:
-                            tag_ids.append(int(tag_id))
-                        except (ValueError, TypeError) as e:
-                            print(f"Invalid tag ID {tag_id}: {str(e)}")
-                print(f"Processed tag IDs: {tag_ids}")
-                
-                # Clear existing tags
-                item.tags = []
-                db.session.flush()
-                print("Cleared existing tags")
-                
-                if tag_ids:
-                    # Fetch and validate tags
-                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                    found_ids = [t.id for t in tags]
-                    print(f"Found tags: {found_ids}")
-                    
-                    # Check if all requested tags were found
-                    missing = set(tag_ids) - set(found_ids)
-                    if missing:
-                        raise ValueError(f"Some tags were not found: {missing}")
-                    
-                    # Add tags one by one
-                    for tag in tags:
-                        item.tags.append(tag)
-                        print(f"Added tag: {tag.id} - {tag.name}")
-                
-                print("\n=== Saving changes ===")
-                db.session.commit()
-                print("Changes committed successfully")
-                
-                # Log the activity
-                log_inventory_activity('update', item, {
-                    'name': item.name,
-                    'category': item.category.name if item.category else None,
-                    'quantity': item.quantity
-                })
-                
-                flash('Item updated successfully!', 'success')
-                return redirect(url_for('inventory.dashboard'))
-                
-            except Exception as e:
-                db.session.rollback()
-                print(f"\n=== Error in POST processing ===")
-                print(f"Error type: {type(e)}")
-                print(f"Error message: {str(e)}")
-                print(f"Item data: {item}")
-                print(f"Form data: {form.data}")
-                flash(f'Error updating item: {str(e)}', 'danger')
-                
-        # GET request - populate form
-        print("\n=== Processing GET request ===")
-        
-        # Pre-select current category
-        if item.category:
-            form.category.data = item.category.id
-            print(f"Pre-selected category: {item.category.name} (ID: {item.category.id})")
-        
-        # Get all available tags
-        all_tags = Tag.query.order_by(Tag.name).all()
-        form.tags.choices = [(str(t.id), t.name) for t in all_tags]
-        print(f"Available tags: {[(t.id, t.name) for t in all_tags]}")
-        
-        return render_template('inventory/edit_item.html', 
-                             form=form, 
-                             item=item)
-        
-    except Exception as e:
-        print("\n=== Unexpected error in edit_item route ===")
-        print(f"Error type: {type(e)}")
-        print(f"Error message: {str(e)}")
-        import traceback
-        print(f"Stack trace: {traceback.format_exc()}")
-        flash(f'An unexpected error occurred: {str(e)}', 'danger')
-        return redirect(url_for('inventory.dashboard'))
+            # Update purchase links
+            purchase_link_urls = request.form.getlist('purchase_link_urls[]')
+            purchase_link_titles = request.form.getlist('purchase_link_titles[]')
+            
+            # Remove all existing links
+            item.purchase_links = []
+            
+            # Add new links
+            for url, title in zip(purchase_link_urls, purchase_link_titles):
+                if url.strip():  # Only add non-empty URLs
+                    link = PurchaseLink(
+                        url=url.strip(),
+                        title=title.strip() if title else None,
+                        created_by=current_user.id
+                    )
+                    item.purchase_links.append(link)
+            
+            # Handle tags
+            tag_ids = request.form.get('tags', '').split(',')
+            item.tags = []  # Clear existing tags
+            for tag_id in tag_ids:
+                if tag_id.strip():
+                    try:
+                        tag = Tag.query.get(int(tag_id))
+                        if tag:
+                            item.tags.append(tag)
+                    except (ValueError, TypeError) as e:
+                        print(f"Invalid tag ID {tag_id}: {str(e)}")
+            
+            db.session.commit()
+            flash('Item updated successfully', 'success')
+            return redirect(url_for('inventory.view_item', id=item.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating item: {str(e)}', 'error')
+    
+    return render_template('inventory/edit_item.html', form=form, item=item)
 
 @bp.route('/item/<int:id>/delete', methods=['POST'])
 @login_required

@@ -52,8 +52,8 @@ class Category(db.Model):
         return build_hierarchy()
 
 item_tags = db.Table('item_tags',
-    db.Column('item_id', db.Integer, db.ForeignKey('items.id'), primary_key=True),
-    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True)
+    db.Column('item_id', db.Integer, db.ForeignKey('items.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id', ondelete='CASCADE'), primary_key=True)
 )
 
 class Tag(db.Model):
@@ -97,6 +97,9 @@ class InventoryItem(db.Model):
     tags = db.relationship('Tag', 
                          secondary=item_tags,
                          lazy='joined')
+
+    # Add relationship for purchase links
+    purchase_links = db.relationship('PurchaseLink', back_populates='item', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<InventoryItem {self.name}>'
@@ -276,4 +279,19 @@ class RoadmapItem(db.Model):
             'submitter': self.submitter.username,
             'has_voted': current_user in self.voters if current_user and current_user.is_authenticated else False
         }
+
+class PurchaseLink(db.Model):
+    """Model for storing additional purchase URLs for inventory items."""
+    __tablename__ = 'purchase_links'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id', ondelete='CASCADE'), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    title = db.Column(db.String(100))  # Optional title/description for the link
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Relationships
+    item = db.relationship('InventoryItem', back_populates='purchase_links')
+    creator = db.relationship('User')
  

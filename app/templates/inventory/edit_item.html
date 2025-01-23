@@ -169,8 +169,51 @@
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
-                            {{ form.purchase_url.label(class="form-label") }}
-                            {{ form.purchase_url(class="form-control") }}
+                            <label class="form-label">Purchase Links</label>
+                            <div id="purchaseLinksContainer">
+                                {% if item.purchase_links %}
+                                    {% for link in item.purchase_links %}
+                                    <div class="row mb-3 purchase-link-row">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Link Title</label>
+                                            <input type="text" class="form-control" name="purchase_link_titles[]" value="{{ link.title or '' }}" placeholder="Optional title for the link">
+                                        </div>
+                                        <div class="col-md-7">
+                                            <label class="form-label">URL</label>
+                                            <input type="url" class="form-control" name="purchase_link_urls[]" value="{{ link.url }}" required>
+                                        </div>
+                                        <div class="col-md-1 d-flex align-items-end">
+                                            <button type="button" class="btn btn-danger remove-link-btn" onclick="removePurchaseLink(this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="row mb-3 purchase-link-row">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Link Title</label>
+                                            <input type="text" class="form-control" name="purchase_link_titles[]" placeholder="Optional title for the link">
+                                        </div>
+                                        <div class="col-md-7">
+                                            <label class="form-label">URL</label>
+                                            <input type="url" class="form-control" name="purchase_link_urls[]" required>
+                                        </div>
+                                        <div class="col-md-1 d-flex align-items-end">
+                                            <button type="button" class="btn btn-danger remove-link-btn" onclick="removePurchaseLink(this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-secondary" onclick="addPurchaseLink()">
+                                        <i class="fas fa-plus"></i> Add Purchase Link
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -276,6 +319,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize selected tags display
     updateSelectedTags();
+});
+
+function addPurchaseLink() {
+    const container = document.getElementById('purchaseLinksContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'row mb-3 purchase-link-row';
+    newRow.innerHTML = `
+        <div class="col-md-4">
+            <label class="form-label">Link Title</label>
+            <input type="text" class="form-control" name="purchase_link_titles[]" placeholder="Optional title for the link">
+        </div>
+        <div class="col-md-7">
+            <label class="form-label">URL</label>
+            <input type="url" class="form-control" name="purchase_link_urls[]" required>
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-danger remove-link-btn" onclick="removePurchaseLink(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newRow);
+    updateRemoveButtons();
+}
+
+function removePurchaseLink(button) {
+    const row = button.closest('.purchase-link-row');
+    row.remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const rows = document.querySelectorAll('.purchase-link-row');
+    const buttons = document.querySelectorAll('.remove-link-btn');
+    
+    buttons.forEach(button => {
+        button.style.display = rows.length > 1 ? 'block' : 'none';
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateRemoveButtons();
 });
 </script>
 {% endblock %} 
