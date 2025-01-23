@@ -57,6 +57,7 @@
                             <th>Model</th>
                             <th>Speed</th>
                             <th>Cores</th>
+                            <th>Benchmark</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -67,6 +68,7 @@
                             <td>{{ cpu.model }}</td>
                             <td>{{ cpu.speed }}</td>
                             <td>{{ cpu.cores }}</td>
+                            <td>{{ cpu.benchmark if cpu.benchmark else 'Not tested' }}</td>
                             <td>
                                 <a href="{{ url_for('inventory.edit_cpu', id=cpu.id) }}" class="btn btn-sm btn-warning">Edit</a>
                                 <form action="{{ url_for('inventory.delete_cpu', id=cpu.id) }}" method="POST" class="d-inline">

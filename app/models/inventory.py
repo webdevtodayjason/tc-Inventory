@@ -116,6 +116,7 @@ class CPU(db.Model):
     model = db.Column(db.String(128), nullable=False)
     speed = db.Column(db.String(32))
     cores = db.Column(db.Integer)
+    benchmark = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Association table for system tags

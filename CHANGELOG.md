@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.80] - 2025-01-23
+
+### Added
+- Added benchmark score field to CPU management
+- Added benchmark column to CPU list view
+- Added benchmark field to CPU add/edit forms
+- Enhanced CPU performance tracking capabilities
+
+### Changed
+- Updated CPU management interface to display benchmark scores
+- Modified CPU database schema to include benchmark data
+- Improved CPU form validation for benchmark scores
+
 ## [1.0.77] - 2025-01-23
 
 ### Added

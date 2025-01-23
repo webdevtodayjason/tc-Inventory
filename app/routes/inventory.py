@@ -490,7 +490,8 @@ def add_cpu():
                     manufacturer=form.manufacturer.data,
                     model=form.model.data,
                     speed=form.speed.data,
-                    cores=form.cores.data
+                    cores=form.cores.data,
+                    benchmark=form.benchmark.data
                 )
                 db.session.add(cpu)
                 db.session.commit()
@@ -516,10 +517,18 @@ def edit_cpu(id):
     cpu = CPU.query.get_or_404(id)
     form = CPUForm(obj=cpu)
     if form.validate_on_submit():
-        form.populate_obj(cpu)
-        db.session.commit()
-        flash('CPU updated successfully!', 'success')
-        return redirect(url_for('inventory.manage_cpus'))
+        try:
+            cpu.manufacturer = form.manufacturer.data
+            cpu.model = form.model.data
+            cpu.speed = form.speed.data
+            cpu.cores = form.cores.data
+            cpu.benchmark = form.benchmark.data
+            db.session.commit()
+            flash('CPU updated successfully!', 'success')
+            return redirect(url_for('inventory.manage_cpus'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating CPU: {str(e)}', 'danger')
     return render_template('inventory/manage/edit_cpu.html', form=form, cpu=cpu)
 
 @bp.route('/manage/cpus/<int:id>/delete', methods=['POST'])
