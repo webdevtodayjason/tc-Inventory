@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.77] - 2025-01-23
+
+### Added
+- Color field for tags to enable visual categorization
+- Color picker in tag management for selecting tag colors
+- Colored tag display in dashboard, system view, and tag management pages
+
+### Changed
+- Updated tag badges to use their assigned colors throughout the application
+- Enhanced tag management interface with color selection capabilities
+
 ## [1.0.75] - 2025-01-23
 
 ### Added
