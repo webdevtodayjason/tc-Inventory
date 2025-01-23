@@ -30,6 +30,9 @@ class Config:
     FLASK_ENV = os.environ.get('FLASK_ENV', 'production')
     DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
     
+    # Timezone settings
+    TIMEZONE = os.environ.get('TIMEZONE', 'America/Chicago')
+    
     # Add additional configuration settings
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     UPLOAD_FOLDER = 'app/static/uploads'

@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.71] - 2024-02-15
+## [1.0.74] - 2024-02-15
 
 ### Added
 - Added Microsoft Surface to computer types

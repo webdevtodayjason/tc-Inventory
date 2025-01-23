@@ -9,6 +9,7 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from config import Config
+import time
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -33,34 +34,31 @@ def create_app(config_class=Config):
         except (TypeError, ValueError):
             return value
 
-    # Ensure logs directory exists
+    # Configure logging
     if not os.path.exists('logs'):
-        os.makedirs('logs')
-
-    # Set up logging
-    formatter = logging.Formatter(
+        os.mkdir('logs')
+    
+    # Set up file handler
+    file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+    file_handler.setFormatter(logging.Formatter(
         '%(asctime)s [%(levelname)s] %(message)s',
         datefmt='%Y-%m-%d %I:%M:%S %p'
-    )
-    
-    # Log to file
-    file_handler = RotatingFileHandler(
-        'logs/app.log',
-        maxBytes=10240000,  # 10MB
-        backupCount=10
-    )
-    file_handler.setFormatter(formatter)
+    ))
     file_handler.setLevel(logging.INFO)
-    
-    # Log to stdout for Railway/Docker
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(formatter)
-    stream_handler.setLevel(logging.DEBUG)
-    
-    # Set handlers and level
     app.logger.addHandler(file_handler)
+
+    # Set up stream handler for console output
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%Y-%m-%d %I:%M:%S %p'
+    ))
     app.logger.addHandler(stream_handler)
     app.logger.setLevel(logging.DEBUG)
+    
+    # Set timezone from config
+    os.environ['TZ'] = app.config['TIMEZONE']
+    time.tzset()
     
     # Initial log message
     app.logger.info('TC Inventory startup')
