@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.87] - 2025-01-23
+### Fixed
+- Fixed tag handling in item edit form:
+  - Properly tracks and updates tag changes
+  - Improved tag comparison logic
+  - Added tag changes to activity logs
+  - Fixed issue with tags not updating on live server
+
+## [1.0.86] - 2025-01-23
+### Changed
+- Enhanced log window styling to resemble a terminal:
+  - Set fixed height of 30 lines
+  - Added terminal-like border
+  - Changed text color to light blue
+  - Enabled horizontal scrolling for long lines
+  - Improved monospace font display
+
 ## [1.0.83] - 2025-01-23
 ### Added
 - Enhanced activity logging for item and system modifications
@@ -167,13 +184,4 @@ All notable changes to this project will be documented in this file.
 - Category management
 - Tag system for items
 - Search and filter functionality
-- Responsive dashboard design
-
-## [1.0.86] - 2024-01-23
-### Changed
-- Enhanced log window styling to resemble a terminal:
-  - Set fixed height of 30 lines
-  - Added terminal-like border
-  - Changed text color to light blue
-  - Enabled horizontal scrolling for long lines
-  - Improved monospace font display 
+- Responsive dashboard design 

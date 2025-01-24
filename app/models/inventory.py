@@ -2,6 +2,9 @@ from app import db
 from datetime import datetime
 import json
 from sqlalchemy import Table
+from sqlalchemy.orm import relationship
+from sqlalchemy import event
+from app.utils.activity_logger import log_activity
 
 class Category(db.Model):
     __tablename__ = 'category'
@@ -56,6 +59,11 @@ item_tags = db.Table('item_tags',
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id', ondelete='CASCADE'), primary_key=True)
 )
 
+system_tags = db.Table('system_tags',
+    db.Column('system_id', db.Integer, db.ForeignKey('computer_systems.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id', ondelete='CASCADE'), primary_key=True)
+)
+
 class Tag(db.Model):
     __tablename__ = 'tag'
     id = db.Column(db.Integer, primary_key=True)
@@ -104,81 +112,89 @@ class InventoryItem(db.Model):
     def __repr__(self):
         return f'<InventoryItem {self.name}>'
 
-class ComputerModel(db.Model):
-    __tablename__ = 'computer_model'
-    id = db.Column(db.Integer, primary_key=True)
-    manufacturer = db.Column(db.String(64), nullable=False)
-    model_name = db.Column(db.String(128), nullable=False)
-    model_type = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 class CPU(db.Model):
+    """Model for CPU information"""
     __tablename__ = 'cpu'
-    id = db.Column(db.Integer, primary_key=True)
-    manufacturer = db.Column(db.String(64), nullable=False)
-    model = db.Column(db.String(128), nullable=False)
-    speed = db.Column(db.String(32))
-    cores = db.Column(db.Integer)
-    benchmark = db.Column(db.Integer, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Association table for system tags
-system_tags = db.Table('system_tags',
-    db.Column('system_id', db.Integer, db.ForeignKey('computer_systems.id', ondelete='CASCADE'), primary_key=True),
-    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id', ondelete='CASCADE'), primary_key=True)
-)
+    id = db.Column(db.Integer, primary_key=True)
+    manufacturer = db.Column(db.String(50), nullable=False)
+    model = db.Column(db.String(100), nullable=False)
+    speed = db.Column(db.Float, nullable=False)
+    cores = db.Column(db.Integer, nullable=False)
+    benchmark = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<CPU {self.manufacturer} {self.model}>'
+
+class ComputerModel(db.Model):
+    """Model for computer models"""
+    __tablename__ = 'computer_model'
+
+    id = db.Column(db.Integer, primary_key=True)
+    manufacturer = db.Column(db.String(50), nullable=False)
+    model_name = db.Column(db.String(100), nullable=False)
+    model_type = db.Column(db.String(50), nullable=False)  # desktop, laptop, server, etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ComputerModel {self.manufacturer} {self.model_name}>'
+
+class InventoryTransaction(db.Model):
+    """Model for inventory transactions"""
+    __tablename__ = 'inventory_transactions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    transaction_type = db.Column(db.String(50), nullable=False)  # checkout, checkin, adjustment
+    quantity = db.Column(db.Integer, nullable=False)
+    notes = db.Column(db.Text)
+    checkout_reason = db.Column(db.String(100))  # For mobile checkouts
+    is_mobile = db.Column(db.Boolean, default=False)  # Whether transaction was made from mobile app
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    item = relationship('InventoryItem', backref='transactions')
+    user = relationship('User', backref='transactions')
+
+    def __repr__(self):
+        return f'<InventoryTransaction {self.transaction_type}:{self.quantity}>'
 
 class ComputerSystem(db.Model):
+    """Model for computer systems"""
     __tablename__ = 'computer_systems'
-    id = db.Column(db.Integer, primary_key=True)
-    tracking_id = db.Column(db.String(50), unique=True)
-    serial_tag = db.Column(db.String(100))
-    model_id = db.Column(db.Integer, db.ForeignKey('computer_model.id'), nullable=False)
-    cpu_id = db.Column(db.Integer, db.ForeignKey('cpu.id'), nullable=False)
-    ram = db.Column(db.String(64), nullable=False)
-    storage = db.Column(db.String(128), nullable=False)
-    os = db.Column(db.String(50), nullable=False)
-    storage_location = db.Column(db.String(100))
-    status = db.Column(db.String(50), default='available')
-    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
-    updated_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
-    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    # Testing fields
-    cpu_benchmark = db.Column(db.Float)
-    usb_ports_status = db.Column(db.String(20))
-    usb_ports_notes = db.Column(db.Text)
-    video_status = db.Column(db.String(20))
-    video_notes = db.Column(db.Text)
-    network_status = db.Column(db.String(20))
-    network_notes = db.Column(db.Text)
-    general_notes = db.Column(db.Text)
-    tested_by = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    model = db.relationship('ComputerModel', backref='computers')
-    cpu = db.relationship('CPU', backref='computers')
-    creator = db.relationship('User', foreign_keys=[creator_id], backref='computers_created')
-    tester = db.relationship('User', backref='tested_computers', foreign_keys=[tested_by])
-    tags = db.relationship('Tag', secondary=system_tags, backref=db.backref('computer_systems', lazy='dynamic'))
+    id = db.Column(db.Integer, primary_key=True)
+    tracking_id = db.Column(db.String(50), unique=True, nullable=False)
+    model_id = db.Column(db.Integer, db.ForeignKey('computer_model.id'))
+    serial_number = db.Column(db.String(100))
+    status = db.Column(db.String(50), default='available')  # available, checked_out, maintenance, retired
+    location = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    cpu_id = db.Column(db.Integer, db.ForeignKey('cpu.id'))
+    ram = db.Column(db.String(50))
+    storage = db.Column(db.String(100))
+    os = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Mobile checkout fields
+    checked_out_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    checked_out_at = db.Column(db.DateTime)
+    checkout_reason = db.Column(db.String(100))
+    checkout_notes = db.Column(db.Text)
+
+    # Relationships
+    model = relationship('ComputerModel', backref='systems')
+    cpu = relationship('CPU', backref='systems')
+    checked_out_by = relationship('User', backref='checked_out_systems')
+    tags = db.relationship('Tag', secondary=system_tags, lazy='joined')
 
     def __repr__(self):
         return f'<ComputerSystem {self.tracking_id}>'
-
-class InventoryTransaction(db.Model):
-    __tablename__ = 'transactions'
-    id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
-    transaction_type = db.Column(db.String(20))
-    quantity_changed = db.Column(db.Integer)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
-    notes = db.Column(db.Text)
-
-    item = db.relationship('InventoryItem', backref='transactions')
-    user = db.relationship('User', backref='transactions')
-
-    def __repr__(self):
-        return f'<Transaction {self.id}: {self.transaction_type}>'
 
 class BenchmarkResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)

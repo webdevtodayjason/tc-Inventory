@@ -10,6 +10,7 @@ from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from config import Config
 import time
+from flask_cors import CORS
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -19,7 +20,10 @@ csrf = CSRFProtect()
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
-
+    
+    # Disable CSRF for mobile API routes
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
+    
     # Debug logging for environment variables
     app.logger.debug(f"Environment variables loaded:")
     app.logger.debug(f"TINYMCE_API_KEY: {app.config.get('TINYMCE_API_KEY')}")
@@ -68,12 +72,15 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+    
+    # Enable CORS for all routes
+    CORS(app)
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
 
     # Import models to ensure they're known to Flask-Migrate
-    from app.models import user, inventory, config
+    from app.models import user, inventory, config, mobile
 
     # Register blueprints
     from app.routes import auth, inventory, admin, wiki, roadmap
@@ -82,6 +89,10 @@ def create_app(config_class=Config):
     app.register_blueprint(admin.bp)
     app.register_blueprint(wiki.bp)
     app.register_blueprint(roadmap.bp)
+
+    # Register mobile API blueprint
+    from app.api.mobile import bp as mobile_bp
+    app.register_blueprint(mobile_bp)
 
     # Register CLI commands
     from app import cli
@@ -102,8 +113,19 @@ def create_app(config_class=Config):
                 return redirect(url_for('inventory.dashboard'))
             return render_template('index.html')
         except Exception as e:
-            app.logger.error(f'Error rendering index template: {str(e)}')
-            raise
+            app.logger.error(f'Error in index route: {str(e)}')
+            return render_template('errors/500.html'), 500
+
+    @app.errorhandler(404)
+    def not_found_error(error):
+        app.logger.error(f'404 error: {error}')
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        app.logger.error(f'500 error: {error}')
+        db.session.rollback()
+        return render_template('errors/500.html'), 500
 
     @app.errorhandler(403)
     def forbidden_error(error):
