@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+
+{% block title %}TC Inventory API Code Examples{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/api_docs.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="api-docs">
+    <div class="api-sidebar">
+        <nav>
+            <div class="sidebar-header">
+                <h3>Code Examples</h3>
+            </div>
+            <ul>
+                <li><a href="#authentication">Authentication</a></li>
+                <li><a href="#inventory-search">Inventory Search</a></li>
+                <li><a href="#barcode-scanning">Barcode Scanning</a></li>
+                <li><a href="#checkout">Checkout Process</a></li>
+                <li><a href="#error-handling">Error Handling</a></li>
+                <li><a href="#offline-support">Offline Support</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="api-content">
+        <section id="overview">
+            <h1>TC Inventory API Code Examples</h1>
+            <p>Code examples demonstrating common operations with the TC Inventory API in various programming languages.</p>
+        </section>
+
+        <section id="authentication">
+            <h2>Authentication</h2>
+            
+            <h3>Python</h3>
+            <div class="code-block">
+                <pre><code class="language-python">import requests
+
+class InventoryAPI:
+    def __init__(self, base_url="http://127.0.0.1:5001"):
+        self.base_url = base_url
+        self.token = None
+    
+    def login(self, username, pin):
+        """Authenticate and get JWT token"""
+        response = requests.post(
+            f"{self.base_url}/api/mobile/auth/login",
+            json={
+                "username": username,
+                "pin": pin
+            }
+        )
+        if response.status_code == 200:
+            data = response.json()
+            self.token = data["token"]
+            return data
+        raise Exception(f"Login failed: {response.text}")
+    
+    def get_headers(self):
+        """Get headers with authentication token"""
+        return {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/json"
+        }</code></pre>
+            </div>
+
+            <h3>JavaScript</h3>
+            <div class="code-block">
+                <pre><code class="language-javascript">class InventoryAPI {
+    constructor(baseUrl = 'http://127.0.0.1:5001') {
+        this.baseUrl = baseUrl;
+        this.token = null;
+    }
+
+    async login(username, pin) {
+        const response = await fetch(`${this.baseUrl}/api/mobile/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ username, pin })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Login failed: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        this.token = data.token;
+        return data;
+    }
+
+    getHeaders() {
+        return {
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/json'
+        };
+    }
+}</code></pre>
+            </div>
+
+            <h3>Dart (Flutter)</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+class AuthService {
+  final String baseUrl;
+  final storage = FlutterSecureStorage();
+
+  AuthService({this.baseUrl = 'http://127.0.0.1:5001'});
+
+  Future<String> login(String username, String pin) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/auth/login'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode({
+        'username': username,
+        'pin': pin,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final token = data['token'];
+      await storage.write(key: 'auth_token', value: token);
+      return token;
+    }
+    throw Exception('Login failed: ${response.body}');
+  }
+
+  Future<Map<String, String>> getHeaders() async {
+    final token = await storage.read(key: 'auth_token');
+    return {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="inventory-search">
+            <h2>Inventory Search</h2>
+
+            <h3>Python</h3>
+            <div class="code-block">
+                <pre><code class="language-python">def search_inventory(self, query, type="item", page=1, limit=20):
+    """Search inventory items or systems"""
+    params = {
+        "q": query,
+        "page": page,
+        "limit": limit
+    }
+    response = requests.get(
+        f"{self.base_url}/api/mobile/search/{type}s/search",
+        headers=self.get_headers(),
+        params=params
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise Exception(f"Search failed: {response.text}")</code></pre>
+            </div>
+
+            <h3>Dart (Flutter)</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">Future<List<Item>> searchItems(String query, {int page = 1}) async {
+  final headers = await getHeaders();
+  final response = await http.get(
+    Uri.parse('$baseUrl/api/mobile/search/items/search')
+        .replace(queryParameters: {
+      'q': query,
+      'page': page.toString(),
+      'limit': '20',
+    }),
+    headers: headers,
+  );
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    return (data['results'] as List)
+        .map((json) => Item.fromJson(json))
+        .toList();
+  }
+  throw Exception('Search failed: ${response.body}');
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="barcode-scanning">
+            <h2>Barcode Scanning</h2>
+
+            <h3>Dart (Flutter)</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">import 'package:mobile_scanner/mobile_scanner.dart';
+
+class BarcodeScanner extends StatelessWidget {
+  final Function(String) onBarcodeFound;
+
+  const BarcodeScanner({required this.onBarcodeFound});
+
+  @override
+  Widget build(BuildContext context) {
+    return MobileScanner(
+      controller: MobileScannerController(
+        formats: [BarcodeFormat.code128],
+        facing: CameraFacing.back,
+      ),
+      onDetect: (capture) {
+        final List<Barcode> barcodes = capture.barcodes;
+        for (final barcode in barcodes) {
+          final code = barcode.rawValue;
+          if (code != null && code.startsWith('TC-')) {
+            onBarcodeFound(code);
+          }
+        }
+      },
+    );
+  }
+}
+
+// Usage in checkout screen
+Future<void> handleBarcodeScan(String barcode) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/checkout/search/$barcode'),
+      headers: await getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final item = json.decode(response.body);
+      // Show item details and checkout options
+    } else if (response.statusCode == 404) {
+      // Show item not found message
+    }
+  } catch (e) {
+    // Handle error
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="checkout">
+            <h2>Checkout Process</h2>
+
+            <h3>Python</h3>
+            <div class="code-block">
+                <pre><code class="language-python">def checkout_item(self, item_id, reason_id, quantity=1, notes=None):
+    """Process an item checkout"""
+    data = {
+        "type": "item",
+        "id": item_id,
+        "reason_id": reason_id,
+        "quantity": quantity
+    }
+    if notes:
+        data["notes"] = notes
+
+    response = requests.post(
+        f"{self.base_url}/api/mobile/checkout",
+        headers=self.get_headers(),
+        json=data
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise Exception(f"Checkout failed: {response.text}")
+
+def get_checkout_reasons(self):
+    """Get list of valid checkout reasons"""
+    response = requests.get(
+        f"{self.base_url}/api/mobile/checkout/reasons",
+        headers=self.get_headers()
+    )
+    if response.status_code == 200:
+        return response.json()
+    raise Exception(f"Failed to get reasons: {response.text}")</code></pre>
+            </div>
+
+            <h3>Dart (Flutter)</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">class CheckoutService {
+  final String baseUrl;
+  final AuthService authService;
+
+  CheckoutService({
+    required this.baseUrl,
+    required this.authService,
+  });
+
+  Future<List<CheckoutReason>> getReasons() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/mobile/checkout/reasons'),
+      headers: await authService.getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return (data['reasons'] as List)
+          .map((json) => CheckoutReason.fromJson(json))
+          .toList();
+    }
+    throw Exception('Failed to get reasons: ${response.body}');
+  }
+
+  Future<void> checkoutItem({
+    required String itemId,
+    required String reasonId,
+    int quantity = 1,
+    String? notes,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/checkout'),
+      headers: await authService.getHeaders(),
+      body: json.encode({
+        'type': 'item',
+        'id': itemId,
+        'reason_id': reasonId,
+        'quantity': quantity,
+        if (notes != null) 'notes': notes,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Checkout failed: ${response.body}');
+    }
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="error-handling">
+            <h2>Error Handling</h2>
+
+            <h3>Python</h3>
+            <div class="code-block">
+                <pre><code class="language-python">class InventoryAPIError(Exception):
+    def __init__(self, message, status_code=None, response=None):
+        self.message = message
+        self.status_code = status_code
+        self.response = response
+        super().__init__(self.message)
+
+class InventoryAPI:
+    def _handle_response(self, response):
+        """Handle API response and errors"""
+        try:
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise InventoryAPIError("Authentication failed", response.status_code)
+            elif response.status_code == 404:
+                raise InventoryAPIError("Resource not found", response.status_code)
+            elif response.status_code == 429:
+                raise InventoryAPIError("Rate limit exceeded", response.status_code)
+            else:
+                raise InventoryAPIError(
+                    f"API request failed: {response.text}",
+                    response.status_code
+                )
+        except ValueError:
+            raise InventoryAPIError("Invalid JSON response", response.status_code)
+        except Exception as e:
+            raise InventoryAPIError(f"Unexpected error: {str(e)}")</code></pre>
+            </div>
+
+            <h3>Dart (Flutter)</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">class ApiError implements Exception {
+  final String message;
+  final int? statusCode;
+  final dynamic data;
+
+  ApiError(this.message, {this.statusCode, this.data});
+
+  @override
+  String toString() => 'ApiError: $message';
+}
+
+class ApiService {
+  Future<T> handleResponse<T>(
+    Future<http.Response> Function() request,
+    T Function(Map<String, dynamic>) parser,
+  ) async {
+    try {
+      final response = await request();
+      
+      if (response.statusCode == 200) {
+        return parser(json.decode(response.body));
+      }
+      
+      switch (response.statusCode) {
+        case 401:
+          throw ApiError('Authentication failed', 
+              statusCode: response.statusCode);
+        case 404:
+          throw ApiError('Resource not found', 
+              statusCode: response.statusCode);
+        case 429:
+          throw ApiError('Rate limit exceeded', 
+              statusCode: response.statusCode);
+        default:
+          throw ApiError(
+            'Request failed',
+            statusCode: response.statusCode,
+            data: _tryDecodeJson(response.body),
+          );
+      }
+    } on FormatException {
+      throw ApiError('Invalid response format');
+    } catch (e) {
+      throw ApiError('Unexpected error: $e');
+    }
+  }
+
+  dynamic _tryDecodeJson(String body) {
+    try {
+      return json.decode(body);
+    } catch (_) {
+      return body;
+    }
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="offline-support">
+            <h2>Offline Support</h2>
+
+            <h3>Dart (Flutter)</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">class OfflineQueue {
+  final storage = FlutterSecureStorage();
+  final String queueKey = 'offline_queue';
+
+  Future<List<Map<String, dynamic>>> getQueue() async {
+    final data = await storage.read(key: queueKey);
+    if (data == null) return [];
+    return List<Map<String, dynamic>>.from(json.decode(data));
+  }
+
+  Future<void> addToQueue(Map<String, dynamic> transaction) async {
+    final queue = await getQueue();
+    queue.add(transaction);
+    await storage.write(key: queueKey, value: json.encode(queue));
+  }
+
+  Future<void> processQueue() async {
+    final queue = await getQueue();
+    final List<Map<String, dynamic>> failed = [];
+
+    for (final transaction in queue) {
+      try {
+        await processTransaction(transaction);
+      } catch (e) {
+        failed.add(transaction);
+      }
+    }
+
+    // Save failed transactions back to queue
+    await storage.write(key: queueKey, value: json.encode(failed));
+  }
+
+  Future<void> processTransaction(Map<String, dynamic> transaction) async {
+    // Implement your transaction processing logic here
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/mobile/checkout'),
+      headers: await getHeaders(),
+      body: json.encode(transaction),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Transaction failed');
+    }
+  }
+}</code></pre>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+<script>
+    hljs.highlightAll();
+</script>
+{% endblock %} 

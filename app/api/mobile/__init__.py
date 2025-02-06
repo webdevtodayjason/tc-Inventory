@@ -1,5 +1,5 @@
 """Mobile API Blueprint"""
-from flask import Blueprint
+from flask import Blueprint, redirect, url_for
 from flask_wtf.csrf import CSRFProtect
 
 # Create Blueprint
@@ -13,6 +13,12 @@ from app.api.mobile.swagger import api
 
 # Initialize API with blueprint
 api.init_app(bp)
+
+# Root route redirects to API documentation
+@bp.route('/')
+def index():
+    """Redirect root to API documentation"""
+    return redirect(url_for('mobile_api.doc'))
 
 # Import routes after blueprint creation to avoid circular imports
 from app.api.mobile import auth, items, search, checkout

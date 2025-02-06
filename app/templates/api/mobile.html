@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}TC Inventory Mobile API Guide{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/api_docs.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="api-docs">
+    <div class="api-sidebar">
+        <nav>
+            <div class="sidebar-header">
+                <h3>Mobile Guide</h3>
+            </div>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#authentication">Authentication</a></li>
+                <li><a href="#barcode-scanning">Barcode Scanning</a></li>
+                <li><a href="#inventory-search">Inventory Search</a></li>
+                <li><a href="#checkout-process">Checkout Process</a></li>
+                <li><a href="#offline-support">Offline Support</a></li>
+                <li><a href="#error-handling">Error Handling</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="api-content">
+        <section id="overview">
+            <h1>TC Inventory Mobile API Guide</h1>
+            <p>This guide covers the mobile-specific features of the TC Inventory API, designed for use with the TC Inventory mobile app.</p>
+            
+            <div class="api-quick-links">
+                <a href="{{ url_for('mobile_api.doc') }}" class="quick-link">
+                    <i class="fas fa-book"></i>
+                    <span>API Reference</span>
+                </a>
+                <a href="{{ url_for('api_docs.api_examples') }}" class="quick-link">
+                    <i class="fas fa-code"></i>
+                    <span>Code Examples</span>
+                </a>
+                <a href="https://github.com/webdevtodayjason/tc-Inventory/tree/main/tc_inventory_mobile" class="quick-link">
+                    <i class="fab fa-github"></i>
+                    <span>Mobile App Source</span>
+                </a>
+            </div>
+        </section>
+
+        <section id="authentication">
+            <h2>Authentication</h2>
+            <p>The mobile API uses JWT tokens for authentication. Tokens are valid for 7 days.</p>
+
+            <h3>Login Flow</h3>
+            <div class="code-block">
+                <pre><code class="language-python">import requests
+
+def login(username, pin):
+    response = requests.post(
+        'https://inventory.ticom.pro/api/mobile/auth/login',
+        json={
+            'username': username,
+            'pin': pin
+        }
+    )
+    if response.status_code == 200:
+        return response.json()['token']
+    raise Exception('Login failed')</code></pre>
+            </div>
+
+            <h3>Token Storage</h3>
+            <p>Store tokens securely using platform-specific secure storage:</p>
+            <div class="code-block">
+                <pre><code class="language-dart">import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+final storage = FlutterSecureStorage();
+await storage.write(key: 'auth_token', value: token);</code></pre>
+            </div>
+        </section>
+
+        <section id="barcode-scanning">
+            <h2>Barcode Scanning</h2>
+            <p>The API supports Code128 barcode format used by TC Inventory.</p>
+
+            <h3>Barcode Format</h3>
+            <ul>
+                <li>Format: <code>TC-XXXXXXXX</code></li>
+                <li>X: Alphanumeric characters</li>
+                <li>Example: <code>TC-B95F49A3</code></li>
+            </ul>
+
+            <h3>Scanning Flow</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">Future<void> handleBarcode(String barcode) async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/api/mobile/checkout/search/$barcode'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+  
+  if (response.statusCode == 200) {
+    final item = json.decode(response.body);
+    // Handle found item
+  } else if (response.statusCode == 404) {
+    // Handle item not found
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="inventory-search">
+            <h2>Inventory Search</h2>
+            <p>The search API supports both items and systems with pagination.</p>
+
+            <h3>Search Parameters</h3>
+            <ul>
+                <li><code>q</code>: Search query</li>
+                <li><code>type</code>: "item" or "system"</li>
+                <li><code>page</code>: Page number (default: 1)</li>
+                <li><code>limit</code>: Results per page (default: 20)</li>
+            </ul>
+
+            <h3>Search Example</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">Future<List<Item>> searchItems(String query) async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/api/mobile/search/items/search?q=$query'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+  
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    return (data['results'] as List)
+      .map((item) => Item.fromJson(item))
+      .toList();
+  }
+  throw Exception('Search failed');
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="checkout-process">
+            <h2>Checkout Process</h2>
+            <p>The checkout process involves several steps to ensure proper tracking.</p>
+
+            <h3>Checkout Flow</h3>
+            <ol>
+                <li>Scan item/system barcode</li>
+                <li>Verify availability</li>
+                <li>Select checkout reason</li>
+                <li>Process checkout</li>
+                <li>Receive confirmation</li>
+            </ol>
+
+            <h3>Checkout Example</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">Future<void> checkoutItem(String itemId, String reasonId) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/api/mobile/checkout'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: json.encode({
+      'type': 'item',
+      'id': itemId,
+      'reason_id': reasonId,
+      'quantity': 1,
+      'notes': 'Checked out via mobile app'
+    }),
+  );
+  
+  if (response.statusCode != 200) {
+    throw Exception('Checkout failed');
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="offline-support">
+            <h2>Offline Support</h2>
+            <p>The mobile app supports offline functionality for certain operations.</p>
+
+            <h3>Offline Features</h3>
+            <ul>
+                <li>Cached item/system data</li>
+                <li>Offline barcode scanning</li>
+                <li>Pending transactions queue</li>
+                <li>Auto-sync when online</li>
+            </ul>
+
+            <h3>Implementation Example</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">class OfflineQueue {
+  final storage = FlutterSecureStorage();
+  
+  Future<void> queueTransaction(Map<String, dynamic> transaction) async {
+    final queue = await getQueue();
+    queue.add(transaction);
+    await storage.write(
+      key: 'pending_transactions',
+      value: json.encode(queue),
+    );
+  }
+  
+  Future<void> syncWhenOnline() async {
+    final queue = await getQueue();
+    for (final transaction in queue) {
+      try {
+        await processTransaction(transaction);
+      } catch (e) {
+        // Handle error
+      }
+    }
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="error-handling">
+            <h2>Error Handling</h2>
+            <p>The API uses standard HTTP status codes and provides detailed error messages.</p>
+
+            <h3>Common Error Codes</h3>
+            <ul>
+                <li><code>400</code>: Bad Request - Check parameters</li>
+                <li><code>401</code>: Unauthorized - Invalid/expired token</li>
+                <li><code>404</code>: Not Found - Item/system not found</li>
+                <li><code>409</code>: Conflict - Item unavailable</li>
+                <li><code>429</code>: Too Many Requests - Rate limit exceeded</li>
+            </ul>
+
+            <h3>Error Handling Example</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">Future<void> handleApiError(http.Response response) async {
+  switch (response.statusCode) {
+    case 401:
+      await handleUnauthorized();
+      break;
+    case 404:
+      showNotFoundError();
+      break;
+    case 409:
+      handleConflict();
+      break;
+    default:
+      final error = json.decode(response.body);
+      showError(error['message']);
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="best-practices">
+            <h2>Best Practices</h2>
+            
+            <h3>Performance</h3>
+            <ul>
+                <li>Cache frequently accessed data</li>
+                <li>Use pagination for large datasets</li>
+                <li>Implement request debouncing</li>
+                <li>Compress request/response data</li>
+            </ul>
+
+            <h3>Security</h3>
+            <ul>
+                <li>Store tokens securely</li>
+                <li>Clear sensitive data on logout</li>
+                <li>Validate all user input</li>
+                <li>Use HTTPS for all requests</li>
+            </ul>
+
+            <h3>User Experience</h3>
+            <ul>
+                <li>Show loading indicators</li>
+                <li>Provide clear error messages</li>
+                <li>Implement retry mechanisms</li>
+                <li>Support offline mode</li>
+            </ul>
+
+            <h3>Example Implementation</h3>
+            <div class="code-block">
+                <pre><code class="language-dart">class ApiService {
+  final _storage = FlutterSecureStorage();
+  final _cache = Cache();
+  
+  Future<T> request<T>({
+    required String endpoint,
+    required T Function(Map<String, dynamic>) parser,
+  }) async {
+    // Check cache first
+    final cached = await _cache.get(endpoint);
+    if (cached != null) return parser(cached);
+    
+    try {
+      final token = await _storage.read(key: 'auth_token');
+      final response = await http.get(
+        Uri.parse(endpoint),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        await _cache.set(endpoint, data);
+        return parser(data);
+      }
+      
+      throw ApiException(response);
+    } catch (e) {
+      // Handle error and retry if needed
+      rethrow;
+    }
+  }
+}</code></pre>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+<script>
+    hljs.highlightAll();
+</script>
+{% endblock %} 

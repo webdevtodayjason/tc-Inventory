@@ -31,6 +31,7 @@ app.db
 # Database scripts and dumps
 db_scripts/
 *.sql
+*.dump
 
 # Scripts (for security)
 scripts/

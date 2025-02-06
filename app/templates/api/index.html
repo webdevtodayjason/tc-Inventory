@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}TC Inventory API Documentation{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/api_docs.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="api-docs">
+    <div class="api-sidebar">
+        <nav>
+            <div class="sidebar-header">
+                <h3>API Documentation</h3>
+            </div>
+            <ul>
+                <li><a href="#introduction">Introduction</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#authentication">Authentication</a></li>
+                <li><a href="#mobile-api">Mobile API</a></li>
+                <li><a href="#postman">Postman Setup</a></li>
+                <li><a href="#resources">Resources</a></li>
+                <li><a href="#examples">Code Examples</a></li>
+                <li><a href="#support">Support</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="api-content">
+        <section id="introduction">
+            <h1>TC Inventory API Documentation</h1>
+            <p>Welcome to the TC Inventory API documentation. Our API enables you to integrate with the TC Inventory system for inventory management, barcode scanning, and checkout functionality.</p>
+            
+            <div class="api-quick-links">
+                <a href="{{ url_for('mobile_api.doc') }}" class="quick-link">
+                    <i class="fas fa-book"></i>
+                    <span>Interactive API Docs</span>
+                </a>
+                <a href="{{ url_for('api_docs.mobile_docs') }}" class="quick-link">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Mobile Guide</span>
+                </a>
+                <a href="{{ url_for('api_docs.api_examples') }}" class="quick-link">
+                    <i class="fas fa-code"></i>
+                    <span>Code Examples</span>
+                </a>
+                <a href="{{ url_for('api_docs.postman_collection') }}" class="quick-link">
+                    <i class="fas fa-download"></i>
+                    <span>Postman Collection</span>
+                </a>
+            </div>
+        </section>
+
+        <section id="getting-started">
+            <h2>Getting Started</h2>
+            <p>To get started with the TC Inventory API, you'll need:</p>
+            <ul>
+                <li>An account with API access</li>
+                <li>Your API credentials</li>
+                <li>Basic understanding of REST APIs</li>
+            </ul>
+
+            <h3>Available Environments</h3>
+            <div class="code-block">
+                <pre><code class="language-text">Development: http://127.0.0.1:5001
+Staging: https://tc-inventory-staging.up.railway.app
+Production: https://inventory.ticom.pro</code></pre>
+            </div>
+        </section>
+
+        <section id="authentication">
+            <h2>Authentication</h2>
+            <p>The API uses JWT (JSON Web Tokens) for authentication. To authenticate:</p>
+            
+            <h3>1. Get an Access Token</h3>
+            <div class="code-block">
+                <pre><code class="language-bash">curl -X POST http://127.0.0.1:5001/api/mobile/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username": "your_username", "pin": "your_pin"}'</code></pre>
+            </div>
+
+            <h3>2. Use the Token</h3>
+            <div class="code-block">
+                <pre><code class="language-bash">curl http://127.0.0.1:5001/api/mobile/items \
+    -H "Authorization: Bearer your_token_here"</code></pre>
+            </div>
+        </section>
+
+        <section id="mobile-api">
+            <h2>Mobile API</h2>
+            <p>The Mobile API provides endpoints specifically designed for the TC Inventory mobile app:</p>
+            
+            <h3>Key Features</h3>
+            <ul>
+                <li>Barcode scanning and lookup</li>
+                <li>Inventory search and filtering</li>
+                <li>Item and system checkout</li>
+                <li>Real-time updates</li>
+            </ul>
+
+            <p>For detailed mobile API documentation, see our <a href="{{ url_for('api_docs.mobile_docs') }}">Mobile Guide</a>.</p>
+        </section>
+
+        <section id="postman">
+            <h2>Postman Setup</h2>
+            <p>We provide a Postman collection and environment configurations to help you test the API:</p>
+
+            <div class="resources-grid">
+                <div class="resource-card">
+                    <h3>Collection</h3>
+                    <p>Complete API collection with all endpoints and example requests.</p>
+                    <a href="{{ url_for('api_docs.postman_collection') }}" class="btn">Download Collection</a>
+                </div>
+                
+                <div class="resource-card">
+                    <h3>Environments</h3>
+                    <p>Environment configurations for development, staging, and production.</p>
+                    <a href="{{ url_for('api_docs.postman_environments') }}" class="btn">Download Environments</a>
+                </div>
+            </div>
+
+            <h3>Setting Up Environments</h3>
+            <ol>
+                <li>Download both the collection and environments files</li>
+                <li>Import them into Postman</li>
+                <li>Select your environment from the environment dropdown (top-right)</li>
+                <li>Use the Login request to get a JWT token</li>
+                <li>The token will be automatically set for subsequent requests</li>
+            </ol>
+
+            <h3>Environment Variables</h3>
+            <ul>
+                <li><code>development</code>: Local development server URL</li>
+                <li><code>staging</code>: Staging server URL</li>
+                <li><code>production</code>: Production server URL</li>
+                <li><code>base_url</code>: Currently active server URL (automatically set)</li>
+                <li><code>jwt_token</code>: Your authentication token (automatically set after login)</li>
+                <li><code>query</code>: Search term for inventory searches</li>
+                <li><code>barcode</code>: Barcode for item lookups</li>
+            </ul>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Tip:</strong> The environment file includes all three environments. Simply switch between them using Postman's environment selector to test against different servers.
+            </div>
+        </section>
+
+        <section id="resources">
+            <h2>Resources</h2>
+            <div class="resources-grid">
+                <div class="resource-card">
+                    <h3>API Reference</h3>
+                    <p>Complete API reference with all endpoints, parameters, and responses.</p>
+                    <a href="{{ url_for('mobile_api.doc') }}" class="btn">View Reference</a>
+                </div>
+                
+                <div class="resource-card">
+                    <h3>Code Examples</h3>
+                    <p>Sample code in various languages showing common API usage.</p>
+                    <a href="{{ url_for('api_docs.api_examples') }}" class="btn">View Examples</a>
+                </div>
+                
+                <div class="resource-card">
+                    <h3>Postman Collection</h3>
+                    <p>Ready-to-use Postman collection for testing the API.</p>
+                    <a href="{{ url_for('api_docs.postman_collection') }}" class="btn">Download</a>
+                </div>
+                
+                <div class="resource-card">
+                    <h3>OpenAPI Spec</h3>
+                    <p>OpenAPI/Swagger specification file for the API.</p>
+                    <a href="{{ url_for('api_docs.openapi_spec') }}" class="btn">Download</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="examples">
+            <h2>Code Examples</h2>
+            
+            <h3>Python</h3>
+            <div class="code-block">
+                <pre><code class="language-python">import requests
+
+def get_inventory_items(token):
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/json'
+    }
+    response = requests.get(
+        'https://inventory.ticom.pro/api/mobile/items',
+        headers=headers
+    )
+    return response.json()</code></pre>
+            </div>
+
+            <h3>JavaScript</h3>
+            <div class="code-block">
+                <pre><code class="language-javascript">async function getInventoryItems(token) {
+    const response = await fetch('https://inventory.ticom.pro/api/mobile/items', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+        }
+    });
+    return response.json();
+}</code></pre>
+            </div>
+
+            <p>For more examples, visit our <a href="{{ url_for('api_docs.api_examples') }}">Code Examples</a> page.</p>
+        </section>
+
+        <section id="support">
+            <h2>Support</h2>
+            <p>Need help with the API? Here are some resources:</p>
+            <ul>
+                <li>Email: <a href="mailto:support@ticom.pro">support@ticom.pro</a></li>
+                <li>GitHub Issues: <a href="https://github.com/ticom/inventory/issues">Report a Bug</a></li>
+                <li>Status Page: <a href="https://status.ticom.pro">System Status</a></li>
+            </ul>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+<script>
+    hljs.highlightAll();
+</script>
+{% endblock %} 

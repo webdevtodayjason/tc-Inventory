@@ -18,7 +18,7 @@ A Flutter-based mobile companion app for the TC Inventory System.
 ## Requirements
 
 - Flutter 3.16.0 or higher
-- iOS 12.0 or higher
+- iOS 16.0 or higher
 - Xcode 14.0 or higher (for iOS builds)
 - macOS (for iOS development)
 - Android Studio (for Android development)
@@ -52,6 +52,53 @@ flutter run
 flutter build apk
 flutter run
 ```
+
+## API Documentation
+
+The TC Inventory API provides several ways to explore and test the API:
+
+### Interactive Documentation
+- **Swagger UI**: Access interactive API documentation at `/api/mobile/docs`
+- **API Guide**: View the comprehensive guide at `/api/docs/mobile`
+- **Code Examples**: Find implementation examples at `/api/docs/examples`
+
+### Testing Tools
+1. **Postman Collection**
+   - Download: `/api/docs/postman`
+   - Includes all API endpoints with examples
+   - Pre-configured authentication
+   - Request/response examples
+
+2. **Environment Configurations**
+   - Download: `/api/docs/postman/environments`
+   - Supports:
+     - Development (`http://127.0.0.1:5001`)
+     - Staging (`https://tc-inventory-staging.up.railway.app`)
+     - Production (`https://inventory.ticom.pro`)
+
+3. **OpenAPI Specification**
+   - YAML format: `/api/docs/openapi`
+   - JSON format: `/api/docs/openapi.json`
+   - Compatible with OpenAPI 3.0.3
+
+### API Environments
+
+The API supports three environments:
+
+1. **Development**
+   - URL: `http://127.0.0.1:5001/api/mobile`
+   - Use for local development and testing
+   - Full debugging capabilities
+
+2. **Staging**
+   - URL: `https://tc-inventory-staging.up.railway.app/api/mobile`
+   - Test environment with production-like data
+   - Safe for testing new features
+
+3. **Production**
+   - URL: `https://inventory.ticom.pro/api/mobile`
+   - Live production environment
+   - Requires proper authentication
 
 ## Barcode Scanner Configuration
 
@@ -134,6 +181,11 @@ flutter build appbundle
    - Run `flutter clean`
    - Delete build folders
    - Re-run `flutter pub get`
+
+4. API Connection
+   - Verify environment configuration
+   - Check network connectivity
+   - Validate authentication token
 
 ## Contributing
 
