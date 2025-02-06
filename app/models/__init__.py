@@ -6,9 +6,13 @@ from app.models.inventory import (
     ComputerModel,
     CPU,
     Tag,
-    InventoryTransaction,
-    BenchmarkResult
+    Transaction,
+    item_tags,
+    WikiPage,
+    WikiCategory,
+    PurchaseLink
 )
+from app.models.activity import Activity
 from app.models.config import Configuration
 
 __all__ = [
@@ -20,6 +24,10 @@ __all__ = [
     'ComputerModel',
     'CPU',
     'Tag',
-    'InventoryTransaction',
-    'BenchmarkResult'
+    'Transaction',
+    'item_tags',
+    'WikiPage',
+    'WikiCategory',
+    'PurchaseLink',
+    'Activity'
 ]

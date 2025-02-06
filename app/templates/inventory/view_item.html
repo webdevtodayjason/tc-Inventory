@@ -222,31 +222,36 @@
                 </div>
             </div>
 
-            <!-- Recent Checkouts -->
+            <!-- Recent Activity -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Recent Checkouts</h5>
+                    <h5 class="mb-0">Transaction History</h5>
                 </div>
                 <div class="card-body">
                     {% if item.transactions %}
                         <div class="list-group">
                             {% for transaction in item.transactions|sort(attribute='created_at', reverse=true) %}
-                            {% if transaction.transaction_type == 'check_out' %}
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">Checked out by {{ transaction.user.username }}</h6>
-                                    <small>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">
+                                            {% if transaction.quantity_changed > 0 %}
+                                                <span class="text-success">+{{ transaction.quantity_changed }}</span>
+                                            {% else %}
+                                                <span class="text-danger">{{ transaction.quantity_changed }}</span>
+                                            {% endif %}
+                                            {{ transaction.transaction_type }}
+                                        </h6>
+                                        <small class="text-muted">{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </div>
+                                    <p class="mb-1">By {{ transaction.user.username }}</p>
+                                    {% if transaction.notes %}
+                                        <small class="text-muted">{{ transaction.notes }}</small>
+                                    {% endif %}
                                 </div>
-                                <p class="mb-1">Quantity: {{ transaction.quantity_changed }}</p>
-                                {% if transaction.notes %}
-                                <small class="text-muted">Reason: {{ transaction.notes }}</small>
-                                {% endif %}
-                            </div>
-                            {% endif %}
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted mb-0">No checkout history available.</p>
+                        <p class="text-muted mb-0">No transaction history available.</p>
                     {% endif %}
                 </div>
             </div>

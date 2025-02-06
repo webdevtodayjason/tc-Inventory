@@ -64,7 +64,7 @@ class CPUForm(FlaskForm):
     ])
     speed = StringField('Speed', validators=[
         DataRequired(),
-        Regexp(r'^\d+(\.\d+)?\s*(GHz|MHz)$', message="Speed must be in format: 3.6 GHz or 3600 MHz")
+        Regexp(r'^\d+(\.\d+)?\s*(GHz|MHz|ghz|mhz)$', message="Speed must be in format: 3.5 GHz or 3500 MHz")
     ])
     cores = IntegerField('Cores', validators=[
         DataRequired(),
@@ -76,11 +76,30 @@ class CPUForm(FlaskForm):
     ])
 
     def validate_speed(self, field):
-        # Convert all speeds to GHz for consistency
-        value = field.data.lower()
-        if 'mhz' in value:
-            speed = float(value.replace('mhz', '').strip()) / 1000
-            field.data = f"{speed:.2f} GHz"
+        """Validate and format the speed value as a string"""
+        try:
+            # Convert input to lowercase for consistent processing
+            value = field.data.lower().strip()
+            
+            # Extract numeric part and unit
+            import re
+            match = re.match(r'(\d+(?:\.\d+)?)\s*(ghz|mhz)', value)
+            if not match:
+                raise ValidationError("Invalid speed format")
+                
+            number, unit = match.groups()
+            
+            # Format the speed consistently
+            if unit == 'mhz':
+                # Convert MHz to GHz for display
+                speed_value = float(number) / 1000
+                field.data = f"{speed_value:.2f} GHz"
+            else:
+                # Keep GHz as is, but format consistently
+                field.data = f"{float(number):.2f} GHz"
+            
+        except (ValueError, AttributeError) as e:
+            raise ValidationError('Invalid speed value')
 
 class ComputerSystemForm(FlaskForm):
     tracking_id = StringField('Tracking ID', validators=[Optional()])
@@ -104,18 +123,18 @@ class ComputerSystemForm(FlaskForm):
         ('PASSED', 'PASSED'),
         ('FAILED', 'FAILED')
     ], validators=[DataRequired()])
-    usb_ports_notes = TextAreaField('USB Ports Notes')
+    usb_ports_notes = TextAreaField('USB Ports Notes', validators=[Optional()])
     video_status = SelectField('Video Status', choices=[
         ('PASSED', 'PASSED'),
         ('FAILED', 'FAILED')
     ], validators=[DataRequired()])
-    video_notes = TextAreaField('Video Notes')
+    video_notes = TextAreaField('Video Notes', validators=[Optional()])
     network_status = SelectField('Network Status', choices=[
         ('PASSED', 'PASSED'),
         ('FAILED', 'FAILED')
     ], validators=[DataRequired()])
-    network_notes = TextAreaField('Network Notes')
-    general_notes = TextAreaField('General Notes')
+    network_notes = TextAreaField('Network Notes', validators=[Optional()])
+    general_notes = TextAreaField('General Notes', validators=[Optional()])
     
     def __init__(self, *args, **kwargs):
         super(ComputerSystemForm, self).__init__(*args, **kwargs)

@@ -74,6 +74,24 @@ class Tag(db.Model):
     def __repr__(self):
         return f'<Tag {self.name}>'
 
+class Transaction(db.Model):
+    __tablename__ = 'transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    quantity_changed = db.Column(db.Integer, nullable=False)
+    transaction_type = db.Column(db.String(20), nullable=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    
+    # Relationships
+    item = db.relationship('InventoryItem', backref='transactions')
+    user = db.relationship('User', backref='transactions')
+
+    def __repr__(self):
+        return f'<Transaction {self.transaction_type}: {self.quantity_changed}>'
+
 class InventoryItem(db.Model):
     __tablename__ = 'items'
     
@@ -117,13 +135,11 @@ class CPU(db.Model):
     __tablename__ = 'cpu'
 
     id = db.Column(db.Integer, primary_key=True)
-    manufacturer = db.Column(db.String(50), nullable=False)
-    model = db.Column(db.String(100), nullable=False)
-    speed = db.Column(db.Float, nullable=False)
-    cores = db.Column(db.Integer, nullable=False)
-    benchmark = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    manufacturer = db.Column(db.String(64), nullable=False)
+    model = db.Column(db.String(128), nullable=False)
+    speed = db.Column(db.String(32))
+    cores = db.Column(db.Integer)
+    benchmark = db.Column(db.Integer)
 
     def __repr__(self):
         return f'<CPU {self.manufacturer} {self.model}>'
@@ -142,27 +158,6 @@ class ComputerModel(db.Model):
     def __repr__(self):
         return f'<ComputerModel {self.manufacturer} {self.model_name}>'
 
-class InventoryTransaction(db.Model):
-    """Model for inventory transactions"""
-    __tablename__ = 'inventory_transactions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    transaction_type = db.Column(db.String(50), nullable=False)  # checkout, checkin, adjustment
-    quantity = db.Column(db.Integer, nullable=False)
-    notes = db.Column(db.Text)
-    checkout_reason = db.Column(db.String(100))  # For mobile checkouts
-    is_mobile = db.Column(db.Boolean, default=False)  # Whether transaction was made from mobile app
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # Relationships
-    item = relationship('InventoryItem', backref='transactions')
-    user = relationship('User', backref='transactions')
-
-    def __repr__(self):
-        return f'<InventoryTransaction {self.transaction_type}:{self.quantity}>'
-
 class ComputerSystem(db.Model):
     """Model for computer systems"""
     __tablename__ = 'computer_systems'
@@ -170,9 +165,9 @@ class ComputerSystem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tracking_id = db.Column(db.String(50), unique=True, nullable=False)
     model_id = db.Column(db.Integer, db.ForeignKey('computer_model.id'))
-    serial_number = db.Column(db.String(100))
+    serial_tag = db.Column(db.String(100))
     status = db.Column(db.String(50), default='available')  # available, checked_out, maintenance, retired
-    location = db.Column(db.String(100))
+    storage_location = db.Column(db.String(100))
     notes = db.Column(db.Text)
     cpu_id = db.Column(db.Integer, db.ForeignKey('cpu.id'))
     ram = db.Column(db.String(50))
@@ -180,6 +175,18 @@ class ComputerSystem(db.Model):
     os = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    creator_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Testing fields
+    cpu_benchmark = db.Column(db.Float)
+    usb_ports_status = db.Column(db.String(50))
+    usb_ports_notes = db.Column(db.Text)
+    video_status = db.Column(db.String(50))
+    video_notes = db.Column(db.Text)
+    network_status = db.Column(db.String(50))
+    network_notes = db.Column(db.Text)
+    general_notes = db.Column(db.Text)
+    tested_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Mobile checkout fields
     checked_out_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -190,8 +197,16 @@ class ComputerSystem(db.Model):
     # Relationships
     model = relationship('ComputerModel', backref='systems')
     cpu = relationship('CPU', backref='systems')
-    checked_out_by = relationship('User', backref='checked_out_systems')
+    checked_out_by = relationship('User', 
+                                foreign_keys=[checked_out_by_id],
+                                backref='checked_out_systems')
     tags = db.relationship('Tag', secondary=system_tags, lazy='joined')
+    tester = relationship('User', 
+                         foreign_keys=[tested_by],
+                         backref='tested_systems')
+    creator = relationship('User',
+                         foreign_keys=[creator_id],
+                         backref='created_systems')
 
     def __repr__(self):
         return f'<ComputerSystem {self.tracking_id}>'

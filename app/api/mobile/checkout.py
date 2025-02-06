@@ -1,7 +1,7 @@
 """Mobile API Checkout Routes"""
 from flask import jsonify, request, current_app
 from app.api.mobile import bp, csrf, api
-from app.models.inventory import InventoryItem, ComputerSystem, InventoryTransaction
+from app.models.inventory import InventoryItem, ComputerSystem, Transaction
 from app.models.mobile import MobileCheckoutReason
 from app.api.mobile.auth import token_required
 from app import db
@@ -122,7 +122,7 @@ class Checkout(Resource):
 
                 try:
                     # Create transaction
-                    transaction = InventoryTransaction(
+                    transaction = Transaction(
                         item_id=item.id,
                         user_id=current_user.id,
                         quantity=quantity,
@@ -225,10 +225,10 @@ class CheckoutHistory(Resource):
         """Get user's checkout history"""
         try:
             # Get item transactions
-            transactions = InventoryTransaction.query.filter_by(
+            transactions = Transaction.query.filter_by(
                 user_id=current_user.id,
                 transaction_type='checkout'
-            ).order_by(InventoryTransaction.timestamp.desc()).all()
+            ).order_by(Transaction.timestamp.desc()).all()
 
             # Get system checkouts
             systems = ComputerSystem.query.filter_by(
