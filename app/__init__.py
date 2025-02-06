@@ -83,12 +83,13 @@ def create_app(config_class=Config):
     from app.models import user, inventory, config, mobile
 
     # Register blueprints
-    from app.routes import auth, inventory, admin, wiki, roadmap
+    from app.routes import auth, inventory, admin, wiki, roadmap, main
     app.register_blueprint(auth.bp)
     app.register_blueprint(inventory.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(wiki.bp)
     app.register_blueprint(roadmap.bp)
+    app.register_blueprint(main.bp)
 
     # Register mobile API blueprint
     from app.api.mobile import bp as mobile_bp
