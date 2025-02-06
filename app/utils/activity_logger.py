@@ -15,59 +15,47 @@ def format_details(details):
             
     return " ".join(s for s in formatted if s)
 
-def log_activity(action, item_type, item_id, details=None):
+def log_activity(user_id, action, message, details=None):
     """
     Log database activity with user information in a human-readable format.
     """
     try:
         # Get user info
-        username = current_user.username if not current_user.is_anonymous else 'Anonymous'
+        user = User.query.get(user_id)
+        username = user.username if user else 'Unknown'
         
-        # Make item type more readable
-        item_type = item_type.replace('_', ' ').title()
-        
-        # Create readable action phrase
-        if action == 'add':
-            action_phrase = 'added new'
-        elif action == 'update':
-            action_phrase = 'updated'
-        elif action == 'delete':
-            action_phrase = 'deleted'
-        elif action == 'checkout':
-            action_phrase = 'checked out'
+        # Format the log message based on action type
+        if action == 'mobile_checkout':
+            # For mobile checkouts, use the provided message directly
+            log_message = message
+            if details:
+                # Add any additional details to the log
+                detail_str = ' '.join(f"{k}={v}" for k, v in details.items() if v is not None)
+                if detail_str:
+                    log_message += f" ({detail_str})"
         else:
-            action_phrase = action
-        
-        # Format the log message
-        if action == 'update' and details and 'changes' in details:
-            # Convert the changes list into a single line format
-            changes = []
-            for change in details['changes']:
-                field, values = change.split(':\n', 1)
-                old_val = values.split('\n')[0].replace('Old Value: ', '')
-                new_val = values.split('\n')[1].replace('New Value: ', '')
-                changes.append(f"change - {field} - {old_val} to {new_val}")
-            
-            changes_str = '; '.join(changes)
-            message = f"User {username} {action_phrase} {item_type} '{details.get('name', '')}' {changes_str}"
-        else:
-            details_str = format_details(details)
-            message = f"User {username} {action_phrase} {item_type} {details_str}"
+            # For other actions, use the standard format
+            action_phrase = action.replace('_', ' ').title()
+            log_message = f"User {username} {action_phrase} {message}"
+            if details:
+                detail_str = ' '.join(f"{k}={v}" for k, v in details.items() if v is not None)
+                if detail_str:
+                    log_message += f" ({detail_str})"
         
         # Log the activity
-        current_app.logger.info(message)
+        current_app.logger.info(log_message)
         
     except Exception as e:
         current_app.logger.error(f"Error logging activity: {str(e)}")
 
 def log_inventory_activity(action, item, details=None):
     """Convenience function for logging inventory item activities"""
-    log_activity(action, 'inventory_item', item.id, details)
+    log_activity(item.id, action, item.name, details)
 
 def log_system_activity(action, system, details=None):
     """Convenience function for logging computer system activities"""
-    log_activity(action, 'computer_system', system.id, details)
+    log_activity(system.id, action, system.name, details)
 
 def log_user_activity(action, user, details=None):
     """Convenience function for logging user-related activities"""
-    log_activity(action, 'user', user.id, details) 
+    log_activity(user.id, action, user.username, details) 

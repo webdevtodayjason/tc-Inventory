@@ -67,3 +67,9 @@ htmlcov/
 .cursorrules
 tcinvintory.code-workspace
 
+# Keep ignoring scripts directory in general
+/scripts/*
+
+# But allow our specific database setup script
+!/scripts/setup_staging_db.py
+
