@@ -16,7 +16,7 @@ itsdangerous==2.2.0
 Jinja2==3.1.5
 MarkupSafe>=2.1.5
 click==8.1.8
-blinker==1.7.0
+blinker==1.9.0
 qrcode==8.0
 reportlab==4.3.0
 pytest==8.3.4
