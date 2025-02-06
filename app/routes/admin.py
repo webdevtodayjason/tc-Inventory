@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from app.models.config import Configuration
 from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
-    ComputerModel, CPU, InventoryTransaction
+    ComputerModel, CPU, Transaction
 )
 from app.routes.inventory import admin_required
 from app import db
@@ -252,35 +252,50 @@ def manage_config():
 @admin_required
 def view_logs():
     try:
-        log_file = 'logs/app.log'
         logs = []
+        log_start_date = None
+        log_end_date = None
         
-        if os.path.exists(log_file):
-            with open(log_file, 'r') as f:
-                logs = f.readlines()[-100:]  # Get last 100 lines
-            logs.reverse()  # Show newest first
-            
-            # Get log date range
-            log_start_date = None
-            log_end_date = None
-            
-            if logs:
-                # Parse dates from log entries
-                for log in logs:
-                    try:
-                        date_str = log.split('[')[0].strip()
-                        date = datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
-                        if log_start_date is None or date < log_start_date:
-                            log_start_date = date
-                        if log_end_date is None or date > log_end_date:
-                            log_end_date = date
-                    except:
-                        continue
-            
-            # Format dates for template
-            log_start_date = log_start_date.strftime('%Y-%m-%d') if log_start_date else datetime.now().strftime('%Y-%m-%d')
-            log_end_date = log_end_date.strftime('%Y-%m-%d') if log_end_date else datetime.now().strftime('%Y-%m-%d')
-            
+        # Read from both log files
+        log_files = ['logs/app.log', 'logs/activity.log']
+        
+        for log_file in log_files:
+            if os.path.exists(log_file):
+                with open(log_file, 'r') as f:
+                    file_logs = f.readlines()
+                    logs.extend(file_logs)
+        
+        # Sort all logs by timestamp
+        def get_log_timestamp(log):
+            try:
+                date_str = log.split('[')[0].strip()
+                return datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
+            except:
+                return datetime.min
+        
+        logs.sort(key=get_log_timestamp, reverse=True)
+        
+        # Get last 100 lines
+        logs = logs[:100]
+        
+        # Get log date range
+        if logs:
+            # Parse dates from log entries
+            for log in logs:
+                try:
+                    date_str = log.split('[')[0].strip()
+                    date = datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
+                    if log_start_date is None or date < log_start_date:
+                        log_start_date = date
+                    if log_end_date is None or date > log_end_date:
+                        log_end_date = date
+                except:
+                    continue
+        
+        # Format dates for template
+        log_start_date = log_start_date.strftime('%Y-%m-%d') if log_start_date else datetime.now().strftime('%Y-%m-%d')
+        log_end_date = log_end_date.strftime('%Y-%m-%d') if log_end_date else datetime.now().strftime('%Y-%m-%d')
+        
         return render_template('admin/logs.html', logs=logs, log_start_date=log_start_date, log_end_date=log_end_date)
     except Exception as e:
         current_app.logger.error(f"Error viewing logs: {str(e)}")
@@ -296,19 +311,30 @@ def download_logs():
         # Add one day to end_date to include the entire day
         end_date = end_date + timedelta(days=1)
         
-        log_file = 'logs/app.log'
         filtered_logs = []
+        log_files = ['logs/app.log', 'logs/activity.log']
         
-        if os.path.exists(log_file):
-            with open(log_file, 'r') as f:
-                for line in f:
-                    try:
-                        date_str = line.split('[')[0].strip()
-                        log_date = datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
-                        if start_date <= log_date <= end_date:
-                            filtered_logs.append(line)
-                    except:
-                        continue
+        for log_file in log_files:
+            if os.path.exists(log_file):
+                with open(log_file, 'r') as f:
+                    for line in f:
+                        try:
+                            date_str = line.split('[')[0].strip()
+                            log_date = datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
+                            if start_date <= log_date <= end_date:
+                                filtered_logs.append(line)
+                        except:
+                            continue
+        
+        # Sort filtered logs by timestamp
+        def get_log_timestamp(log):
+            try:
+                date_str = log.split('[')[0].strip()
+                return datetime.strptime(date_str, '%Y-%m-%d %I:%M:%S %p')
+            except:
+                return datetime.min
+        
+        filtered_logs.sort(key=get_log_timestamp, reverse=True)
         
         # Create in-memory file
         mem_file = io.StringIO()
@@ -474,7 +500,7 @@ def export_table():
             'computer_models': ComputerModel,
             'cpus': CPU,
             'users': User,
-            'inventory_transactions': InventoryTransaction
+            'transactions': Transaction
         }
         
         if table_name not in table_mappings:
@@ -700,3 +726,37 @@ def import_table():
         current_app.logger.error(error_msg)
         flash(error_msg, 'danger')
         return redirect(url_for('admin.backup'))
+
+@bp.route('/config/read_only_mode', methods=['POST'])
+@login_required
+@admin_required
+def update_read_only_mode():
+    """Update read-only mode setting"""
+    read_only = request.form.get('read_only_mode', 'false')
+    Configuration.set_value(
+        'read_only_mode',
+        'true' if read_only == 'on' else 'false',
+        'When enabled, all create, edit, and delete operations are disabled'
+    )
+    flash('Read-only mode setting updated successfully', 'success')
+    return redirect(url_for('admin.config'))
+
+@bp.route('/logs/clear', methods=['POST'])
+@login_required
+@admin_required
+def clear_logs():
+    try:
+        # Clear both log files
+        log_files = ['logs/app.log', 'logs/activity.log']
+        for log_file in log_files:
+            if os.path.exists(log_file):
+                # Open file in write mode to clear it
+                with open(log_file, 'w') as f:
+                    f.write('')  # Write empty string to clear file
+                
+        flash('Logs cleared successfully!', 'success')
+    except Exception as e:
+        current_app.logger.error(f"Error clearing logs: {str(e)}")
+        flash('Error clearing logs', 'danger')
+    
+    return redirect(url_for('admin.view_logs'))

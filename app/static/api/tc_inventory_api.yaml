@@ -1,0 +1,528 @@
+openapi: 3.0.3
+info:
+  title: TC Inventory Mobile API
+  version: '1.0'
+  description: |
+    Mobile access to the TC Inventory System. Enables inventory management, barcode scanning, 
+    and checkout functionality through mobile devices.
+
+servers:
+  - url: http://127.0.0.1:5001/api/mobile
+    description: Development
+  - url: https://tc-inventory-staging.up.railway.app/api/mobile
+    description: Staging
+  - url: https://inventory.ticom.pro/api/mobile
+    description: Production
+
+security:
+  - Bearer: []
+
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Add "Bearer " prefix to your JWT token'
+
+  schemas:
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Unique identifier for the tag
+        name:
+          type: string
+          maxLength: 50
+          example: Testing
+          description: Tag name (max 50 chars)
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: '#FF0000'
+          description: Hex color code (e.g. #FF0000)
+
+    ComputerModel:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Unique identifier for the model
+        manufacturer:
+          type: string
+          example: Dell
+          description: Manufacturer name (e.g. Dell, HP)
+        model_name:
+          type: string
+          example: Optiplex 7090
+          description: Model name/number
+        type:
+          type: string
+          enum: [desktop, laptop, server, other]
+          example: desktop
+          description: System type
+
+    CPU:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Unique identifier for the CPU
+        manufacturer:
+          type: string
+          example: Intel
+          description: CPU manufacturer (e.g. Intel, AMD)
+        model:
+          type: string
+          example: Core i7-11700
+          description: CPU model name
+        speed:
+          type: string
+          example: '2.5'
+          description: Clock speed in GHz
+        benchmark:
+          type: integer
+          example: 24356
+          description: PassMark score (if available)
+
+    CheckoutHistory:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [item, system]
+          description: Transaction type
+        date:
+          type: string
+          format: date-time
+          description: ISO 8601 formatted date
+        item_name:
+          type: string
+          description: Item name (for items)
+        system_name:
+          type: string
+          description: System name (for systems)
+        quantity:
+          type: integer
+          description: Quantity checked out (for items)
+        reason:
+          type: string
+          description: Checkout reason
+        notes:
+          type: string
+          description: Additional notes
+
+    PurchaseLink:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the link
+        url:
+          type: string
+          format: uri
+          description: Purchase URL
+        title:
+          type: string
+          description: Link title/description
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 formatted creation date
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        tracking_id:
+          type: string
+          example: TC-B95F49A3
+        name:
+          type: string
+          example: USB Network Adapter
+        description:
+          type: string
+          example: Gigabit USB 3.0 to RJ45 adapter
+        quantity:
+          type: integer
+          example: 5
+        min_quantity:
+          type: integer
+          example: 2
+        reorder_threshold:
+          type: integer
+          example: 3
+        location:
+          type: string
+          example: Shelf A3
+        storage_location:
+          type: string
+          example: Warehouse 1
+        manufacturer:
+          type: string
+          example: TP-Link
+        mpn:
+          type: string
+          example: UE300
+        image_url:
+          type: string
+          format: uri
+          example: https://inventory.ticom.pro/images/items/UE300.jpg
+        cost:
+          type: number
+          format: float
+          example: 19.99
+        sell_price:
+          type: number
+          format: float
+          example: 29.99
+        purchase_url:
+          type: string
+          format: uri
+          example: https://www.amazon.com/dp/B00YUU3KC6
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-02-06T12:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2024-02-06T14:30:00Z'
+        category_id:
+          type: integer
+          example: 5
+        status:
+          type: string
+          enum: [available, reserved, checked_out, maintenance, retired]
+          example: available
+        creator_id:
+          type: integer
+          example: 1
+        creator:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            username:
+              type: string
+              example: jsmith
+        category:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 5
+            name:
+              type: string
+              example: Network Adapters
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckoutHistory'
+        purchase_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseLink'
+
+    System:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        tracking_id:
+          type: string
+          example: TC-3C7B2D9A
+        model:
+          $ref: '#/components/schemas/ComputerModel'
+        serial_number:
+          type: string
+          example: SN123456789
+        status:
+          type: string
+          enum: [available, reserved, checked_out, maintenance, retired]
+          example: available
+        location:
+          type: string
+          example: Lab 2
+        notes:
+          type: string
+          example: Fresh Windows install, ready for use
+        cpu:
+          $ref: '#/components/schemas/CPU'
+        ram:
+          type: string
+          example: 32GB
+        storage:
+          type: string
+          example: 1TB NVMe SSD
+        os:
+          type: string
+          example: Windows 11 Pro
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+
+    SearchResults:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/Item'
+              - $ref: '#/components/schemas/System'
+        total:
+          type: integer
+          example: 42
+          description: Total number of results
+        pages:
+          type: integer
+          example: 3
+          description: Total number of pages
+        current_page:
+          type: integer
+          example: 1
+          description: Current page number
+        has_next:
+          type: boolean
+          example: true
+          description: Whether there is a next page
+        has_prev:
+          type: boolean
+          example: false
+          description: Whether there is a previous page
+
+    Login:
+      type: object
+      required:
+        - username
+        - pin
+      properties:
+        username:
+          type: string
+          example: jsmith
+          description: Username
+        pin:
+          type: string
+          example: '123456'
+          description: PIN code
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: User ID
+        username:
+          type: string
+          example: jsmith
+          description: Username
+        role:
+          type: string
+          example: technician
+          description: User role
+
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+          description: JWT token
+        user:
+          $ref: '#/components/schemas/User'
+
+    CheckoutReason:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Reason ID
+        name:
+          type: string
+          example: CLIENT INSTALL
+          description: Reason name
+        description:
+          type: string
+          example: Installation at client site
+          description: Reason description
+
+    CheckoutRequest:
+      type: object
+      required:
+        - type
+        - id
+        - reason_id
+      properties:
+        type:
+          type: string
+          enum: [item, system]
+          example: item
+          description: Type of checkout (item/system)
+        id:
+          type: integer
+          example: 1
+          description: Item/System ID
+        reason_id:
+          type: integer
+          example: 1
+          description: Checkout reason ID
+        quantity:
+          type: integer
+          example: 1
+          description: Quantity to checkout (for items)
+        notes:
+          type: string
+          example: Needed for Client ABC setup
+          description: Checkout notes
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user
+      description: Login with username and PIN to get JWT token
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Too many login attempts
+
+  /items:
+    get:
+      summary: List items
+      description: Get list of inventory items
+      tags:
+        - items
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Items per page
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [available, reserved, checked_out, maintenance, retired]
+          description: Filter by status
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+
+  /items/{id}:
+    get:
+      summary: Get item details
+      description: Get detailed information about an item
+      tags:
+        - items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Item ID
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404':
+          description: Item not found
+
+  /search:
+    get:
+      summary: Search items and systems
+      description: Search inventory using various criteria
+      tags:
+        - search
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [item, system, all]
+            default: all
+          description: Type of results to return
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+
+  /checkout:
+    post:
+      summary: Checkout item or system
+      description: Process a checkout request
+      tags:
+        - checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: Checkout successful
+        '400':
+          description: Invalid request
+        '404':
+          description: Item/System not found
+        '409':
+          description: Item/System not available 

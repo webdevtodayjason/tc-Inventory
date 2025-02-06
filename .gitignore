@@ -16,6 +16,7 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -31,6 +32,7 @@ app.db
 # Database scripts and dumps
 db_scripts/
 *.sql
+*.dump
 
 # Scripts (for security)
 scripts/
@@ -40,6 +42,7 @@ scripts/
 .vscode/
 *.swp
 *.swo
+.cursor/
 
 # OS
 .DS_Store
@@ -72,4 +75,12 @@ tcinvintory.code-workspace
 
 # But allow our specific database setup script
 !/scripts/setup_staging_db.py
+
+# Virtual Environment
+venv/
+ENV/
+
+# Custom
+uploads/
+temp/
 

@@ -11,11 +11,13 @@ from flask_wtf.csrf import CSRFProtect
 from config import Config
 import time
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 csrf = CSRFProtect()
+jwt = JWTManager()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -72,6 +74,7 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+    jwt.init_app(app)
     
     # Enable CORS for all routes
     CORS(app)
@@ -83,13 +86,14 @@ def create_app(config_class=Config):
     from app.models import user, inventory, config, mobile
 
     # Register blueprints
-    from app.routes import auth, inventory, admin, wiki, roadmap, main
+    from app.routes import auth, inventory, admin, wiki, roadmap, main, api_docs
     app.register_blueprint(auth.bp)
     app.register_blueprint(inventory.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(wiki.bp)
     app.register_blueprint(roadmap.bp)
     app.register_blueprint(main.bp)
+    app.register_blueprint(api_docs.bp)
 
     # Register mobile API blueprint
     from app.api.mobile import bp as mobile_bp

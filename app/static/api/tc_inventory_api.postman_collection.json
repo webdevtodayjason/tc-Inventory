@@ -1,0 +1,212 @@
+{
+  "info": {
+    "name": "TC Inventory API",
+    "description": "API collection for TC Inventory System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"your_username\",\n    \"pin\": \"your_pin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "login"]
+            },
+            "description": "Authenticate user and get JWT token"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "refresh"]
+            },
+            "description": "Refresh JWT token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/search/items/search?q={{query}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "search", "items", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{query}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Search inventory items"
+          }
+        },
+        {
+          "name": "Search Systems",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/search/systems/search?q={{query}}&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "search", "systems", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{query}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Search computer systems"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "Get Checkout Reasons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/checkout/reasons",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "checkout", "reasons"]
+            },
+            "description": "Get list of valid checkout reasons"
+          }
+        },
+        {
+          "name": "Search Item by Barcode",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/checkout/search/{{barcode}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "checkout", "search", "{{barcode}}"]
+            },
+            "description": "Search for an item by barcode"
+          }
+        },
+        {
+          "name": "Process Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"item\",\n    \"id\": 1,\n    \"reason_id\": 1,\n    \"quantity\": 1,\n    \"notes\": \"Checkout via mobile app\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "checkout"]
+            },
+            "description": "Process a checkout transaction"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5001",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_jwt_token",
+      "type": "string"
+    },
+    {
+      "key": "query",
+      "value": "search_term",
+      "type": "string"
+    },
+    {
+      "key": "barcode",
+      "value": "TC-XXXXXXXX",
+      "type": "string"
+    }
+  ]
+} 

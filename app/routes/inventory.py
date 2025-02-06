@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
-    InventoryTransaction, ComputerModel, CPU, Tag, item_tags,
+    Transaction, ComputerModel, CPU, Tag, item_tags,
     WikiPage, WikiCategory, PurchaseLink
 )
 from app.models.config import Configuration
@@ -224,7 +224,7 @@ def add_item():
 def view_item(id):
     # Get item with transactions eager loaded
     item = InventoryItem.query.options(
-        db.joinedload(InventoryItem.transactions).joinedload(InventoryTransaction.user)
+        db.joinedload(InventoryItem.transactions).joinedload(Transaction.user)
     ).get_or_404(id)
     
     # Generate barcode
@@ -277,19 +277,15 @@ def edit_item(id):
     if request.method == 'POST':
         try:
             # Store original values for logging
+            original_quantity = item.quantity
+            original_location = item.storage_location
             original_values = {
-                'name': item.name,
-                'category': item.category.name if item.category else None,
-                'quantity': item.quantity,
                 'location': item.storage_location,
-                'manufacturer': item.manufacturer,
+                'name': item.name,
                 'description': item.description,
-                'min_quantity': item.min_quantity,
-                'reorder_threshold': item.reorder_threshold,
+                'manufacturer': item.manufacturer,
                 'mpn': item.mpn,
-                'cost': item.cost,
-                'sell_price': item.sell_price,
-                'tags': [tag.name for tag in item.tags]
+                'category': item.category.name if item.category else None
             }
             
             # Update basic fields individually
@@ -308,6 +304,44 @@ def edit_item(id):
             item.cost = form.cost.data
             item.sell_price = form.sell_price.data
             item.category_id = form.category.data
+            
+            # If quantity changed, create a transaction record
+            if item.quantity != original_quantity:
+                quantity_change = item.quantity - original_quantity
+                transaction = Transaction(
+                    item_id=item.id,
+                    user_id=current_user.id,
+                    quantity_changed=quantity_change,
+                    transaction_type='adjustment',
+                    notes=f'Quantity adjusted from {original_quantity} to {item.quantity}'
+                )
+                db.session.add(transaction)
+                
+                # Log the quantity change
+                log_inventory_activity('adjustment', item, {
+                    'old_quantity': original_quantity,
+                    'new_quantity': item.quantity,
+                    'tracking_id': item.tracking_id
+                })
+            
+            # Check if any other fields changed
+            new_values = {
+                'location': item.storage_location,
+                'name': item.name,
+                'description': item.description,
+                'manufacturer': item.manufacturer,
+                'mpn': item.mpn,
+                'category': item.category.name if item.category else None
+            }
+            
+            # Log item update if any fields changed
+            if any(original_values[k] != new_values[k] for k in original_values):
+                changes = {k: {'old': original_values[k], 'new': new_values[k]} 
+                          for k in original_values if original_values[k] != new_values[k]}
+                log_inventory_activity('update_item', item, {
+                    'changes': changes,
+                    'tracking_id': item.tracking_id
+                })
             
             # Update purchase links
             purchase_link_urls = request.form.getlist('purchase_link_urls[]')
@@ -344,37 +378,6 @@ def edit_item(id):
                     item.tags.append(tag)
             
             db.session.commit()
-            
-            # Get new values for logging
-            new_values = {
-                'name': item.name,
-                'category': item.category.name if item.category else None,
-                'quantity': item.quantity,
-                'location': item.storage_location,
-                'manufacturer': item.manufacturer,
-                'description': item.description,
-                'min_quantity': item.min_quantity,
-                'reorder_threshold': item.reorder_threshold,
-                'mpn': item.mpn,
-                'cost': item.cost,
-                'sell_price': item.sell_price,
-                'tags': [tag.name for tag in item.tags]
-            }
-            
-            # Create details string for logging
-            changes = []
-            for key in original_values:
-                if key == 'tags':
-                    if set(original_values[key]) != set(new_values[key]):
-                        changes.append(f"{key}:\nOld Value: {', '.join(original_values[key])}\nNew Value: {', '.join(new_values[key])}")
-                elif original_values[key] != new_values[key]:
-                    changes.append(f"{key}:\nOld Value: {original_values[key]}\nNew Value: {new_values[key]}")
-            
-            if changes:
-                log_inventory_activity('update', item, {
-                    'name': item.name,
-                    'changes': changes
-                })
             
             flash('Item updated successfully!', 'success')
             return redirect(url_for('inventory.dashboard'))
@@ -447,6 +450,7 @@ def add_cpu():
         if form.validate_on_submit():
             print("Form validation successful")
             try:
+                # Speed is already formatted as "X.XX GHz" by form validation
                 cpu = CPU(
                     manufacturer=form.manufacturer.data,
                     model=form.model.data,
@@ -477,19 +481,53 @@ def add_cpu():
 def edit_cpu(id):
     cpu = CPU.query.get_or_404(id)
     form = CPUForm(obj=cpu)
+    
+    if request.method == 'GET':
+        # Speed is already in the correct format from database
+        form.speed.data = cpu.speed
+    
     if form.validate_on_submit():
         try:
+            # Store original values for logging
+            original_values = {
+                'manufacturer': cpu.manufacturer,
+                'model': cpu.model,
+                'speed': cpu.speed,
+                'cores': cpu.cores,
+                'benchmark': cpu.benchmark
+            }
+            
+            # Update CPU fields
             cpu.manufacturer = form.manufacturer.data
             cpu.model = form.model.data
-            cpu.speed = form.speed.data
+            cpu.speed = form.speed.data  # Speed is already formatted by form validation
             cpu.cores = form.cores.data
             cpu.benchmark = form.benchmark.data
+            
             db.session.commit()
+            
+            # Log the update
+            changes = {k: {'old': original_values[k], 'new': getattr(cpu, k)} 
+                      for k in original_values 
+                      if original_values[k] != getattr(cpu, k)}
+            
+            if changes:
+                log_inventory_activity('update_cpu', cpu, {
+                    'changes': changes
+                })
+            
             flash('CPU updated successfully!', 'success')
             return redirect(url_for('inventory.manage_cpus'))
+            
         except Exception as e:
             db.session.rollback()
             flash(f'Error updating CPU: {str(e)}', 'danger')
+            current_app.logger.error(f'Error updating CPU: {str(e)}')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'{field}: {error}', 'danger')
+    
     return render_template('inventory/manage/edit_cpu.html', form=form, cpu=cpu)
 
 @bp.route('/manage/cpus/<int:id>/delete', methods=['POST'])
@@ -560,9 +598,9 @@ def checkout():
     # Get recent transactions if tech is logged in
     recent_transactions = []
     if current_tech:
-        recent_transactions = InventoryTransaction.query\
+        recent_transactions = Transaction.query\
             .filter_by(transaction_type='check_out')\
-            .order_by(InventoryTransaction.created_at.desc())\
+            .order_by(Transaction.created_at.desc())\
             .limit(5)\
             .all()
     
@@ -642,7 +680,7 @@ def process_checkout():
             quantity = 1
         
         # Create transaction record
-        transaction = InventoryTransaction(
+        transaction = Transaction(
             item_id=item.id,
             transaction_type='check_out',
             quantity=quantity,
@@ -947,7 +985,7 @@ def add_system():
     if request.method == 'POST':
         print("\n=== Debug: Add System POST Request ===")
         print(f"Form Data: {request.form.to_dict()}")
-        print(f"Serial Tag from form: {form.serial_tag.data}")
+        print(f"Serial Number from form: {form.serial_tag.data}")
         
         if form.validate():
             try:
@@ -979,55 +1017,18 @@ def add_system():
                 
                 print(f"Debug: Created system with serial_tag: {system.serial_tag}")
                 
-                # Add system to session first
+                # Add tags
+                if form.tags.data:
+                    tags = Tag.query.filter(Tag.id.in_(form.tags.data)).all()
+                    system.tags.extend(tags)
+                
                 db.session.add(system)
-                db.session.flush()  # Flush to get the system ID
-                
-                # Handle tags
-                print("\n=== Processing tags ===")
-                raw_tags = request.form.get('tags', '').split(',')
-                print(f"Raw tags from form: {raw_tags}")
-                
-                # Convert to integers and validate
-                tag_ids = []
-                for tag_id in raw_tags:
-                    if tag_id.strip():  # Only process non-empty strings
-                        try:
-                            tag_ids.append(int(tag_id))
-                        except (ValueError, TypeError) as e:
-                            print(f"Invalid tag ID {tag_id}: {str(e)}")
-                print(f"Processed tag IDs: {tag_ids}")
-                
-                if tag_ids:
-                    # Fetch and validate tags
-                    tags = Tag.query.filter(Tag.id.in_(tag_ids)).all()
-                    found_ids = [t.id for t in tags]
-                    print(f"Found tags: {found_ids}")
-                    
-                    # Check if all requested tags were found
-                    missing = set(tag_ids) - set(found_ids)
-                    if missing:
-                        raise ValueError(f"Some tags were not found: {missing}")
-                    
-                    # Add tags one by one
-                    for tag in tags:
-                        system.tags.append(tag)
-                        print(f"Added tag: {tag.id} - {tag.name}")
-                
                 db.session.commit()
+                
                 print(f"Debug: After commit, system serial_tag: {system.serial_tag}")
                 
-                # Create a descriptive name for logging
-                system_name = f"{model.manufacturer} {model.model_name}"
-                if cpu:
-                    system_name += f" - {cpu.manufacturer} {cpu.model}"
-                
                 # Log the activity
-                log_system_activity('add', system, {
-                    'name': system_name,
-                    'model': f"{model.manufacturer} {model.model_name}",
-                    'cpu': f"{cpu.manufacturer} {cpu.model}" if cpu else None
-                })
+                log_system_activity('add', system)
                 
                 flash('Computer system added successfully!', 'success')
                 return redirect(url_for('inventory.dashboard', active_tab='systems'))
@@ -1166,7 +1167,7 @@ def edit_system(id):
                     
                     if changes:
                         log_system_activity('update', system, {
-                            'name': f"{new_model.manufacturer} {new_model.model_name}",
+                            'system': f"{new_model.manufacturer} {new_model.model_name}",
                             'changes': changes
                         })
                     
