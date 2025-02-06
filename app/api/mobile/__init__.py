@@ -11,6 +11,9 @@ csrf = CSRFProtect()
 # Import swagger configuration first
 from app.api.mobile.swagger import api, ns_auth, ns_items, ns_search, ns_checkout, ns_systems
 
+# Import routes before initializing API
+from app.api.mobile import auth, items, search, checkout
+
 # Initialize API with blueprint
 api.init_app(bp)
 
@@ -26,9 +29,6 @@ api.add_namespace(ns_checkout)
 def index():
     """Redirect root to API documentation"""
     return redirect(url_for('mobile_api.swagger'))
-
-# Import routes after blueprint creation to avoid circular imports
-from app.api.mobile import auth, items, search, checkout
 
 # Export all for easier imports
 __all__ = ['bp', 'csrf', 'api'] 
