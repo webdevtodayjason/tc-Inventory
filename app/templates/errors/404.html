@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Page Not Found</h4>
+            <p>The requested page could not be found. Please check the URL and try again.</p>
+            <hr>
+            <p class="mb-0">
+                <a href="{{ url_for('index') }}" class="alert-link">Return to Home</a>
+            </p>
+        </div>
+    </div>
+{% endblock %} 

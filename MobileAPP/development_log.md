@@ -63,18 +63,55 @@
 - PyJWT==2.8.0 (JWT token handling)
 - Flask-CORS==4.0.0 (CORS support)
 
+## 2024-01-24
+- ✓ Added Swagger/OpenAPI documentation for the mobile API
+  - Implemented using Flask-RESTX
+  - Added documentation for all API endpoints including:
+    - Authentication routes (login, refresh, verify)
+    - Item/System lookup routes
+    - Checkout process routes
+    - User history routes
+  - Added security scheme for Bearer token authentication
+  - Added API documentation link to admin navigation
+  - Tested all endpoints through Swagger UI
+
+## 2024-01-25: Mobile Development Framework Decision
+- Selected Flutter as the mobile development framework after careful consideration:
+  - Perfect fit for barcode scanning requirements
+  - Excellent performance and native compilation
+  - Strong offline capabilities for inventory management
+  - Single codebase for iOS and Android
+  - Rich widget library for custom UI/UX
+  - Growing enterprise adoption and long-term support
+  - Cost-effective for cross-platform development
+
+### Flutter Project Setup Progress
+1. ✓ Initial Setup
+   - ✓ Installed Flutter SDK via Homebrew
+   - ✓ Created new Flutter project: tc_inventory_mobile
+   - ✓ Basic project structure generated
+
+2. Development Environment Setup (In Progress)
+   Required installations:
+   - Android Studio (for Android development)
+   - Xcode (for iOS development)
+   - CocoaPods (for iOS dependencies)
+   
+3. Next Steps After Tool Installation:
+   - Configure Android SDK
+   - Set up iOS development certificates
+   - Install Flutter plugins in Android Studio/VS Code
+   - Configure project dependencies
+   - Set up version control for mobile project
+
+4. Planned Initial Dependencies:
+   - http/dio: For API integration
+   - flutter_barcode_scanner: For barcode scanning
+   - flutter_secure_storage: For JWT token storage
+   - provider/riverpod: For state management
+   - sqflite/hive: For local database
+   - flutter_offline: For offline capabilities
+
 ## Next Steps
 1. Run Database Migrations
-   ```bash
-   flask db upgrade
    ```
-
-2. Add Initial Checkout Reasons:
-   - CLIENT INSTALL
-   - REPLACEMENT
-   - INTERNAL
-
-3. Begin Flutter Mobile App Development
-   - Set up Flutter project
-   - Implement authentication screens
-   - Add barcode scanning capability 

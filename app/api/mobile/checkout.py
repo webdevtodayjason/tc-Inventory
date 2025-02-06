@@ -1,14 +1,20 @@
 """Mobile API Checkout Routes"""
 from flask import jsonify, request, current_app
-from app.api.mobile import bp, csrf
+from app.api.mobile import bp, csrf, api
 from app.models.inventory import InventoryItem, ComputerSystem, InventoryTransaction
 from app.models.mobile import MobileCheckoutReason
 from app.api.mobile.auth import token_required
 from app import db
 from datetime import datetime
 from flask_restx import Resource
-from app.api.mobile.swagger import api, ns_checkout, checkout_reason_model, checkout_request_model, history_model
+from app.api.mobile.swagger import (
+    checkout_reason_model, checkout_request_model, history_model,
+    item_model, system_model, ns_checkout
+)
+from app.utils.activity_logger import log_activity
+from flask_restx import marshal
 
+# Routes start here
 @ns_checkout.route('/reasons')
 class CheckoutReasons(Resource):
     @csrf.exempt
@@ -17,21 +23,60 @@ class CheckoutReasons(Resource):
     @api.response(500, 'Internal server error')
     @token_required
     def get(self, current_user):
-        """Get list of active checkout reasons"""
+        """Get list of checkout reasons"""
         try:
-            reasons = MobileCheckoutReason.query.filter_by(is_active=True).all()
-            return [{
-                'id': reason.id,
-                'name': reason.name,
-                'description': reason.description
-            } for reason in reasons]
-
+            reasons = MobileCheckoutReason.query.all()
+            return {
+                'reasons': [
+                    {
+                        'id': reason.id,
+                        'name': reason.name,
+                        'description': reason.description
+                    } for reason in reasons
+                ]
+            }
         except Exception as e:
             current_app.logger.error(f'Error getting checkout reasons: {str(e)}')
             return {'error': 'Internal server error'}, 500
 
+@ns_checkout.route('/search/<string:barcode>')
+@api.doc(security='Bearer')
+class CheckoutSearch(Resource):
+    @csrf.exempt
+    @api.doc('search_for_checkout')
+    @api.response(200, 'Success', item_model)
+    @api.response(404, 'Item not found or not available for checkout')
+    @api.response(500, 'Internal server error')
+    @token_required
+    def get(self, current_user, barcode):
+        """Search for an item by barcode for checkout"""
+        try:
+            # First try to find an item
+            item = InventoryItem.query.filter_by(tracking_id=barcode).first()
+            if item:
+                if item.quantity > 0:
+                    return marshal(item, item_model), 200
+                else:
+                    return {'message': 'Item is out of stock'}, 404
+
+            # If no item found, try to find a system
+            system = ComputerSystem.query.filter_by(tracking_id=barcode).first()
+            if system:
+                if system.status == 'available':
+                    return marshal(system, system_model), 200
+                else:
+                    return {'message': f'System is not available (Status: {system.status})'}, 404
+
+            return {'message': 'Item or system not found'}, 404
+
+        except Exception as e:
+            current_app.logger.error(f'Error in checkout search: {str(e)}')
+            return {'message': 'Internal server error', 'error': True}, 500
+
 @ns_checkout.route('')
 class Checkout(Resource):
+    method_decorators = [token_required]  # Apply token_required to all methods
+    
     @csrf.exempt
     @api.doc('process_checkout')
     @api.expect(checkout_request_model)
@@ -39,11 +84,12 @@ class Checkout(Resource):
     @api.response(400, 'Validation Error')
     @api.response(404, 'Item/System not found')
     @api.response(500, 'Internal server error')
-    @token_required
     def post(self, current_user):
         """Process a checkout transaction"""
         try:
             data = request.get_json()
+            current_app.logger.info(f'Processing checkout request: {data}')
+            
             if not data:
                 return {'error': 'No data provided'}, 400
 
@@ -55,8 +101,13 @@ class Checkout(Resource):
 
             # Get checkout reason
             reason = MobileCheckoutReason.query.get(data['reason_id'])
-            if not reason or not reason.is_active:
-                return {'error': 'Invalid or inactive checkout reason'}, 400
+            if not reason:
+                current_app.logger.error(f'Invalid checkout reason ID: {data["reason_id"]}')
+                return {'error': 'Invalid checkout reason'}, 400
+            
+            if not reason.is_active:
+                current_app.logger.error(f'Checkout reason {reason.name} is not active')
+                return {'error': 'Checkout reason is not active'}, 400
 
             # Process based on type
             if data['type'] == 'item':
@@ -69,17 +120,48 @@ class Checkout(Resource):
                 if quantity > item.quantity:
                     return {'error': 'Insufficient quantity available'}, 400
 
-                # Create transaction
-                transaction = InventoryTransaction(
-                    item_id=item.id,
-                    user_id=current_user.id,
-                    quantity=quantity,
-                    transaction_type='checkout',
-                    notes=data.get('notes', ''),
-                    checkout_reason=reason.name,
-                    is_mobile=True
-                )
-                item.quantity -= quantity
+                try:
+                    # Create transaction
+                    transaction = InventoryTransaction(
+                        item_id=item.id,
+                        user_id=current_user.id,
+                        quantity=quantity,
+                        transaction_type='checkout',
+                        notes=data.get('notes', ''),
+                        checkout_reason=reason.name,
+                        is_mobile=True,
+                        timestamp=datetime.utcnow()
+                    )
+                    
+                    # Update item quantity
+                    old_quantity = item.quantity
+                    item.quantity -= quantity
+                    
+                    # Add transaction to session
+                    db.session.add(transaction)
+                    
+                    # Log activity for system logs
+                    current_app.logger.info(f'[CHECKOUT] Mobile user {current_user.username} checked out {item.name} (x{quantity}) - {reason.name}')
+                    log_activity(
+                        current_user.id,
+                        'mobile_checkout',
+                        f'Mobile checkout by {current_user.username}: {item.name} (x{quantity}) - {reason.name}',
+                        details={
+                            'item_id': item.id,
+                            'item_name': item.name,
+                            'quantity': quantity,
+                            'old_quantity': old_quantity,
+                            'new_quantity': item.quantity,
+                            'reason': reason.name,
+                            'username': current_user.username,
+                            'notes': data.get('notes', '')
+                        }
+                    )
+
+                except Exception as e:
+                    current_app.logger.error(f'[CHECKOUT] Failed: {str(e)}')
+                    db.session.rollback()
+                    return {'error': str(e)}, 500
 
             elif data['type'] == 'system':
                 system = ComputerSystem.query.get(data['id'])
@@ -89,25 +171,48 @@ class Checkout(Resource):
                 if system.status != 'available':
                     return {'error': 'System is not available for checkout'}, 400
 
-                # Update system status
-                system.status = 'checked_out'
-                system.checked_out_by = current_user
-                system.checked_out_at = datetime.utcnow()
-                system.checkout_reason = reason.name
-                system.checkout_notes = data.get('notes', '')
+                try:
+                    # Update system status
+                    system.status = 'checked_out'
+                    system.checked_out_by = current_user
+                    system.checked_out_at = datetime.utcnow()
+                    system.checkout_reason = reason.name
+                    system.checkout_notes = data.get('notes', '')
+                    
+                    # Log activity for system logs
+                    current_app.logger.info(f'[CHECKOUT] Mobile user {current_user.username} checked out system {system.model.manufacturer} {system.model.model_name} - {reason.name}')
+                    log_activity(
+                        current_user.id,
+                        'mobile_checkout',
+                        f'Mobile checkout by {current_user.username}: {system.model.manufacturer} {system.model.model_name} - {reason.name}',
+                        details={
+                            'system_id': system.id,
+                            'system_name': f"{system.model.manufacturer} {system.model.model_name}",
+                            'reason': reason.name,
+                            'username': current_user.username,
+                            'notes': data.get('notes', '')
+                        }
+                    )
 
-            else:
-                return {'error': 'Invalid checkout type'}, 400
+                except Exception as e:
+                    current_app.logger.error(f'[CHECKOUT] Failed: {str(e)}')
+                    db.session.rollback()
+                    return {'error': str(e)}, 500
 
-            # Save changes
-            db.session.commit()
+            try:
+                # Save changes
+                db.session.commit()
+                return {'message': 'Checkout processed successfully'}
 
-            return {'message': 'Checkout processed successfully'}
+            except Exception as e:
+                current_app.logger.error(f'[CHECKOUT] Database commit failed: {str(e)}')
+                db.session.rollback()
+                return {'error': str(e)}, 500
 
         except Exception as e:
+            current_app.logger.error(f'[CHECKOUT] Failed: {str(e)}')
             db.session.rollback()
-            current_app.logger.error(f'Error processing checkout: {str(e)}')
-            return {'error': 'Internal server error'}, 500
+            return {'error': str(e)}, 500
 
 @ns_checkout.route('/history')
 class CheckoutHistory(Resource):

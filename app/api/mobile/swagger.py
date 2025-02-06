@@ -1,34 +1,135 @@
-"""Swagger documentation for the mobile API"""
-from flask_restx import Api, Resource, fields
-from app.api.mobile import bp
+"""Swagger configuration for mobile API"""
+from flask_restx import Api, Namespace, fields
 
-# Create API instance
-authorizations = {
-    'Bearer': {
-        'type': 'apiKey',
-        'in': 'header',
-        'name': 'Authorization',
-        'description': 'Enter your JWT token with the Bearer prefix'
-    }
-}
-
+# Create API with prefix handling
 api = Api(
-    bp,
-    version='1.0',
     title='TC Inventory Mobile API',
-    description='API documentation for TC Inventory mobile application',
+    version='1.0',
+    description='API for TC Inventory mobile app',
     doc='/docs',
-    authorizations=authorizations,
-    security=[{'Bearer': []}]  # Apply security globally
+    authorizations={
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Add "Bearer " prefix to your JWT token'
+        }
+    },
+    security='Bearer'  # Apply Bearer auth by default to all endpoints
 )
 
-# Define namespaces
-ns_auth = api.namespace('auth', description='Authentication operations')
-ns_items = api.namespace('item', description='Item operations')
-ns_systems = api.namespace('system', description='System operations')
-ns_checkout = api.namespace('checkout', description='Checkout operations')
+# Create namespaces
+ns_auth = Namespace('auth', description='Authentication operations')
+ns_items = Namespace('items', description='Item operations')
+ns_systems = Namespace('systems', description='System operations')
+ns_search = Namespace('search', description='Search operations')
+ns_checkout = Namespace('checkout', description='Checkout operations')
 
-# Define models
+# Add namespaces to API
+api.add_namespace(ns_auth)
+api.add_namespace(ns_items)
+api.add_namespace(ns_systems)
+api.add_namespace(ns_search)
+api.add_namespace(ns_checkout)
+
+# Models
+tag_model = api.model('Tag', {
+    'id': fields.Integer,
+    'name': fields.String,
+    'color': fields.String
+})
+
+computer_model_model = api.model('ComputerModel', {
+    'id': fields.Integer,
+    'manufacturer': fields.String,
+    'model_name': fields.String,
+    'type': fields.String
+})
+
+cpu_model = api.model('CPU', {
+    'id': fields.Integer,
+    'manufacturer': fields.String,
+    'model': fields.String,
+    'speed': fields.String
+})
+
+history_model = api.model('CheckoutHistory', {
+    'type': fields.String(description='Transaction type (item/system)'),
+    'date': fields.String(description='Checkout date'),
+    'item_name': fields.String(description='Item name (for items)'),
+    'system_name': fields.String(description='System name (for systems)'),
+    'quantity': fields.Integer(description='Quantity (for items)'),
+    'reason': fields.String(description='Checkout reason'),
+    'notes': fields.String(description='Notes')
+})
+
+purchase_link_model = api.model('PurchaseLink', {
+    'id': fields.Integer,
+    'url': fields.String,
+    'title': fields.String,
+    'created_at': fields.String
+})
+
+item_model = api.model('Item', {
+    'id': fields.Integer,
+    'tracking_id': fields.String,
+    'name': fields.String,
+    'description': fields.String,
+    'quantity': fields.Integer,
+    'min_quantity': fields.Integer,
+    'reorder_threshold': fields.Integer,
+    'location': fields.String,
+    'storage_location': fields.String,
+    'manufacturer': fields.String,
+    'mpn': fields.String,
+    'image_url': fields.String,
+    'cost': fields.Float,
+    'sell_price': fields.Float,
+    'purchase_url': fields.String,
+    'created_at': fields.String,
+    'updated_at': fields.String,
+    'category_id': fields.Integer,
+    'status': fields.String,
+    'creator_id': fields.Integer,
+    'creator': fields.Nested(api.model('ItemCreator', {
+        'id': fields.Integer,
+        'username': fields.String
+    })),
+    'category': fields.Nested(api.model('ItemCategory', {
+        'id': fields.Integer,
+        'name': fields.String
+    })),
+    'tags': fields.List(fields.Nested(tag_model)),
+    'transactions': fields.List(fields.Nested(history_model)),
+    'purchase_links': fields.List(fields.Nested(purchase_link_model))
+})
+
+system_model = api.model('System', {
+    'id': fields.Integer,
+    'tracking_id': fields.String,
+    'model': fields.Nested(computer_model_model),
+    'serial_number': fields.String,
+    'status': fields.String,
+    'location': fields.String,
+    'notes': fields.String,
+    'cpu': fields.Nested(cpu_model),
+    'ram': fields.String,
+    'storage': fields.String,
+    'os': fields.String,
+    'tags': fields.List(fields.Nested(tag_model))
+})
+
+# Response models
+search_results_model = api.model('SearchResults', {
+    'results': fields.Raw(description='List of search results (items or systems)'),
+    'total': fields.Integer(description='Total number of results'),
+    'pages': fields.Integer(description='Total number of pages'),
+    'current_page': fields.Integer(description='Current page number'),
+    'has_next': fields.Boolean(description='Whether there is a next page'),
+    'has_prev': fields.Boolean(description='Whether there is a previous page')
+})
+
+# Auth models
 login_model = api.model('Login', {
     'username': fields.String(required=True, description='Username'),
     'pin': fields.String(required=True, description='PIN code')
@@ -45,42 +146,6 @@ token_response = api.model('TokenResponse', {
     'user': fields.Nested(user_model)
 })
 
-item_model = api.model('Item', {
-    'id': fields.Integer(description='Item ID'),
-    'name': fields.String(description='Item name'),
-    'tracking_id': fields.String(description='Tracking ID'),
-    'quantity': fields.Integer(description='Available quantity'),
-    'category': fields.String(description='Item category'),
-    'location': fields.String(description='Item location'),
-    'status': fields.String(description='Item status'),
-    'notes': fields.String(description='Item notes')
-})
-
-# Updated system model with nested structures
-computer_model = api.model('ComputerModel', {
-    'manufacturer': fields.String(description='Model manufacturer'),
-    'model_name': fields.String(description='Model name'),
-    'model_type': fields.String(description='Model type')
-})
-
-cpu_model = api.model('CPU', {
-    'manufacturer': fields.String(description='CPU manufacturer'),
-    'model': fields.String(description='CPU model'),
-    'speed': fields.Float(description='CPU speed in GHz'),
-    'cores': fields.Integer(description='Number of cores')
-})
-
-system_model = api.model('System', {
-    'id': fields.Integer(description='System ID'),
-    'tracking_id': fields.String(description='Tracking ID'),
-    'model': fields.Nested(computer_model, description='Computer model details'),
-    'serial_number': fields.String(description='Serial number'),
-    'status': fields.String(description='System status'),
-    'location': fields.String(description='System location'),
-    'notes': fields.String(description='System notes'),
-    'cpu': fields.Nested(cpu_model, description='CPU details')
-})
-
 checkout_reason_model = api.model('CheckoutReason', {
     'id': fields.Integer(description='Reason ID'),
     'name': fields.String(description='Reason name'),
@@ -93,17 +158,4 @@ checkout_request_model = api.model('CheckoutRequest', {
     'reason_id': fields.Integer(required=True, description='Checkout reason ID'),
     'quantity': fields.Integer(description='Quantity to checkout (for items)'),
     'notes': fields.String(description='Checkout notes')
-})
-
-history_model = api.model('CheckoutHistory', {
-    'type': fields.String(description='Transaction type (item/system)'),
-    'date': fields.String(description='Checkout date'),
-    'item_name': fields.String(description='Item name (for items)'),
-    'system_name': fields.String(description='System name (for systems)'),
-    'quantity': fields.Integer(description='Quantity (for items)'),
-    'reason': fields.String(description='Checkout reason'),
-    'notes': fields.String(description='Notes')
-})
-
-# Import route handlers after defining models to avoid circular imports
-from app.api.mobile import auth, items, checkout 
+}) 
