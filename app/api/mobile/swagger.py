@@ -12,9 +12,9 @@ This API provides mobile access to the TC Inventory System. It enables inventory
 and checkout functionality through mobile devices.
 
 ## Quick Links
-- [API Reference](/api/mobile/docs)
-- [Code Examples](/api/docs/examples)
-- [Postman Collection](/api/docs/postman)
+- [API Reference](../mobile/swagger)
+- [Code Examples](../docs/examples)
+- [Postman Collection](../docs/postman)
 - [Mobile App Source](https://github.com/webdevtodayjason/tc-Inventory/tree/main/tc_inventory_mobile)
 
 ## Authentication
@@ -41,8 +41,8 @@ All endpoints require JWT authentication. To authenticate:
 
 ## Development Environment
 - Local API: /api/mobile
-- Local Docs: /api/mobile/docs
-- Local Swagger UI: /api/mobile/docs
+- Local API Docs: ../docs
+- Local Swagger UI: ../mobile/swagger
 
 ## Mobile App Features
 - Barcode scanning with Code128 support
@@ -53,12 +53,12 @@ All endpoints require JWT authentication. To authenticate:
 - Push notifications
 
 ## Testing Tools
-- [Postman Collection](/api/docs/postman) - Ready-to-use API collection with environment configurations
-- [OpenAPI Spec](/api/docs/openapi) - OpenAPI/Swagger specification file
+- [Postman Collection](../docs/postman) - Ready-to-use API collection with environment configurations
+- [OpenAPI Spec](../docs/openapi) - OpenAPI/Swagger specification file
 
-For detailed implementation examples, see our [Mobile Development Guide](/api/docs/mobile).
+For detailed implementation examples, see our [Mobile Development Guide](../docs/mobile).
     """,
-    doc='/docs',  # This sets the Swagger UI endpoint to /api/mobile/docs
+    doc='/swagger',  # This sets the Swagger UI endpoint to /api/mobile/swagger
     prefix='/api/mobile',  # This ensures all API routes have the correct prefix
     authorizations={
         'Bearer': {

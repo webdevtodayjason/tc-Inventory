@@ -23,8 +23,9 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Disable CSRF for mobile API routes
-    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
+    # Configure CSRF protection
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = True  # Enable CSRF by default
+    app.config['WTF_CSRF_METHODS'] = ['POST', 'PUT', 'PATCH', 'DELETE']  # Methods to protect
     
     # Debug logging for environment variables
     app.logger.debug(f"Environment variables loaded:")
@@ -73,7 +74,17 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+    
+    # Initialize CSRF protection with mobile API exemption
     csrf.init_app(app)
+    
+    # Exempt mobile API routes from CSRF
+    @csrf.exempt
+    def exempt_mobile_api():
+        if request.path.startswith('/api/mobile/'):
+            return True
+        return False
+    
     jwt.init_app(app)
     
     # Enable CORS for all routes

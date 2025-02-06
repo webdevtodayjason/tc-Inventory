@@ -64,14 +64,22 @@ class Login(Resource):
         """
         try:
             # Log request details for debugging
-            current_app.logger.debug(f"Headers: {request.headers}")
-            current_app.logger.debug(f"Body: {request.get_data()}")
+            current_app.logger.info(f"[Mobile Login] Received login request")
+            current_app.logger.debug(f"[Mobile Login] Headers: {dict(request.headers)}")
+            current_app.logger.debug(f"[Mobile Login] Body: {request.get_data(as_text=True)}")
             
             data = request.get_json()
+            if not data:
+                current_app.logger.error("[Mobile Login] No JSON data received")
+                return {'message': 'No data provided'}, 400
+
             username = data.get('username')
             pin = data.get('pin')
 
+            current_app.logger.info(f"[Mobile Login] Attempting login for user: {username}")
+
             if not username or not pin:
+                current_app.logger.error("[Mobile Login] Missing username or PIN")
                 return {'message': 'Missing username or PIN'}, 400
 
             user = User.query.filter_by(username=username).first()
@@ -82,6 +90,7 @@ class Login(Resource):
                     'exp': datetime.utcnow() + timedelta(days=7)
                 }, current_app.config['SECRET_KEY'])
 
+                current_app.logger.info(f"[Mobile Login] Successful login for user: {username}")
                 return {
                     'token': token,
                     'user': {
@@ -91,10 +100,11 @@ class Login(Resource):
                     }
                 }, 200
             else:
+                current_app.logger.warning(f"[Mobile Login] Failed login attempt for user: {username}")
                 return {'message': 'Invalid credentials'}, 401
 
         except Exception as e:
-            current_app.logger.error(f"Login error: {str(e)}")
+            current_app.logger.error(f"[Mobile Login] Error during login: {str(e)}")
             return {'message': 'Internal server error'}, 500
 
 @ns_auth.route('/refresh')

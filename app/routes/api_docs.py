@@ -9,6 +9,11 @@ def index():
     """API Documentation Home"""
     return render_template('api/index.html')
 
+@bp.route('/docs')
+def docs():
+    """Main API Documentation"""
+    return render_template('api/index.html')
+
 @bp.route('/docs/mobile')
 def mobile_docs():
     """Mobile API Documentation"""
