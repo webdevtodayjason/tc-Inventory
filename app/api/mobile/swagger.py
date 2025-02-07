@@ -90,6 +90,11 @@ Authentication endpoints for mobile access.
 3. Returns JWT token valid for 7 days
 4. Token refresh available before expiration
 
+## User History
+- GET /user/history - Get user's checkout history
+- Returns list of item and system checkouts
+- Sorted by date (most recent first)
+
 ## Security Notes
 - PINs must be 4-6 digits
 - Failed attempts are rate limited
@@ -98,9 +103,9 @@ Authentication endpoints for mobile access.
     }
 )
 
-ns_items = Namespace('items', 
+ns_items = Namespace('item', 
     description='Item operations',
-    path='/items',
+    path='/item',
     decorators=[],
     validate=True,
     doc={
@@ -124,9 +129,9 @@ Where X is alphanumeric
     }
 )
 
-ns_systems = Namespace('systems', 
+ns_systems = Namespace('system', 
     description='System operations',
-    path='/systems',
+    path='/system',
     decorators=[],
     validate=True,
     doc={

@@ -23,8 +23,17 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
+    # Configure CORS
+    CORS(app, resources={
+        r"/api/mobile/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "Accept"]
+        }
+    })
+    
     # Configure CSRF protection
-    app.config['WTF_CSRF_CHECK_DEFAULT'] = True  # Enable CSRF by default
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False  # Disable CSRF by default
     app.config['WTF_CSRF_METHODS'] = ['POST', 'PUT', 'PATCH', 'DELETE']  # Methods to protect
     
     # Debug logging for environment variables
@@ -75,15 +84,15 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     
-    # Initialize CSRF protection with mobile API exemption
+    # Initialize CSRF protection
     csrf.init_app(app)
     
-    # Exempt mobile API routes from CSRF
-    @csrf.exempt
-    def exempt_mobile_api():
-        if request.path.startswith('/api/mobile/'):
-            return True
-        return False
+    # Enable CSRF for web routes only
+    @app.before_request
+    def csrf_protect():
+        if not request.path.startswith('/api/mobile/'):  # Enable CSRF for non-mobile routes
+            if request.method in app.config['WTF_CSRF_METHODS']:
+                csrf.protect()
     
     jwt.init_app(app)
     
@@ -95,6 +104,14 @@ def create_app(config_class=Config):
 
     # Import models to ensure they're known to Flask-Migrate
     from app.models import user, inventory, config, mobile
+
+    # Initialize checkout reasons
+    try:
+        with app.app_context():
+            mobile.init_checkout_reasons()
+    except Exception as e:
+        app.logger.warning(f"Could not initialize checkout reasons: {str(e)}")
+        app.logger.info("Continuing startup - table may already exist")
 
     # Register blueprints
     from app.routes import auth, inventory, admin, wiki, roadmap, main, api_docs
