@@ -8,13 +8,12 @@ class MobileCheckoutReason(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(255))
+    description = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
-        return f'<MobileCheckoutReason {self.name}>'
+        return f'<CheckoutReason {self.name}>'
 
     def to_dict(self):
         return {
@@ -23,6 +22,44 @@ class MobileCheckoutReason(db.Model):
             'description': self.description,
             'is_active': self.is_active
         }
+
+# Add initial data
+def init_checkout_reasons():
+    """Initialize checkout reasons if they don't exist"""
+    reasons = [
+        {
+            'name': 'CLIENT INSTALL',
+            'description': 'Installation at client site',
+            'is_active': True
+        },
+        {
+            'name': 'TESTING',
+            'description': 'Testing or validation',
+            'is_active': True
+        },
+        {
+            'name': 'REPAIR',
+            'description': 'Repair or maintenance',
+            'is_active': True
+        },
+        {
+            'name': 'DEMO',
+            'description': 'Product demonstration',
+            'is_active': True
+        }
+    ]
+
+    for reason_data in reasons:
+        reason = MobileCheckoutReason.query.filter_by(name=reason_data['name']).first()
+        if not reason:
+            reason = MobileCheckoutReason(**reason_data)
+            db.session.add(reason)
+    
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error initializing checkout reasons: {str(e)}")
 
 class MobileDeviceToken(db.Model):
     """Model for mobile device tokens (for push notifications)"""

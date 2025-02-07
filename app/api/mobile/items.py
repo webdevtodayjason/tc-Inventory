@@ -2,7 +2,7 @@
 from flask import jsonify, current_app
 from app.api.mobile import bp, csrf
 from app.models.inventory import InventoryItem, ComputerSystem
-from app.api.mobile.auth import token_required
+from app.api.mobile.auth import mobile_token_required
 from flask_restx import Resource
 from app.api.mobile.swagger import api, ns_items, ns_systems, item_model, system_model
 from flask_restx import marshal
@@ -15,7 +15,7 @@ class ItemLookup(Resource):
     @api.response(200, 'Success', item_model)
     @api.response(404, 'Item not found')
     @api.response(500, 'Internal server error')
-    @token_required
+    @mobile_token_required
     def get(self, current_user, barcode):
         """Get item details by barcode"""
         try:
@@ -35,7 +35,7 @@ class SystemLookup(Resource):
     @api.response(200, 'Success', system_model)
     @api.response(404, 'System not found')
     @api.response(500, 'Internal server error')
-    @token_required
+    @mobile_token_required
     def get(self, current_user, barcode):
         """Get computer system details by barcode"""
         try:

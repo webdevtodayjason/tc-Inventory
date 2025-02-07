@@ -3,7 +3,7 @@ from flask import jsonify, request, current_app
 from app.api.mobile import bp, csrf, api
 from app.models.inventory import InventoryItem, ComputerSystem, Transaction
 from app.models.mobile import MobileCheckoutReason
-from app.api.mobile.auth import token_required
+from app.api.mobile.auth import mobile_token_required
 from app import db
 from datetime import datetime
 from flask_restx import Resource
@@ -21,11 +21,11 @@ class CheckoutReasons(Resource):
     @api.doc('get_checkout_reasons')
     @api.response(200, 'Success', [checkout_reason_model])
     @api.response(500, 'Internal server error')
-    @token_required
+    @mobile_token_required
     def get(self, current_user):
         """Get list of checkout reasons"""
         try:
-            reasons = MobileCheckoutReason.query.all()
+            reasons = MobileCheckoutReason.query.filter_by(is_active=True).all()
             return {
                 'reasons': [
                     {
@@ -47,7 +47,7 @@ class CheckoutSearch(Resource):
     @api.response(200, 'Success', item_model)
     @api.response(404, 'Item not found or not available for checkout')
     @api.response(500, 'Internal server error')
-    @token_required
+    @mobile_token_required
     def get(self, current_user, barcode):
         """Search for an item by barcode for checkout"""
         try:
@@ -75,7 +75,7 @@ class CheckoutSearch(Resource):
 
 @ns_checkout.route('')
 class Checkout(Resource):
-    method_decorators = [token_required]  # Apply token_required to all methods
+    method_decorators = [mobile_token_required]  # Apply mobile_token_required to all methods
     
     @csrf.exempt
     @api.doc('process_checkout')
@@ -125,12 +125,10 @@ class Checkout(Resource):
                     transaction = Transaction(
                         item_id=item.id,
                         user_id=current_user.id,
-                        quantity=quantity,
+                        quantity_changed=-quantity,  # Negative for checkout
                         transaction_type='checkout',
                         notes=data.get('notes', ''),
-                        checkout_reason=reason.name,
-                        is_mobile=True,
-                        timestamp=datetime.utcnow()
+                        created_at=datetime.utcnow()
                     )
                     
                     # Update item quantity
@@ -212,59 +210,4 @@ class Checkout(Resource):
         except Exception as e:
             current_app.logger.error(f'[CHECKOUT] Failed: {str(e)}')
             db.session.rollback()
-            return {'error': str(e)}, 500
-
-@ns_checkout.route('/history')
-class CheckoutHistory(Resource):
-    @csrf.exempt
-    @api.doc('get_user_history')
-    @api.response(200, 'Success', [history_model])
-    @api.response(500, 'Internal server error')
-    @token_required
-    def get(self, current_user):
-        """Get user's checkout history"""
-        try:
-            # Get item transactions
-            transactions = Transaction.query.filter_by(
-                user_id=current_user.id,
-                transaction_type='checkout'
-            ).order_by(Transaction.timestamp.desc()).all()
-
-            # Get system checkouts
-            systems = ComputerSystem.query.filter_by(
-                checked_out_by_id=current_user.id
-            ).all()
-
-            # Combine and format history
-            history = []
-
-            # Add item transactions
-            for trans in transactions:
-                history.append({
-                    'type': 'item',
-                    'date': trans.timestamp.isoformat(),
-                    'item_name': trans.item.name if trans.item else 'Unknown Item',
-                    'quantity': trans.quantity,
-                    'reason': trans.checkout_reason,
-                    'notes': trans.notes
-                })
-
-            # Add system checkouts
-            for system in systems:
-                if system.checked_out_at:  # Only include if actually checked out
-                    history.append({
-                        'type': 'system',
-                        'date': system.checked_out_at.isoformat(),
-                        'system_name': f"{system.model.manufacturer} {system.model.model_name}" if system.model else 'Unknown System',
-                        'reason': system.checkout_reason,
-                        'notes': system.checkout_notes
-                    })
-
-            # Sort combined history by date
-            history.sort(key=lambda x: x['date'], reverse=True)
-
-            return history
-
-        except Exception as e:
-            current_app.logger.error(f'Error getting user history: {str(e)}')
-            return {'error': 'Internal server error'}, 500 
+            return {'error': str(e)}, 500 

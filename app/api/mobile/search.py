@@ -2,7 +2,7 @@
 from flask import jsonify, current_app, request
 from app.api.mobile import bp, csrf
 from app.models.inventory import InventoryItem, ComputerSystem, ComputerModel
-from app.api.mobile.auth import token_required
+from app.api.mobile.auth import mobile_token_required
 from flask_restx import Resource
 from app.api.mobile.swagger import api, ns_search, item_model, system_model, search_results_model
 from flask_restx import marshal
@@ -20,7 +20,7 @@ class ItemSearch(Resource):
     @api.response(200, 'Success', search_results_model)
     @api.response(400, 'Invalid request')
     @api.response(500, 'Internal server error')
-    @token_required
+    @mobile_token_required
     def get(self, current_user):
         """Search inventory items by name or tracking ID"""
         try:
@@ -82,7 +82,7 @@ class SystemSearch(Resource):
     @api.response(200, 'Success', search_results_model)
     @api.response(400, 'Invalid request')
     @api.response(500, 'Internal server error')
-    @token_required
+    @mobile_token_required
     def get(self, current_user):
         """Search computer systems by tracking ID or model info"""
         try:

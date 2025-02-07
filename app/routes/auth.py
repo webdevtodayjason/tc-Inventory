@@ -5,6 +5,7 @@ from app.models.config import Configuration
 from app import db
 from app.forms import ChangePasswordForm
 from app.utils.activity_logger import log_user_activity
+from flask import current_app
 
 bp = Blueprint('auth', __name__)
 
@@ -16,30 +17,42 @@ def login():
     
     try:
         # Get configuration settings with defaults
-        allow_registration = Configuration.get_setting('allow_public_registration', 'false')
+        allow_registration = Configuration.get_value('allow_public_registration', 'false')
         
         if request.method == 'POST':
             username = request.form.get('username')
             password = request.form.get('password')
             
+            # Debug logging
+            current_app.logger.debug(f"Login attempt for user: {username}")
+            
             if not username or not password:
+                current_app.logger.warning("Missing username or password")
                 flash('Please provide both username and password', 'error')
                 return render_template('auth/login.html', allow_registration=allow_registration)
             
             user = User.query.filter_by(username=username).first()
             
-            if user and user.check_password(password):
+            if not user:
+                current_app.logger.warning(f"User not found: {username}")
+                flash('Invalid username or password', 'error')
+                return render_template('auth/login.html', allow_registration=allow_registration)
+            
+            if user.check_password(password):
+                current_app.logger.info(f"Successful login for user: {username}")
                 login_user(user)
                 next_page = request.args.get('next')
                 if next_page:
                     return redirect(next_page)
                 return redirect(url_for('inventory.dashboard'))
-                
-            flash('Invalid username or password', 'error')
+            else:
+                current_app.logger.warning(f"Invalid password for user: {username}")
+                flash('Invalid username or password', 'error')
         
         return render_template('auth/login.html', allow_registration=allow_registration)
         
     except Exception as e:
+        current_app.logger.error(f"Login error: {str(e)}")
         flash('An error occurred. Please try again.', 'error')
         return render_template('auth/login.html', allow_registration='false')
 
@@ -50,7 +63,7 @@ def register():
     
     try:
         # Check if registration is allowed
-        allow_registration = Configuration.get_setting('allow_public_registration', 'false')
+        allow_registration = Configuration.get_value('allow_public_registration', 'false')
         if allow_registration.lower() != 'true':
             flash('Public registration is currently disabled', 'error')
             return redirect(url_for('auth.login'))
