@@ -296,6 +296,7 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <form method="GET" class="row g-3">
+                        <input type="hidden" name="active_tab" value="systems">
                         <div class="col-md-4">
                             <input type="text" class="form-control" name="search_systems" 
                                    value="{{ request.args.get('search_systems', '') }}" 
@@ -321,7 +322,7 @@
                         </div>
                         <div class="col-md-4 d-flex justify-content-between">
                             {% if request.args.get('search_systems') or request.args.get('model') or request.args.get('system_status') %}
-                                <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary btn-sm me-2">
+                                <a href="{{ url_for('inventory.dashboard', active_tab='systems') }}" class="btn btn-secondary btn-sm me-2">
                                     <i class="fas fa-times"></i>
                                 </a>
                             {% endif %}
@@ -404,6 +405,7 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <form method="GET" class="row g-3">
+                        <input type="hidden" name="active_tab" value="wiki">
                         <div class="col-md-4">
                             <input type="text" class="form-control" name="wiki_search" 
                                    value="{{ request.args.get('wiki_search', '') }}" 
@@ -421,7 +423,7 @@
                         </div>
                         <div class="col-md-4 d-flex justify-content-between">
                             {% if request.args.get('wiki_search') or request.args.get('wiki_category') %}
-                                <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary btn-sm me-2">
+                                <a href="{{ url_for('inventory.dashboard', active_tab='wiki') }}" class="btn btn-secondary btn-sm me-2">
                                     <i class="fas fa-times"></i>
                                 </a>
                             {% endif %}
@@ -522,11 +524,11 @@ $(document).ready(function() {
             { orderable: false, targets: [8, 9] }, // Disable sorting for Tags and Actions columns
             { searchable: false, targets: [9] }  // Disable searching for Actions column
         ],
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+        searching: false, // Disable DataTables search to avoid confusion with server-side search
+        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6">>' + // Removed 'f' for filter/search
              '<"row"<"col-sm-12"tr>>' +
              '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
         language: {
-            search: "Search systems:",
             lengthMenu: "Show _MENU_ systems per page",
             info: "Showing _START_ to _END_ of _TOTAL_ systems",
             infoEmpty: "No systems available",

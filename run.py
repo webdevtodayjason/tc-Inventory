@@ -104,12 +104,12 @@ def init_config():
 
         # Only set configuration if it doesn't exist
         def init_setting(key, env_key, description, default=None):
-            if not Configuration.get_setting(key):
+            if not Configuration.get_value(key):
                 value = os.environ.get(env_key)
                 if value is None:
                     value = default
                 if value is not None:
-                    Configuration.set_setting(key, str(value).lower(), description)
+                    Configuration.set_value(key, str(value).lower(), description)
 
         # Admin Settings
         init_setting(

@@ -637,7 +637,7 @@ def verify_pin():
 
 def check_low_stock(item):
     """Check if an item needs a stock alert and send if enabled"""
-    if not Configuration.get_setting('enable_low_stock_alerts', 'false') == 'true':
+    if not Configuration.get_value('enable_low_stock_alerts', 'false') == 'true':
         return
         
     if item.needs_restock:

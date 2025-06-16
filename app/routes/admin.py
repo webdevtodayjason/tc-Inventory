@@ -147,66 +147,66 @@ def manage_config():
             current_app.logger.debug(f"Form data: {request.form}")
 
             # User Management Settings
-            Configuration.set_setting(
+            Configuration.set_value(
                 'allow_public_registration',
                 request.form.get('allow_registration', 'false'),
                 'Allow public user registration'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'require_email_verification',
                 request.form.get('require_email_verification', 'false'),
                 'Require email verification for new users'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'allow_password_reset',
                 request.form.get('allow_password_reset', 'false'),
                 'Allow users to reset passwords via email'
             )
 
             # Inventory Settings
-            Configuration.set_setting(
+            Configuration.set_value(
                 'items_per_page',
                 request.form.get('items_per_page', '20'),
                 'Number of items to display per page'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'enable_barcode_scanner',
                 request.form.get('enable_barcode_scanner', 'false'),
                 'Enable barcode scanning functionality'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'enable_low_stock_alerts',
                 request.form.get('enable_low_stock_alerts', 'false'),
                 'Enable low stock alerts'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'stock_alert_email',
                 request.form.get('stock_alert_email', ''),
                 'Email address for low stock alerts'
             )
 
             # Email Settings
-            Configuration.set_setting(
+            Configuration.set_value(
                 'smtp_server',
                 request.form.get('smtp_server', ''),
                 'SMTP server address'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'smtp_port',
                 request.form.get('smtp_port', '587'),
                 'SMTP server port'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'smtp_username',
                 request.form.get('smtp_username', ''),
                 'SMTP username'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'smtp_password',
                 request.form.get('smtp_password', ''),
                 'SMTP password'
             )
-            Configuration.set_setting(
+            Configuration.set_value(
                 'notification_email',
                 request.form.get('notification_email', ''),
                 'Email address for system notifications'
@@ -231,18 +231,18 @@ def manage_config():
 
     # Get current settings
     settings = {
-        'allow_registration': Configuration.get_setting('allow_public_registration', 'true'),
-        'require_email_verification': Configuration.get_setting('require_email_verification', 'false'),
-        'allow_password_reset': Configuration.get_setting('allow_password_reset', 'true'),
-        'items_per_page': Configuration.get_setting('items_per_page', '20'),
-        'enable_barcode_scanner': Configuration.get_setting('enable_barcode_scanner', 'true'),
-        'enable_low_stock_alerts': Configuration.get_setting('enable_low_stock_alerts', 'true'),
-        'stock_alert_email': Configuration.get_setting('stock_alert_email', ''),
-        'smtp_server': Configuration.get_setting('smtp_server', ''),
-        'smtp_port': Configuration.get_setting('smtp_port', '587'),
-        'smtp_username': Configuration.get_setting('smtp_username', ''),
-        'smtp_password': Configuration.get_setting('smtp_password', ''),
-        'notification_email': Configuration.get_setting('notification_email', '')
+        'allow_registration': Configuration.get_value('allow_public_registration', 'true'),
+        'require_email_verification': Configuration.get_value('require_email_verification', 'false'),
+        'allow_password_reset': Configuration.get_value('allow_password_reset', 'true'),
+        'items_per_page': Configuration.get_value('items_per_page', '20'),
+        'enable_barcode_scanner': Configuration.get_value('enable_barcode_scanner', 'true'),
+        'enable_low_stock_alerts': Configuration.get_value('enable_low_stock_alerts', 'true'),
+        'stock_alert_email': Configuration.get_value('stock_alert_email', ''),
+        'smtp_server': Configuration.get_value('smtp_server', ''),
+        'smtp_port': Configuration.get_value('smtp_port', '587'),
+        'smtp_username': Configuration.get_value('smtp_username', ''),
+        'smtp_password': Configuration.get_value('smtp_password', ''),
+        'notification_email': Configuration.get_value('notification_email', '')
     }
 
     return render_template('admin/config.html', **settings)
@@ -425,10 +425,10 @@ def backup():
     
     # Get backup settings from configuration
     backup_settings = {
-        'auto_backup_enabled': Configuration.get_setting('auto_backup_enabled', 'false'),
-        'backup_frequency': Configuration.get_setting('backup_frequency', 'daily'),
-        'backup_retention_days': Configuration.get_setting('backup_retention_days', '30'),
-        'backup_time': Configuration.get_setting('backup_time', '00:00'),
+        'auto_backup_enabled': Configuration.get_value('auto_backup_enabled', 'false'),
+        'backup_frequency': Configuration.get_value('backup_frequency', 'daily'),
+        'backup_retention_days': Configuration.get_value('backup_retention_days', '30'),
+        'backup_time': Configuration.get_value('backup_time', '00:00'),
     }
     
     return render_template('admin/backup.html', settings=backup_settings)
