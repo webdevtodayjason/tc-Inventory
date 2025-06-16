@@ -15,14 +15,14 @@ def send_stock_alert(items):
         return
     
     # Get email settings
-    smtp_server = Configuration.get_setting('smtp_server')
-    smtp_port = int(Configuration.get_setting('smtp_port', '587'))
-    smtp_username = Configuration.get_setting('smtp_username')
-    smtp_password = Configuration.get_setting('smtp_password')
+    smtp_server = Configuration.get_value('smtp_server')
+    smtp_port = int(Configuration.get_value('smtp_port', '587'))
+    smtp_username = Configuration.get_value('smtp_username')
+    smtp_password = Configuration.get_value('smtp_password')
     
     # Get alert email address (use stock alert email if set, otherwise use general notification email)
-    to_email = (Configuration.get_setting('stock_alert_email') or 
-               Configuration.get_setting('notification_email'))
+    to_email = (Configuration.get_value('stock_alert_email') or 
+               Configuration.get_value('notification_email'))
     
     if not all([smtp_server, smtp_port, smtp_username, smtp_password, to_email]):
         current_app.logger.error('Email settings not properly configured')
