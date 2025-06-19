@@ -193,6 +193,9 @@ class ComputerSystem(db.Model):
     checked_out_at = db.Column(db.DateTime)
     checkout_reason = db.Column(db.String(100))
     checkout_notes = db.Column(db.Text)
+    
+    # Price field
+    sell_price = db.Column(db.Numeric(10, 2))
 
     # Relationships
     model = relationship('ComputerModel', backref='systems')
@@ -207,6 +210,7 @@ class ComputerSystem(db.Model):
     creator = relationship('User',
                          foreign_keys=[creator_id],
                          backref='created_systems')
+    purchase_links = db.relationship('SystemPurchaseLink', back_populates='system', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<ComputerSystem {self.tracking_id}>'
@@ -324,5 +328,21 @@ class PurchaseLink(db.Model):
     
     # Relationships
     item = db.relationship('InventoryItem', back_populates='purchase_links')
+    creator = db.relationship('User')
+
+
+class SystemPurchaseLink(db.Model):
+    """Model for storing additional purchase URLs for computer systems."""
+    __tablename__ = 'system_purchase_links'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    system_id = db.Column(db.Integer, db.ForeignKey('computer_systems.id', ondelete='CASCADE'), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    title = db.Column(db.String(100))  # Optional title/description for the link
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    # Relationships
+    system = db.relationship('ComputerSystem', back_populates='purchase_links')
     creator = db.relationship('User')
  
