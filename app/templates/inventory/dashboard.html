@@ -347,6 +347,7 @@
                                     <th>CPU</th>
                                     <th>RAM</th>
                                     <th>Storage</th>
+                                    <th>Price</th>
                                     <th>Location</th>
                                     <th>Status</th>
                                     <th>Tags</th>
@@ -362,6 +363,13 @@
                                     <td>{{ system.cpu.manufacturer }} {{ system.cpu.model }}</td>
                                     <td>{{ system.ram }}</td>
                                     <td>{{ system.storage }}</td>
+                                    <td>
+                                        {% if system.sell_price %}
+                                            ${{ "%.2f"|format(system.sell_price) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                     <td>{{ system.storage_location or '-' }}</td>
                                     <td>
                                         <span class="badge {% if system.status == 'available' %}bg-success{% elif system.status == 'in_use' %}bg-primary{% else %}bg-warning{% endif %}">
@@ -521,8 +529,8 @@ $(document).ready(function() {
         pageLength: itemsPerPage,
         order: [[1, 'asc']], // Sort by Model column by default
         columnDefs: [
-            { orderable: false, targets: [8, 9] }, // Disable sorting for Tags and Actions columns
-            { searchable: false, targets: [9] }  // Disable searching for Actions column
+            { orderable: false, targets: [9, 10] }, // Disable sorting for Tags and Actions columns
+            { searchable: false, targets: [10] }  // Disable searching for Actions column
         ],
         searching: false, // Disable DataTables search to avoid confusion with server-side search
         dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6">>' + // Removed 'f' for filter/search

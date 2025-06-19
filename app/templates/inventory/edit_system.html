@@ -54,6 +54,16 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label for="sell_price" class="form-label">Sell Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" name="sell_price" id="sell_price" 
+                                               step="0.01" min="0" placeholder="0.00"
+                                               value="{{ '%.2f'|format(system.sell_price) if system.sell_price else '' }}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
                                     <label for="tags" class="form-label">Tags</label>
                                     <select class="form-select" name="tags" id="tags" multiple data-placeholder="Select tags...">
                                         {% for tag_id, tag_name in form.tags.choices %}
@@ -97,7 +107,56 @@
                             </div>
                         </div>
 
-                        <div class="d-grid gap-2">
+                        <!-- Purchase Links Section -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4 class="mb-3">Purchase Links</h4>
+                                <div id="purchaseLinksContainer">
+                                    {% if system.purchase_links %}
+                                        {% for link in system.purchase_links %}
+                                        <div class="row mb-3 purchase-link-row">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Link Title</label>
+                                                <input type="text" class="form-control" name="purchase_link_titles[]" 
+                                                       value="{{ link.title or '' }}" placeholder="Optional title for the link">
+                                            </div>
+                                            <div class="col-md-7">
+                                                <label class="form-label">URL</label>
+                                                <input type="url" class="form-control" name="purchase_link_urls[]" 
+                                                       value="{{ link.url }}" placeholder="https://example.com">
+                                            </div>
+                                            <div class="col-md-1 d-flex align-items-end">
+                                                <button type="button" class="btn btn-danger remove-link-btn" onclick="removePurchaseLink(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="row mb-3 purchase-link-row">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Link Title</label>
+                                                <input type="text" class="form-control" name="purchase_link_titles[]" placeholder="Optional title for the link">
+                                            </div>
+                                            <div class="col-md-7">
+                                                <label class="form-label">URL</label>
+                                                <input type="url" class="form-control" name="purchase_link_urls[]" placeholder="https://example.com">
+                                            </div>
+                                            <div class="col-md-1 d-flex align-items-end">
+                                                <button type="button" class="btn btn-danger remove-link-btn" onclick="removePurchaseLink(this)" style="display: none;">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn btn-secondary" onclick="addPurchaseLink()">
+                                    <i class="fas fa-plus"></i> Add Purchase Link
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">Update System</button>
                             <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-secondary">Cancel</a>
                         </div>
@@ -130,6 +189,50 @@ $(document).ready(function() {
         placeholder: "Select tags...",
         allowClear: true
     });
+    
+    // Initialize remove buttons on page load
+    updateRemoveButtons();
 });
+
+// Purchase Link Management
+function addPurchaseLink() {
+    const container = document.getElementById('purchaseLinksContainer');
+    const newRow = document.createElement('div');
+    newRow.className = 'row mb-3 purchase-link-row';
+    newRow.innerHTML = `
+        <div class="col-md-4">
+            <label class="form-label">Link Title</label>
+            <input type="text" class="form-control" name="purchase_link_titles[]" placeholder="Optional title for the link">
+        </div>
+        <div class="col-md-7">
+            <label class="form-label">URL</label>
+            <input type="url" class="form-control" name="purchase_link_urls[]" placeholder="https://example.com">
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-danger remove-link-btn" onclick="removePurchaseLink(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(newRow);
+    updateRemoveButtons();
+}
+
+function removePurchaseLink(button) {
+    button.closest('.purchase-link-row').remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const rows = document.querySelectorAll('.purchase-link-row');
+    rows.forEach((row, index) => {
+        const removeBtn = row.querySelector('.remove-link-btn');
+        if (rows.length > 1) {
+            removeBtn.style.display = 'block';
+        } else {
+            removeBtn.style.display = 'none';
+        }
+    });
+}
 </script>
 {% endblock %} 

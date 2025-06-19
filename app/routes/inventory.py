@@ -4,7 +4,7 @@ from flask_wtf import FlaskForm
 from app.models.inventory import (
     InventoryItem, ComputerSystem, Category, 
     Transaction, ComputerModel, CPU, Tag, item_tags,
-    WikiPage, WikiCategory, PurchaseLink
+    WikiPage, WikiCategory, PurchaseLink, SystemPurchaseLink
 )
 from app.models.config import Configuration
 from app.utils.email import send_stock_alert
@@ -993,6 +993,14 @@ def add_system():
                 model = ComputerModel.query.get(form.model_id.data)
                 cpu = CPU.query.get(form.cpu_id.data)
                 
+                # Get price from form
+                price = request.form.get('sell_price')
+                if price:
+                    try:
+                        price = float(price)
+                    except ValueError:
+                        price = None
+                
                 # Create Computer System without tags first
                 system = ComputerSystem(
                     tracking_id=generate_tracking_id(),
@@ -1003,6 +1011,7 @@ def add_system():
                     storage=form.storage.data,
                     os=form.os.data,
                     storage_location=form.storage_location.data,
+                    sell_price=price,
                     cpu_benchmark=form.cpu_benchmark.data,
                     usb_ports_status=form.usb_ports_status.data,
                     usb_ports_notes=form.usb_ports_notes.data,
@@ -1023,6 +1032,20 @@ def add_system():
                     system.tags.extend(tags)
                 
                 db.session.add(system)
+                
+                # Handle purchase links
+                purchase_link_urls = request.form.getlist('purchase_link_urls[]')
+                purchase_link_titles = request.form.getlist('purchase_link_titles[]')
+                
+                for url, title in zip(purchase_link_urls, purchase_link_titles):
+                    if url.strip():  # Only add non-empty URLs
+                        link = SystemPurchaseLink(
+                            url=url.strip(),
+                            title=title.strip() if title else None,
+                            created_by=current_user.id
+                        )
+                        system.purchase_links.append(link)
+                
                 db.session.commit()
                 
                 print(f"Debug: After commit, system serial_tag: {system.serial_tag}")
@@ -1091,11 +1114,20 @@ def edit_system(id):
                         'storage': system.storage,
                         'location': system.storage_location,
                         'os': system.os,
+                        'sell_price': system.sell_price,
                         'cpu_benchmark': system.cpu_benchmark,
                         'usb_ports_status': system.usb_ports_status,
                         'video_status': system.video_status,
                         'network_status': system.network_status
                     }
+                    
+                    # Get price from form
+                    price = request.form.get('sell_price')
+                    if price:
+                        try:
+                            price = float(price)
+                        except ValueError:
+                            price = None
                     
                     # Update system fields
                     system.serial_tag = form.serial_tag.data
@@ -1105,6 +1137,7 @@ def edit_system(id):
                     system.storage = form.storage.data
                     system.os = form.os.data
                     system.storage_location = form.storage_location.data
+                    system.sell_price = price
                     system.cpu_benchmark = form.cpu_benchmark.data
                     system.usb_ports_status = form.usb_ports_status.data
                     system.usb_ports_notes = form.usb_ports_notes.data
@@ -1141,6 +1174,23 @@ def edit_system(id):
                         for tag in tags:
                             system.tags.append(tag)
                     
+                    # Handle purchase links
+                    # Remove all existing links
+                    system.purchase_links = []
+                    
+                    # Add new links
+                    purchase_link_urls = request.form.getlist('purchase_link_urls[]')
+                    purchase_link_titles = request.form.getlist('purchase_link_titles[]')
+                    
+                    for url, title in zip(purchase_link_urls, purchase_link_titles):
+                        if url.strip():  # Only add non-empty URLs
+                            link = SystemPurchaseLink(
+                                url=url.strip(),
+                                title=title.strip() if title else None,
+                                created_by=current_user.id
+                            )
+                            system.purchase_links.append(link)
+                    
                     db.session.commit()
                     
                     # Get new values for logging
@@ -1153,6 +1203,7 @@ def edit_system(id):
                         'storage': system.storage,
                         'location': system.storage_location,
                         'os': system.os,
+                        'sell_price': system.sell_price,
                         'cpu_benchmark': system.cpu_benchmark,
                         'usb_ports_status': system.usb_ports_status,
                         'video_status': system.video_status,

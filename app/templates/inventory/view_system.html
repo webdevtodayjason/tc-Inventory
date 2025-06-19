@@ -54,6 +54,16 @@
                         <div class="col-md-8">{{ system.storage_location or 'Not specified' }}</div>
                     </div>
                     <div class="row mb-3">
+                        <div class="col-md-4"><strong>Price:</strong></div>
+                        <div class="col-md-8">
+                            {% if system.sell_price %}
+                                <span class="h5">${{ "%.2f"|format(system.sell_price) }}</span>
+                            {% else %}
+                                <em class="text-muted">Not specified</em>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
                         <div class="col-md-4"><strong>Status:</strong></div>
                         <div class="col-md-8">
                             <span class="badge {% if system.status == 'available' %}bg-success
@@ -127,6 +137,30 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Purchase Links Section -->
+            {% if system.purchase_links %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Purchase Links</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for link in system.purchase_links %}
+                            <a href="{{ link.url }}" target="_blank" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <h6 class="mb-1">{{ link.title or 'Purchase Link' }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </small>
+                                </div>
+                                <small class="text-muted">{{ link.url }}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="col-md-4">
