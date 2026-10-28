@@ -20,7 +20,7 @@ blinker==1.9.0
 qrcode==8.0
 reportlab==4.3.0
 pytest==8.3.4
-black==26.3.1
+black==26.10.1
 flake8==7.1.1
 python-barcode==0.15.1
 Pillow==13.0.0
